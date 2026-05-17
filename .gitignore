@@ -1,0 +1,22 @@
+# Project planning docs (private)
+SPEC.md
+PLAN.md
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment
+.env
+.env.*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
