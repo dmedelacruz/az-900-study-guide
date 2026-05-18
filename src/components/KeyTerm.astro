@@ -6,13 +6,13 @@ interface Props {
 }
 
 const { term } = Astro.props;
-const tooltipId = `tooltip-${term.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+const suffix = Math.random().toString(36).slice(2, 8);
+const tooltipId = `tooltip-${term.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${suffix}`;
 ---
 
 <span
   class="key-term relative inline-block"
   tabindex="0"
-  role="button"
   aria-describedby={tooltipId}
 >
   <span
@@ -21,7 +21,7 @@ const tooltipId = `tooltip-${term.toLowerCase().replace(/\s+/g, '-').replace(/[^
   <span
     id={tooltipId}
     role="tooltip"
-    class="key-term-tooltip pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs leading-relaxed text-gray-700 dark:text-gray-200 shadow-lg opacity-0 transition-opacity duration-150 z-50"
+    class="key-term-tooltip pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 max-w-[calc(100vw-2rem)] rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs leading-relaxed text-gray-700 dark:text-gray-200 shadow-lg opacity-0 transition-opacity duration-150 z-50"
   >
     <slot />
     <!-- Tooltip arrow -->
