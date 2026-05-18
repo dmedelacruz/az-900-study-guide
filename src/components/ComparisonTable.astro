@@ -1,0 +1,169 @@
+---
+// src/components/ComparisonTable.astro — Styled comparison table for IaaS/PaaS/SaaS and similar structured comparisons
+
+interface Props {
+  title?: string;
+}
+
+const { title } = Astro.props;
+---
+
+<figure
+  class="comparison-table my-10 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+  aria-label={title ? undefined : "Comparison table"}
+>
+  <!-- Header bar -->
+  <div class="flex items-center gap-2.5 px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <!-- Table/grid icon -->
+    <svg
+      class="w-5 h-5 flex-shrink-0 text-gray-500 dark:text-gray-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M3 10h18M3 14h18M10 3v18M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6z"
+      />
+    </svg>
+    {title && (
+      <figcaption class="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 m-0">
+        {title}
+      </figcaption>
+    )}
+  </div>
+
+  <!-- Scrollable table wrapper -->
+  <div class="overflow-x-auto">
+    <div class="comparison-table-content min-w-full">
+      <slot />
+    </div>
+  </div>
+</figure>
+
+<style>
+  /* Table element styling — scoped to this component's slot content */
+  .comparison-table-content :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem; /* text-sm */
+    line-height: 1.5;
+  }
+
+  /* Header row */
+  .comparison-table-content :global(thead tr) {
+    background-color: #f9fafb; /* gray-50 */
+  }
+
+  .comparison-table-content :global(th) {
+    padding: 0.625rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #374151; /* gray-700 */
+    border-bottom: 1px solid #e5e7eb; /* gray-200 */
+    white-space: nowrap;
+  }
+
+  /* Body rows */
+  .comparison-table-content :global(tbody tr) {
+    border-bottom: 1px solid #f3f4f6; /* gray-100 */
+  }
+
+  .comparison-table-content :global(tbody tr:last-child) {
+    border-bottom: none;
+  }
+
+  /* Zebra striping */
+  .comparison-table-content :global(tbody tr:nth-child(odd)) {
+    background-color: #ffffff; /* white */
+  }
+
+  .comparison-table-content :global(tbody tr:nth-child(even)) {
+    background-color: #f9fafb; /* gray-50 */
+  }
+
+  .comparison-table-content :global(td) {
+    padding: 0.625rem 1rem;
+    color: #374151; /* gray-700 */
+    vertical-align: middle;
+  }
+
+  /* First column (row label) — slightly bolder */
+  .comparison-table-content :global(td:first-child) {
+    font-weight: 500;
+    color: #111827; /* gray-900 */
+    white-space: nowrap;
+  }
+
+  /* Cell highlight: "Customer" */
+  .comparison-table-content :global(td[data-highlight="customer"]),
+  .comparison-table-content :global(td.highlight-customer) {
+    color: #1d4ed8; /* blue-700 */
+    font-weight: 500;
+  }
+
+  /* Cell highlight: "Provider" */
+  .comparison-table-content :global(td[data-highlight="provider"]),
+  .comparison-table-content :global(td.highlight-provider) {
+    color: #15803d; /* green-700 */
+    font-weight: 500;
+  }
+
+  /* Cell highlight: "Shared" */
+  .comparison-table-content :global(td[data-highlight="shared"]),
+  .comparison-table-content :global(td.highlight-shared) {
+    color: #b45309; /* amber-700 */
+    font-weight: 500;
+  }
+
+  /* Dark mode overrides */
+  :global(.dark) .comparison-table-content :global(thead tr) {
+    background-color: #1f2937; /* gray-800 */
+  }
+
+  :global(.dark) .comparison-table-content :global(th) {
+    color: #d1d5db; /* gray-300 */
+    border-bottom-color: #374151; /* gray-700 */
+  }
+
+  :global(.dark) .comparison-table-content :global(tbody tr) {
+    border-bottom-color: #1f2937; /* gray-800 */
+  }
+
+  :global(.dark) .comparison-table-content :global(tbody tr:nth-child(odd)) {
+    background-color: #111827; /* gray-900 */
+  }
+
+  :global(.dark) .comparison-table-content :global(tbody tr:nth-child(even)) {
+    background-color: #1f2937; /* gray-800 */
+  }
+
+  :global(.dark) .comparison-table-content :global(td) {
+    color: #d1d5db; /* gray-300 */
+  }
+
+  :global(.dark) .comparison-table-content :global(td:first-child) {
+    color: #f9fafb; /* gray-50 */
+  }
+
+  :global(.dark) .comparison-table-content :global(td[data-highlight="customer"]),
+  :global(.dark) .comparison-table-content :global(td.highlight-customer) {
+    color: #93c5fd; /* blue-300 */
+  }
+
+  :global(.dark) .comparison-table-content :global(td[data-highlight="provider"]),
+  :global(.dark) .comparison-table-content :global(td.highlight-provider) {
+    color: #86efac; /* green-300 */
+  }
+
+  :global(.dark) .comparison-table-content :global(td[data-highlight="shared"]),
+  :global(.dark) .comparison-table-content :global(td.highlight-shared) {
+    color: #fcd34d; /* amber-300 */
+  }
+</style>
