@@ -1,0 +1,164 @@
+---
+// src/components/DeepDive.astro
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+
+// Generate a unique ID for aria-controls linkage
+const id = `deep-dive-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<details
+  class="deep-dive my-10 rounded-lg border-l-4 border-indigo-500 dark:border-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 overflow-hidden"
+>
+  <summary
+    class="flex items-center justify-between gap-3 px-6 py-4 cursor-pointer list-none select-none group"
+    aria-controls={id}
+  >
+    <div class="flex items-center gap-2.5">
+      <!-- Book/magnifier icon to signal "deep dive" content -->
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        class="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0"
+        aria-hidden="true"
+      >
+        <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+      </svg>
+      <span class="text-sm font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+        Deep Dive
+      </span>
+    </div>
+    <div class="flex items-center gap-3 flex-1 min-w-0 justify-between">
+      <span class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
+        {title}
+      </span>
+      <!-- Chevron icon — rotates when expanded via CSS -->
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        class="deep-dive-chevron w-4 h-4 text-indigo-500 dark:text-indigo-400 shrink-0 transition-transform duration-300"
+        aria-hidden="true"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+          clip-rule="evenodd"
+        />
+      </svg>
+    </div>
+  </summary>
+
+  <!-- Content wrapper — JS targets this for smooth height animation -->
+  <div
+    id={id}
+    class="deep-dive-body px-6 pb-5 pt-1 text-gray-700 dark:text-gray-200 text-sm leading-relaxed
+      [&>p]:mt-0 [&>ul]:mt-0 [&>ul]:space-y-1.5 [&>ul>li]:leading-relaxed
+      [&>ol]:mt-0 [&>ol]:space-y-1.5 [&>ol>li]:leading-relaxed
+      border-t border-indigo-200 dark:border-indigo-800 mt-0"
+  >
+    <div class="pt-4">
+      <slot />
+    </div>
+  </div>
+</details>
+
+<style>
+  /* Rotate chevron when <details> is open */
+  details[open] .deep-dive-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* Hide the default marker in all browsers */
+  details > summary {
+    list-style: none;
+  }
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  /* Smooth height animation state — JS sets these */
+  .deep-dive-body {
+    overflow: hidden;
+  }
+</style>
+
+<script>
+  /**
+   * Enhance <details> elements with smooth height animation.
+   * Falls back gracefully to native <details> behavior if JS is unavailable.
+   */
+  function initDeepDives() {
+    const allDeepDives = document.querySelectorAll<HTMLDetailsElement>("details.deep-dive");
+
+    allDeepDives.forEach((details) => {
+      const summary = details.querySelector("summary");
+      const body = details.querySelector<HTMLElement>(".deep-dive-body");
+
+      if (!summary || !body) return;
+
+      // Prevent the native toggle so we can animate
+      summary.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        if (details.open) {
+          // Collapse: animate height to 0
+          const startHeight = body.scrollHeight;
+          body.style.height = `${startHeight}px`;
+
+          // Force reflow so the initial height is applied before transitioning
+          body.getBoundingClientRect();
+
+          body.style.transition = "height 300ms ease";
+          body.style.height = "0px";
+
+          body.addEventListener(
+            "transitionend",
+            () => {
+              details.removeAttribute("open");
+              body.style.height = "";
+              body.style.transition = "";
+            },
+            { once: true }
+          );
+        } else {
+          // Expand: set open first so content is renderable, then animate
+          details.setAttribute("open", "");
+          const endHeight = body.scrollHeight;
+
+          body.style.height = "0px";
+          body.getBoundingClientRect(); // reflow
+
+          body.style.transition = "height 300ms ease";
+          body.style.height = `${endHeight}px`;
+
+          body.addEventListener(
+            "transitionend",
+            () => {
+              body.style.height = "";
+              body.style.transition = "";
+            },
+            { once: true }
+          );
+        }
+      });
+
+      // Keyboard: Enter/Space on summary (already handled natively for <summary>,
+      // but we re-attach to ensure our custom click handler fires for keyboard too)
+      summary.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          summary.click();
+        }
+      });
+    });
+  }
+
+  // Run on initial page load and after Astro view transitions
+  initDeepDives();
+  document.addEventListener("astro:page-load", initDeepDives);
+</script>
