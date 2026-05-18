@@ -69,6 +69,15 @@
     @apply border-gray-200 my-8;
   }
 
+  /* Sidebar nav — override global styles */
+  .sidebar-nav a {
+    @apply no-underline;
+  }
+
+  .sidebar-nav ul {
+    @apply list-none pl-0 mb-0;
+  }
+
   /* Dark mode — structure in place for task 1.9 */
   /* @media (prefers-color-scheme: dark) { ... } */
 }

@@ -1,0 +1,196 @@
+---
+// src/components/Sidebar.astro — Collapsible sidebar navigation
+
+const currentPath = Astro.url.pathname;
+
+const navData = [
+  {
+    domain: 'Domain 1: Describe Cloud Concepts',
+    weight: '25-30%',
+    sections: [
+      { title: '1.1 Define cloud computing', href: '/sections/1-1-define-cloud-computing/' },
+      { title: '1.2 Shared responsibility model', href: '/sections/1-2-shared-responsibility-model/' },
+      { title: '1.3 Cloud models', href: '/sections/1-3-cloud-models/' },
+      { title: '1.4 Consumption-based model', href: '/sections/1-4-consumption-based-model/' },
+      { title: '1.5 Cloud service types', href: '/sections/1-5-cloud-service-types/' },
+      { title: '1.6 Benefits of cloud', href: '/sections/1-6-benefits-of-cloud/' },
+    ],
+  },
+  {
+    domain: 'Domain 2: Azure Architecture & Services',
+    weight: '35-40%',
+    sections: [
+      { title: '2.1 Core architectural components', href: '/sections/2-1-core-architectural-components/' },
+      { title: '2.2a Compute services', href: '/sections/2-2a-compute-services/' },
+      { title: '2.2b Networking services', href: '/sections/2-2b-networking-services/' },
+      { title: '2.3 Storage services', href: '/sections/2-3-storage-services/' },
+      { title: '2.4 Identity, access & security', href: '/sections/2-4-identity-access-security/' },
+    ],
+  },
+  {
+    domain: 'Domain 3: Management & Governance',
+    weight: '30-35%',
+    sections: [
+      { title: '3.1 Cost management', href: '/sections/3-1-cost-management/' },
+      { title: '3.2 Governance & compliance', href: '/sections/3-2-governance-compliance/' },
+      { title: '3.3 Resource management tools', href: '/sections/3-3-resource-management-tools/' },
+      { title: '3.4 Monitoring tools', href: '/sections/3-4-monitoring-tools/' },
+    ],
+  },
+];
+---
+
+<!-- Mobile hamburger button -->
+<button
+  id="sidebar-open-btn"
+  type="button"
+  class="fixed top-4 left-4 z-50 lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-gray-200 shadow-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+  aria-label="Open navigation"
+>
+  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+</button>
+
+<!-- Backdrop (mobile only) -->
+<div
+  id="sidebar-backdrop"
+  class="fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 opacity-0 pointer-events-none lg:hidden"
+></div>
+
+<!-- Sidebar -->
+<aside
+  id="sidebar"
+  class="sidebar-nav fixed top-0 left-0 z-40 h-screen w-64 bg-gray-50 border-r border-gray-200 flex flex-col overflow-y-auto transition-transform duration-300 -translate-x-full lg:translate-x-0"
+  data-current-path={currentPath}
+>
+  <!-- Header -->
+  <div class="flex items-center justify-between px-5 py-5 border-b border-gray-200">
+    <a href="/" class="text-lg font-semibold text-gray-900">AZ-900 Study Guide</a>
+    <button
+      id="sidebar-close-btn"
+      type="button"
+      class="lg:hidden inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-400 hover:text-gray-600 transition-colors"
+      aria-label="Close navigation"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 px-3 py-4 space-y-1">
+    {navData.map((group, idx) => (
+      <div class="sidebar-group" data-expanded="true">
+        <button
+          type="button"
+          class="sidebar-group-toggle flex items-center justify-between w-full px-2 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-700 rounded transition-colors"
+          aria-expanded="true"
+          aria-controls={`sidebar-group-${idx}`}
+        >
+          <span>{group.domain} <span class="text-gray-400 font-normal normal-case tracking-normal">({group.weight})</span></span>
+          <svg class="sidebar-chevron w-4 h-4 flex-shrink-0 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <ul id={`sidebar-group-${idx}`} class="sidebar-group-links mt-1 space-y-0.5 overflow-hidden transition-all duration-200">
+          {group.sections.map((section) => {
+            const isActive = currentPath === section.href || currentPath === section.href.replace(/\/$/, '');
+            return (
+              <li>
+                <a
+                  href={section.href}
+                  class:list={[
+                    'block px-3 py-1.5 text-sm rounded transition-colors',
+                    isActive
+                      ? 'bg-blue-50 text-blue-700 font-medium border-l-2 border-blue-600 pl-2.5'
+                      : 'text-gray-700 hover:text-blue-600 hover:bg-gray-100',
+                  ]}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  {section.title}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    ))}
+  </nav>
+</aside>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const openBtn = document.getElementById('sidebar-open-btn');
+    const closeBtn = document.getElementById('sidebar-close-btn');
+
+    if (!sidebar || !backdrop || !openBtn || !closeBtn) return;
+
+    // Mobile open/close
+    function openSidebar() {
+      sidebar.classList.remove('-translate-x-full');
+      sidebar.classList.add('translate-x-0');
+      backdrop.classList.remove('opacity-0', 'pointer-events-none');
+      backdrop.classList.add('opacity-100');
+      document.body.style.overflow = 'hidden';
+      closeBtn.focus();
+    }
+
+    function closeSidebar() {
+      sidebar.classList.add('-translate-x-full');
+      sidebar.classList.remove('translate-x-0');
+      backdrop.classList.add('opacity-0', 'pointer-events-none');
+      backdrop.classList.remove('opacity-100');
+      document.body.style.overflow = '';
+      openBtn.focus();
+    }
+
+    openBtn.addEventListener('click', openSidebar);
+    closeBtn.addEventListener('click', closeSidebar);
+    backdrop.addEventListener('click', closeSidebar);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeSidebar();
+    });
+
+    // Collapse/expand domain groups
+    const groups = document.querySelectorAll('.sidebar-group');
+    groups.forEach((group) => {
+      const toggle = group.querySelector('.sidebar-group-toggle');
+      const links = group.querySelector('.sidebar-group-links') as HTMLElement | null;
+      const chevron = group.querySelector('.sidebar-chevron');
+      if (!toggle || !links || !chevron) return;
+
+      toggle.addEventListener('click', () => {
+        const expanded = group.getAttribute('data-expanded') === 'true';
+        if (expanded) {
+          group.setAttribute('data-expanded', 'false');
+          toggle.setAttribute('aria-expanded', 'false');
+          links.style.maxHeight = links.scrollHeight + 'px';
+          requestAnimationFrame(() => {
+            links.style.maxHeight = '0px';
+            links.style.opacity = '0';
+          });
+          chevron.classList.add('-rotate-90');
+        } else {
+          group.setAttribute('data-expanded', 'true');
+          toggle.setAttribute('aria-expanded', 'true');
+          links.style.maxHeight = links.scrollHeight + 'px';
+          links.style.opacity = '1';
+          links.addEventListener('transitionend', function handler() {
+            links.style.maxHeight = 'none';
+            links.removeEventListener('transitionend', handler);
+          });
+          chevron.classList.remove('-rotate-90');
+        }
+      });
+
+      // Initialize expanded state — use 'none' so it adapts to content
+      links.style.maxHeight = 'none';
+      links.style.opacity = '1';
+    });
+  });
+</script>
