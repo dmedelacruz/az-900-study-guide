@@ -1,0 +1,61 @@
+---
+// src/components/InteractiveDiagram.astro
+
+interface Props {
+  title?: string;
+  alt: string;
+}
+
+const { title, alt } = Astro.props;
+---
+
+<figure
+  class="interactive-diagram my-10 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+  aria-label={alt}
+>
+  <!-- Header bar -->
+  <div class="flex items-center gap-2.5 px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <!-- Diagram/node icon -->
+    <svg
+      class="w-5 h-5 flex-shrink-0 text-gray-500 dark:text-gray-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10-1a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1v-4a1 1 0 00-1-1h-4z"
+      />
+    </svg>
+    {title && (
+      <figcaption class="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 m-0">
+        {title}
+      </figcaption>
+    )}
+  </div>
+
+  <!-- Diagram content wrapper — position: relative so hotspots can be positioned absolutely -->
+  <div class="interactive-diagram-inner relative bg-white dark:bg-gray-900">
+    <slot />
+    <!-- Instructions text -->
+    <p class="interactive-diagram-hint absolute bottom-2 right-3 text-xs text-gray-400 dark:text-gray-500 select-none pointer-events-none m-0">
+      Click the highlighted areas to learn more
+    </p>
+  </div>
+</figure>
+
+<style>
+  .interactive-diagram-inner {
+    min-height: 80px;
+  }
+
+  /* Ensure SVG passed in as slot fills width */
+  .interactive-diagram-inner :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+</style>

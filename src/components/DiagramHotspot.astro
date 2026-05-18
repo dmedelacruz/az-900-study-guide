@@ -1,0 +1,307 @@
+---
+// src/components/DiagramHotspot.astro
+
+interface Props {
+  x: string;       // e.g. "25%"
+  y: string;       // e.g. "50%"
+  label: string;
+  width?: string;  // e.g. "80px" or "auto"
+  height?: string; // e.g. "40px" or "auto"
+}
+
+const { x, y, label, width = "auto", height = "auto" } = Astro.props;
+
+// Unique ID for aria linkage between button and popover
+const id = `hotspot-${Math.random().toString(36).slice(2, 9)}`;
+const popoverId = `popover-${id}`;
+---
+
+<div
+  class="diagram-hotspot-wrapper absolute"
+  style={`left: ${x}; top: ${y}; transform: translate(-50%, -50%);`}
+  data-hotspot-wrapper
+>
+  <!-- Clickable hotspot button -->
+  <button
+    id={id}
+    class="diagram-hotspot relative flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+    style={`width: ${width}; height: ${height};`}
+    aria-expanded="false"
+    aria-controls={popoverId}
+    aria-label={`Learn more: ${label}`}
+    data-hotspot-btn
+  >
+    <!-- Outer pulse ring -->
+    <span
+      class="hotspot-pulse absolute inset-0 rounded-full bg-indigo-400 dark:bg-indigo-500 opacity-30"
+      aria-hidden="true"
+    ></span>
+    <!-- Inner dot -->
+    <span
+      class="relative z-10 w-4 h-4 rounded-full bg-indigo-500 dark:bg-indigo-400 shadow-md ring-2 ring-white dark:ring-gray-900"
+      aria-hidden="true"
+    ></span>
+  </button>
+
+  <!-- Popover card — hidden by default, toggled by JS -->
+  <div
+    id={popoverId}
+    role="region"
+    aria-label={label}
+    class="diagram-popover absolute z-50 hidden w-72 max-w-[calc(100vw-2rem)] rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+    data-hotspot-popover
+    aria-hidden="true"
+  >
+    <!-- Arrow tip (points down toward the hotspot; flipped class added by JS when below) -->
+    <span
+      class="hotspot-arrow absolute left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+      data-hotspot-arrow
+      aria-hidden="true"
+    ></span>
+
+    <!-- Popover content -->
+    <div class="relative px-4 pt-3 pb-4">
+      <!-- Label / heading -->
+      <p class="font-semibold text-gray-900 dark:text-gray-50 m-0 mb-1.5 pr-6 leading-snug">
+        {label}
+      </p>
+      <!-- Close button -->
+      <button
+        class="absolute top-2.5 right-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+        data-hotspot-close
+        aria-label="Close"
+      >
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <!-- Description slot -->
+      <div class="text-gray-600 dark:text-gray-300 leading-relaxed [&>p]:m-0 [&>ul]:m-0 [&>ul]:pl-4 [&>ul]:space-y-1 [&>ol]:m-0 [&>ol]:pl-4 [&>ol]:space-y-1">
+        <slot />
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Pulse animation on the outer ring */
+  @keyframes hotspot-ping {
+    75%, 100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+
+  .hotspot-pulse {
+    animation: hotspot-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  /* Pause pulse on hover/focus for clarity */
+  .diagram-hotspot:hover .hotspot-pulse,
+  .diagram-hotspot:focus .hotspot-pulse {
+    animation-play-state: paused;
+  }
+
+  /* Popover show state — JS adds/removes .is-open */
+  .diagram-popover.is-open {
+    display: block;
+    animation: popover-in 150ms ease forwards;
+  }
+
+  @keyframes popover-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Default position: above the hotspot */
+  .diagram-popover {
+    bottom: calc(100% + 16px);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* Arrow default: below the popover box, pointing down */
+  .hotspot-arrow {
+    bottom: -6px;
+    border-right: 1px solid;
+    border-bottom: 1px solid;
+  }
+
+  /* Flipped: popover appears below the hotspot */
+  .diagram-popover.is-flipped {
+    bottom: auto;
+    top: calc(100% + 16px);
+    transform: translateX(-50%);
+    animation: popover-in-flipped 150ms ease forwards;
+  }
+
+  @keyframes popover-in-flipped {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  /* Respect reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    .hotspot-pulse {
+      animation: none;
+    }
+    .diagram-popover.is-open,
+    .diagram-popover.is-flipped {
+      animation: none;
+    }
+  }
+
+  /* Arrow flipped: above the popover box, pointing up */
+  .diagram-popover.is-flipped .hotspot-arrow {
+    bottom: auto;
+    top: -6px;
+    border-right: none;
+    border-bottom: none;
+    border-left: 1px solid;
+    border-top: 1px solid;
+  }
+</style>
+
+<script>
+  let documentListenersAttached = false;
+  let activeBtn: HTMLButtonElement | null = null;
+
+  function initHotspots() {
+
+    function openPopover(btn: HTMLButtonElement, popover: HTMLElement) {
+      // Determine if the hotspot is near the top of its container
+      const wrapper = btn.closest<HTMLElement>("[data-hotspot-wrapper]");
+      const container = wrapper?.closest<HTMLElement>(".interactive-diagram-inner");
+
+      if (wrapper && container) {
+        const wrapperRect = wrapper.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const relativeTop = wrapperRect.top - containerRect.top;
+        // If hotspot is in the top ~35% of the container, flip popover below
+        const isNearTop = relativeTop < containerRect.height * 0.35;
+        popover.classList.toggle("is-flipped", isNearTop);
+      }
+
+      popover.classList.remove("hidden");
+      // Force reflow so animation runs
+      popover.getBoundingClientRect();
+      popover.classList.add("is-open");
+      popover.setAttribute("aria-hidden", "false");
+      btn.setAttribute("aria-expanded", "true");
+      activeBtn = btn;
+    }
+
+    function closePopover(btn: HTMLButtonElement, popover: HTMLElement) {
+      popover.classList.remove("is-open");
+      popover.setAttribute("aria-hidden", "true");
+      btn.setAttribute("aria-expanded", "false");
+
+      // Wait for animation, then hide
+      const onEnd = () => {
+        popover.classList.add("hidden");
+        popover.removeEventListener("animationend", onEnd);
+      };
+      // Fallback if no animation fires (e.g. reduced motion)
+      const fallback = setTimeout(() => {
+        popover.classList.add("hidden");
+      }, 200);
+      popover.addEventListener("animationend", () => {
+        clearTimeout(fallback);
+        onEnd();
+      }, { once: true });
+
+      if (activeBtn === btn) activeBtn = null;
+    }
+
+    function closeAll() {
+      document.querySelectorAll<HTMLButtonElement>("[data-hotspot-btn]").forEach((btn) => {
+        const popoverId = btn.getAttribute("aria-controls");
+        if (!popoverId) return;
+        const popover = document.getElementById(popoverId) as HTMLElement | null;
+        if (popover && btn.getAttribute("aria-expanded") === "true") {
+          closePopover(btn, popover);
+        }
+      });
+    }
+
+    // Wire up each hotspot button
+    document.querySelectorAll<HTMLButtonElement>("[data-hotspot-btn]").forEach((btn) => {
+      // Remove existing listener by cloning (avoids duplicate listeners on page transitions)
+      const freshBtn = btn.cloneNode(true) as HTMLButtonElement;
+      btn.replaceWith(freshBtn);
+
+      const popoverId = freshBtn.getAttribute("aria-controls");
+      if (!popoverId) return;
+      const popover = document.getElementById(popoverId) as HTMLElement | null;
+      if (!popover) return;
+
+      freshBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isOpen = freshBtn.getAttribute("aria-expanded") === "true";
+        // Close any other open popover first
+        if (activeBtn && activeBtn !== freshBtn) closeAll();
+        if (isOpen) {
+          closePopover(freshBtn, popover);
+        } else {
+          openPopover(freshBtn, popover);
+        }
+      });
+
+      // Keyboard: Enter / Space
+      freshBtn.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          freshBtn.click();
+        }
+      });
+
+      // Close button inside popover
+      const closeBtn = popover.querySelector<HTMLButtonElement>("[data-hotspot-close]");
+      if (closeBtn) {
+        const freshClose = closeBtn.cloneNode(true) as HTMLButtonElement;
+        closeBtn.replaceWith(freshClose);
+        freshClose.addEventListener("click", (e) => {
+          e.stopPropagation();
+          closePopover(freshBtn, popover);
+          freshBtn.focus();
+        });
+      }
+    });
+
+    // Document-level listeners — attach only once
+    if (!documentListenersAttached) {
+      documentListenersAttached = true;
+
+      // Click outside → close all
+      document.addEventListener("click", (e) => {
+        const target = e.target as Node;
+        const insideHotspot = (target as Element).closest?.("[data-hotspot-wrapper]");
+        if (!insideHotspot) closeAll();
+      });
+
+      // Escape → close all
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          const wasActive = activeBtn;
+          closeAll();
+          wasActive?.focus();
+        }
+      });
+    }
+  }
+
+  initHotspots();
+  document.addEventListener("astro:page-load", initHotspots);
+</script>
