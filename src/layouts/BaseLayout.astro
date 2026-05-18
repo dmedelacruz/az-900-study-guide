@@ -34,18 +34,20 @@ const {
     <!-- FOUC prevention: apply theme class before first paint -->
     <script is:inline>
       (function () {
-        var stored = localStorage.getItem('theme');
-        if (stored === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else if (stored === 'light') {
-          document.documentElement.classList.remove('dark');
-        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          document.documentElement.classList.add('dark');
-        }
+        try {
+          var stored = localStorage.getItem('theme');
+          if (stored === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else if (stored === 'light') {
+            document.documentElement.classList.remove('dark');
+          } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (_) {}
       })();
     </script>
   </head>
-  <body class="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+  <body class="min-h-screen">
     <ProgressBar />
     <Sidebar />
     <main class="max-w-3xl mx-auto px-6 py-16 lg:ml-64">

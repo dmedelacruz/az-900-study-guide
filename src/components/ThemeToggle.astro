@@ -67,33 +67,34 @@
       }
     }
 
-    function setTheme(theme: 'dark' | 'light' | 'system') {
+    function setTheme(theme: 'dark' | 'light') {
       if (theme === 'dark') {
         document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-      } else if (theme === 'light') {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
       } else {
-        localStorage.removeItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.classList.toggle('dark', prefersDark);
+        document.documentElement.classList.remove('dark');
       }
+      try { localStorage.setItem('theme', theme); } catch (_) {}
       updateIcons();
     }
 
     btn.addEventListener('click', () => {
-      // Toggle between dark and light; saves explicit preference
       setTheme(isDark() ? 'light' : 'dark');
     });
 
     // Listen for OS-level preference changes — only applies when no manual preference is set
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      if (!localStorage.getItem('theme')) {
-        document.documentElement.classList.toggle('dark', e.matches);
-        updateIcons();
-      }
-    });
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        try {
+          if (!localStorage.getItem('theme')) {
+            document.documentElement.classList.toggle('dark', e.matches);
+            updateIcons();
+          }
+        } catch (_) {
+          document.documentElement.classList.toggle('dark', e.matches);
+          updateIcons();
+        }
+      });
+    }
 
     // Sync icons with current state on mount
     updateIcons();
