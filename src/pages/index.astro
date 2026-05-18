@@ -1,30 +1,17 @@
 ---
-// src/pages/index.astro — Minimal page to verify Astro + Tailwind CSS
+// src/pages/index.astro
+
+import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AZ-900 Study Guide</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body class="min-h-screen bg-white text-gray-900 font-sans">
-    <main class="max-w-3xl mx-auto px-6 py-16">
-      <h1 class="text-4xl font-bold tracking-tight mb-4">
-        AZ-900 Study Guide
-      </h1>
-      <p class="text-lg text-gray-600 mb-6">
-        An interactive study guide for the Microsoft Azure Fundamentals certification exam.
-      </p>
-      <p class="text-sm text-gray-400 font-mono">
-        Astro + Tailwind CSS initialized successfully.
-      </p>
-    </main>
-  </body>
-</html>
+<BaseLayout title="AZ-900 Study Guide">
+  <h1 class="text-4xl font-bold tracking-tight mb-4">
+    AZ-900 Study Guide
+  </h1>
+  <p class="text-lg text-gray-600 mb-6">
+    An interactive study guide for the Microsoft Azure Fundamentals certification exam.
+  </p>
+  <p class="text-sm text-gray-400 font-mono">
+    Astro + Tailwind CSS initialized successfully.
+  </p>
+</BaseLayout>

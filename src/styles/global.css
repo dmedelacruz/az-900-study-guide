@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-white text-gray-900 font-sans leading-relaxed;
+  }
+
+  h1 {
+    @apply text-4xl font-bold tracking-tight leading-tight;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold tracking-tight leading-snug;
+  }
+
+  h3 {
+    @apply text-xl font-semibold leading-snug;
+  }
+
+  h4 {
+    @apply text-lg font-semibold;
+  }
+
+  p {
+    @apply leading-7 mb-4;
+  }
+
+  p:last-child {
+    @apply mb-0;
+  }
+
+  a {
+    @apply text-blue-600 underline underline-offset-2 hover:text-blue-800 transition-colors;
+  }
+
+  code {
+    @apply font-mono text-sm bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded;
+  }
+
+  pre {
+    @apply font-mono text-sm bg-gray-100 text-gray-800 p-4 rounded-lg overflow-x-auto my-4;
+  }
+
+  pre code {
+    @apply bg-transparent p-0 rounded-none;
+  }
+
+  ul {
+    @apply list-disc list-outside pl-6 mb-4 space-y-1;
+  }
+
+  ol {
+    @apply list-decimal list-outside pl-6 mb-4 space-y-1;
+  }
+
+  blockquote {
+    @apply border-l-4 border-gray-200 pl-4 italic text-gray-600 my-4;
+  }
+
+  hr {
+    @apply border-gray-200 my-8;
+  }
+
+  /* Dark mode — structure in place for task 1.9 */
+  /* @media (prefers-color-scheme: dark) { ... } */
+}
