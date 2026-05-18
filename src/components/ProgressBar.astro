@@ -1,0 +1,48 @@
+---
+// src/components/ProgressBar.astro — Scroll-based reading progress bar
+---
+
+<div
+  id="reading-progress-bar"
+  role="progressbar"
+  aria-label="Reading progress"
+  aria-valuenow="0"
+  aria-valuemin="0"
+  aria-valuemax="100"
+  style="transform: scaleX(0)"
+  class="fixed top-0 left-0 h-[3px] bg-blue-600 z-50 w-full origin-left transition-transform duration-100 ease-out pointer-events-none"
+></div>
+
+<script>
+  (function () {
+    const bar = document.getElementById('reading-progress-bar');
+    if (!bar) return;
+
+    let ticking = false;
+
+    function updateProgress() {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const progress = docHeight > 0 ? Math.min(100, (scrollTop / docHeight) * 100) : 0;
+
+      bar.style.transform = `scaleX(${progress / 100})`;
+      bar.setAttribute('aria-valuenow', String(Math.round(progress)));
+
+      ticking = false;
+    }
+
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) {
+          requestAnimationFrame(updateProgress);
+          ticking = true;
+        }
+      },
+      { passive: true }
+    );
+
+    // Set initial value on page load
+    updateProgress();
+  })();
+</script>

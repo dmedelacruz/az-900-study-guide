@@ -3,6 +3,7 @@
 
 import '../styles/global.css';
 import Sidebar from '../components/Sidebar.astro';
+import ProgressBar from '../components/ProgressBar.astro';
 
 interface Props {
   title: string;
@@ -29,6 +30,7 @@ const {
     />
   </head>
   <body class="min-h-screen">
+    <ProgressBar />
     <Sidebar />
     <main class="max-w-3xl mx-auto px-6 py-16 lg:ml-64">
       <slot />
