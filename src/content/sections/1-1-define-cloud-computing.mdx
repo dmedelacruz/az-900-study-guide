@@ -11,6 +11,7 @@ microsoftLearnUrl: "https://learn.microsoft.com/en-us/training/modules/describe-
 
 import KeyTakeaways from '../../components/KeyTakeaways.astro';
 import KeyTerm from '../../components/KeyTerm.astro';
+import Callout from '../../components/Callout.astro';
 
 ## What is Cloud Computing?
 
@@ -34,6 +35,18 @@ In cloud computing, responsibilities are shared between the cloud provider and t
 | Applications | Customer | Customer | Customer | Provider |
 | OS | Customer | Customer | Provider | Provider |
 | Infrastructure | Customer | Provider | Provider | Provider |
+
+<Callout type="info">
+Azure and other major cloud providers operate under the NIST definition of cloud computing, which identifies the five essential characteristics listed above. These characteristics distinguish true cloud services from simple hosted or managed services.
+</Callout>
+
+<Callout type="warning">
+Do not confuse the **shared responsibility model** with full provider responsibility. Regardless of service type (IaaS, PaaS, or SaaS), **you are always responsible for your own data and identity/access management**.
+</Callout>
+
+<Callout type="tip">
+For the AZ-900 exam, remember the mnemonic **"On Broad Resource Rapid Measured"** (On-demand, Broad network access, Resource pooling, Rapid elasticity, Measured service) to recall the five key cloud characteristics quickly.
+</Callout>
 
 <KeyTakeaways>
 - Cloud computing delivers computing services over the internet, enabling on-demand access to servers, storage, databases, networking, and more.
