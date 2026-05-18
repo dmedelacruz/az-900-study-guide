@@ -1,0 +1,47 @@
+---
+// src/components/KeyTerm.astro — Inline key term with hover/focus tooltip definition
+
+interface Props {
+  term: string;
+}
+
+const { term } = Astro.props;
+const tooltipId = `tooltip-${term.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+---
+
+<span
+  class="key-term relative inline-block"
+  tabindex="0"
+  role="button"
+  aria-describedby={tooltipId}
+>
+  <span
+    class="key-term-label cursor-help text-blue-700 dark:text-blue-300 underline decoration-dotted underline-offset-2 decoration-blue-500 dark:decoration-blue-400 font-medium"
+  >{term}</span>
+  <span
+    id={tooltipId}
+    role="tooltip"
+    class="key-term-tooltip pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-xs leading-relaxed text-gray-700 dark:text-gray-200 shadow-lg opacity-0 transition-opacity duration-150 z-50"
+  >
+    <slot />
+    <!-- Tooltip arrow -->
+    <span
+      class="absolute left-1/2 -translate-x-1/2 -bottom-[5px] w-2.5 h-2.5 border-b border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rotate-45"
+      aria-hidden="true"
+    ></span>
+  </span>
+</span>
+
+<style>
+  .key-term:hover .key-term-tooltip,
+  .key-term:focus .key-term-tooltip,
+  .key-term:focus-within .key-term-tooltip {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Ensure tooltip is not clipped inside prose containers */
+  .key-term {
+    vertical-align: baseline;
+  }
+</style>

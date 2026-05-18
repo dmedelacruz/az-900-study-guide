@@ -10,22 +10,23 @@ microsoftLearnUrl: "https://learn.microsoft.com/en-us/training/modules/describe-
 ---
 
 import KeyTakeaways from '../../components/KeyTakeaways.astro';
+import KeyTerm from '../../components/KeyTerm.astro';
 
 ## What is Cloud Computing?
 
-Cloud computing is the delivery of computing services—including servers, storage, databases, networking, software, analytics, and intelligence—over the internet ("the cloud") to offer faster innovation, flexible resources, and economies of scale.
+<KeyTerm term="Cloud computing">The delivery of computing services—including servers, storage, databases, networking, software, analytics, and intelligence—over the internet to offer faster innovation, flexible resources, and economies of scale.</KeyTerm> enables organizations to access technology resources on demand without owning physical infrastructure.
 
 ## Key Characteristics
 
 - **On-demand self-service**: Provision resources without requiring human interaction with the service provider.
 - **Broad network access**: Resources are available over the network and accessed through standard mechanisms.
-- **Resource pooling**: The provider's resources are pooled to serve multiple consumers using a multi-tenant model.
+- **Resource pooling**: The provider's resources are pooled to serve multiple consumers using a <KeyTerm term="multi-tenant model">An architecture where a single instance of software serves multiple customers (tenants), with each tenant's data isolated and invisible to others.</KeyTerm>.
 - **Rapid elasticity**: Capabilities can be elastically provisioned and released to scale rapidly with demand.
 - **Measured service**: Resource usage can be monitored, controlled, and reported transparently.
 
 ## The Shared Responsibility Model
 
-In cloud computing, responsibilities are shared between the cloud provider and the customer. The division depends on the service type (IaaS, PaaS, or SaaS).
+In cloud computing, responsibilities are shared between the cloud provider and the customer. The division depends on the <KeyTerm term="service type">The category of cloud service being used — Infrastructure as a Service (IaaS), Platform as a Service (PaaS), or Software as a Service (SaaS) — each shifting a different amount of management responsibility to the provider.</KeyTerm> (IaaS, PaaS, or SaaS).
 
 | Responsibility | On-premises | IaaS | PaaS | SaaS |
 |---|---|---|---|---|
