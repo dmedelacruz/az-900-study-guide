@@ -23,21 +23,21 @@ const shouldRender = prev !== null || next !== null;
 ---
 
 {shouldRender && (
-  <nav aria-label="Section navigation" class="mt-16 pt-6 border-t border-gray-200">
+  <nav aria-label="Section navigation" class="mt-16 pt-6 border-t border-gray-200 dark:border-gray-700">
     <div class="flex items-stretch justify-between gap-4">
       <!-- Previous -->
       {prev ? (
         <a
           href={prev.href}
-          class="group flex-1 max-w-xs flex flex-col gap-1 px-4 py-3 rounded-lg border border-gray-200 no-underline hover:border-blue-300 hover:bg-blue-50 transition-colors"
+          class="group flex-1 max-w-xs flex flex-col gap-1 px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 no-underline hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors"
         >
-          <span class="flex items-center gap-1 text-xs font-medium text-gray-400 group-hover:text-blue-500 transition-colors">
+          <span class="flex items-center gap-1 text-xs font-medium text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
             Previous
           </span>
-          <span class="text-sm font-medium text-blue-700 group-hover:text-blue-800 transition-colors leading-snug">
+          <span class="text-sm font-medium text-blue-700 dark:text-blue-400 group-hover:text-blue-800 dark:group-hover:text-blue-300 transition-colors leading-snug">
             {prev.title}
           </span>
         </a>
@@ -49,15 +49,15 @@ const shouldRender = prev !== null || next !== null;
       {next ? (
         <a
           href={next.href}
-          class="group flex-1 max-w-xs flex flex-col gap-1 items-end text-right px-4 py-3 rounded-lg border border-gray-200 no-underline hover:border-blue-300 hover:bg-blue-50 transition-colors"
+          class="group flex-1 max-w-xs flex flex-col gap-1 items-end text-right px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 no-underline hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors"
         >
-          <span class="flex items-center gap-1 text-xs font-medium text-gray-400 group-hover:text-blue-500 transition-colors">
+          <span class="flex items-center gap-1 text-xs font-medium text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
             Next
             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
           </span>
-          <span class="text-sm font-medium text-blue-700 group-hover:text-blue-800 transition-colors leading-snug">
+          <span class="text-sm font-medium text-blue-700 dark:text-blue-400 group-hover:text-blue-800 dark:group-hover:text-blue-300 transition-colors leading-snug">
             {next.title}
           </span>
         </a>

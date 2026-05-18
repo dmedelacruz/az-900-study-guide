@@ -1,0 +1,101 @@
+---
+// src/components/ThemeToggle.astro — Dark/light mode toggle button
+---
+
+<button
+  id="theme-toggle"
+  type="button"
+  aria-label="Toggle dark mode"
+  class="inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+>
+  <!-- Sun icon — shown in dark mode (click to go light) -->
+  <svg
+    id="theme-icon-sun"
+    class="w-4 h-4 hidden"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"
+    />
+  </svg>
+
+  <!-- Moon icon — shown in light mode (click to go dark) -->
+  <svg
+    id="theme-icon-moon"
+    class="w-4 h-4"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+    />
+  </svg>
+</button>
+
+<script>
+  (function () {
+    const btn = document.getElementById('theme-toggle');
+    const sunIcon = document.getElementById('theme-icon-sun');
+    const moonIcon = document.getElementById('theme-icon-moon');
+
+    if (!btn || !sunIcon || !moonIcon) return;
+
+    function isDark() {
+      return document.documentElement.classList.contains('dark');
+    }
+
+    function updateIcons() {
+      if (isDark()) {
+        sunIcon.classList.remove('hidden');
+        moonIcon.classList.add('hidden');
+        btn.setAttribute('aria-label', 'Switch to light mode');
+      } else {
+        sunIcon.classList.add('hidden');
+        moonIcon.classList.remove('hidden');
+        btn.setAttribute('aria-label', 'Switch to dark mode');
+      }
+    }
+
+    function setTheme(theme: 'dark' | 'light' | 'system') {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else if (theme === 'light') {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      } else {
+        localStorage.removeItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.toggle('dark', prefersDark);
+      }
+      updateIcons();
+    }
+
+    btn.addEventListener('click', () => {
+      // Toggle between dark and light; saves explicit preference
+      setTheme(isDark() ? 'light' : 'dark');
+    });
+
+    // Listen for OS-level preference changes — only applies when no manual preference is set
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      if (!localStorage.getItem('theme')) {
+        document.documentElement.classList.toggle('dark', e.matches);
+        updateIcons();
+      }
+    });
+
+    // Sync icons with current state on mount
+    updateIcons();
+  })();
+</script>
