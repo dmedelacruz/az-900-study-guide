@@ -1,0 +1,560 @@
+---
+// src/components/FillInBlank.astro
+
+interface FIBItem {
+  text: string;
+  answer: string;
+}
+
+interface Props {
+  title?: string;
+  mode?: "type" | "select";
+  items: FIBItem[];
+}
+
+const { title, mode = "type", items } = Astro.props;
+
+const uid = `fib-${Math.random().toString(36).slice(2, 9)}`;
+const itemsJson = JSON.stringify(items);
+---
+
+<div
+  class="fill-in-blank my-10 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+  data-fib-id={uid}
+  data-fib-mode={mode}
+  data-fib-items={itemsJson}
+>
+  {/* Header bar */}
+  <div class="flex items-center gap-2.5 px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <svg
+      class="w-5 h-5 flex-shrink-0 text-teal-600 dark:text-teal-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+      />
+    </svg>
+    <span class="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+      Fill in the Blank
+    </span>
+    {title && (
+      <span class="text-sm font-medium text-gray-800 dark:text-gray-100 ml-1">
+        — {title}
+      </span>
+    )}
+  </div>
+
+  {/* Body */}
+  <div class="bg-white dark:bg-gray-900 p-5 sm:p-6">
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">
+      {mode === "type"
+        ? "Type the missing term in each blank, then check your answers."
+        : "Select the correct term for each blank from the dropdown."}
+    </p>
+
+    {/* ARIA live region */}
+    <div
+      id={`${uid}-live`}
+      aria-live="polite"
+      aria-atomic="true"
+      class="sr-only"
+    ></div>
+
+    {/* Sentences container — populated by JS */}
+    <ol
+      id={`${uid}-sentences`}
+      class="space-y-4 mb-6 list-decimal list-inside"
+    ></ol>
+
+    {/* Result banner (hidden until check) */}
+    <div
+      id={`${uid}-result`}
+      class="hidden mb-4 px-4 py-3 rounded-lg text-sm font-medium"
+      role="status"
+      aria-live="polite"
+    ></div>
+
+    {/* Action buttons */}
+    <div class="flex gap-3 justify-end">
+      <button
+        id={`${uid}-reset`}
+        class="hidden px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        type="button"
+      >
+        Reset
+      </button>
+      <button
+        id={`${uid}-check`}
+        class="px-4 py-2 text-sm font-medium rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-colors"
+        type="button"
+      >
+        Check All
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── Types ──────────────────────────────────────────────────────────────
+
+  interface FIBItem {
+    text: string;
+    answer: string;
+  }
+
+  interface FIBBlankState {
+    value: string;
+    checked: boolean;
+    correct: boolean;
+    attempts: number;
+    revealed: boolean;
+  }
+
+  interface FIBState {
+    mode: "type" | "select";
+    items: FIBItem[];
+    blanks: FIBBlankState[];
+    /** Shuffled answers for select mode */
+    shuffledAnswers: string[];
+  }
+
+  // ─── Helpers ────────────────────────────────────────────────────────────
+
+  function shuffleArray<T>(arr: T[]): T[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function normalize(s: string): string {
+    return s.trim().toLowerCase();
+  }
+
+  function announce(uid: string, message: string): void {
+    const live = document.getElementById(`${uid}-live`);
+    if (!live) return;
+    live.textContent = "";
+    requestAnimationFrame(() => {
+      live.textContent = message;
+    });
+  }
+
+  // ─── Render sentences ──────────────────────────────────────────────────
+
+  function renderSentences(uid: string, state: FIBState): void {
+    const container = document.getElementById(`${uid}-sentences`);
+    if (!container) return;
+    container.innerHTML = "";
+
+    state.items.forEach((item, idx) => {
+      const li = document.createElement("li");
+      li.className = "text-base text-gray-800 dark:text-gray-200 leading-relaxed";
+
+      const parts = item.text.split("___");
+      const blank = state.blanks[idx];
+
+      // Before-blank text
+      if (parts[0]) {
+        li.appendChild(document.createTextNode(parts[0]));
+      }
+
+      // The input or select
+      if (state.mode === "type") {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.id = `${uid}-input-${idx}`;
+        input.dataset.fibIdx = String(idx);
+        input.dataset.fibUid = uid;
+        input.setAttribute("aria-label", `Fill in the blank: ${item.text}`);
+        input.setAttribute("autocomplete", "off");
+        input.setAttribute("spellcheck", "false");
+        input.value = blank.value;
+
+        const widthCh = Math.max(item.answer.length + 2, 8);
+        input.style.width = `${widthCh}ch`;
+
+        const baseClasses = [
+          "fib-input",
+          "inline-block", "mx-1", "px-2", "py-0.5",
+          "text-base", "font-medium", "text-center",
+          "border-b-2", "bg-transparent",
+          "focus:outline-none", "focus:ring-0",
+          "transition-colors", "duration-150",
+        ];
+
+        if (blank.checked && blank.correct) {
+          input.readOnly = true;
+          baseClasses.push("border-green-500", "dark:border-green-400", "text-green-700", "dark:text-green-300");
+        } else if (blank.checked && !blank.correct) {
+          // Incorrect: show red feedback but keep editable for retry
+          baseClasses.push("border-red-500", "dark:border-red-400", "text-red-700", "dark:text-red-300");
+        } else {
+          baseClasses.push(
+            "border-gray-400", "dark:border-gray-500",
+            "text-gray-900", "dark:text-gray-100",
+            "focus:border-teal-500", "dark:focus:border-teal-400"
+          );
+        }
+
+        input.className = baseClasses.join(" ");
+        li.appendChild(input);
+
+        // Feedback icon
+        if (blank.checked) {
+          const icon = document.createElement("span");
+          icon.setAttribute("aria-hidden", "true");
+          icon.className = blank.correct
+            ? "text-green-600 dark:text-green-400 font-bold ml-1"
+            : "text-red-600 dark:text-red-400 font-bold ml-1";
+          icon.textContent = blank.correct ? "✓" : "✗";
+          li.appendChild(icon);
+        }
+
+        // Show Answer link (after 2 failed attempts)
+        if (blank.checked && !blank.correct && blank.attempts >= 2 && !blank.revealed) {
+          const showBtn = document.createElement("button");
+          showBtn.type = "button";
+          showBtn.dataset.fibReveal = String(idx);
+          showBtn.dataset.fibUid = uid;
+          showBtn.className = "ml-2 text-xs text-teal-600 dark:text-teal-400 underline hover:text-teal-800 dark:hover:text-teal-300";
+          showBtn.textContent = "Show Answer";
+          li.appendChild(showBtn);
+        }
+
+        // Revealed answer
+        if (blank.revealed) {
+          const ans = document.createElement("span");
+          ans.className = "ml-2 text-sm text-teal-700 dark:text-teal-300 font-medium";
+          ans.textContent = `(${item.answer})`;
+          li.appendChild(ans);
+        }
+      } else {
+        // Select mode
+        const select = document.createElement("select");
+        select.id = `${uid}-input-${idx}`;
+        select.dataset.fibIdx = String(idx);
+        select.dataset.fibUid = uid;
+        select.setAttribute("aria-label", `Fill in the blank: ${item.text}`);
+
+        const baseClasses = [
+          "fib-select",
+          "inline-block", "mx-1", "px-2", "py-0.5",
+          "text-base", "font-medium",
+          "border-b-2", "bg-transparent",
+          "focus:outline-none", "focus:ring-0",
+          "transition-colors", "duration-150",
+          "cursor-pointer",
+        ];
+
+        if (blank.checked && blank.correct) {
+          select.disabled = true;
+          baseClasses.push("border-green-500", "dark:border-green-400", "text-green-700", "dark:text-green-300");
+        } else if (blank.checked && !blank.correct) {
+          // Incorrect: show red feedback but keep enabled for retry
+          baseClasses.push("border-red-500", "dark:border-red-400", "text-red-700", "dark:text-red-300");
+        } else {
+          baseClasses.push(
+            "border-gray-400", "dark:border-gray-500",
+            "text-gray-900", "dark:text-gray-100",
+            "focus:border-teal-500", "dark:focus:border-teal-400"
+          );
+        }
+
+        select.className = baseClasses.join(" ");
+
+        // Placeholder option
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "— select —";
+        placeholder.disabled = true;
+        if (!blank.value) placeholder.selected = true;
+        select.appendChild(placeholder);
+
+        // Answer options
+        state.shuffledAnswers.forEach((ans) => {
+          const opt = document.createElement("option");
+          opt.value = ans;
+          opt.textContent = ans;
+          if (blank.value === ans) opt.selected = true;
+          select.appendChild(opt);
+        });
+
+        li.appendChild(select);
+
+        // Feedback icon
+        if (blank.checked) {
+          const icon = document.createElement("span");
+          icon.setAttribute("aria-hidden", "true");
+          icon.className = blank.correct
+            ? "text-green-600 dark:text-green-400 font-bold ml-1"
+            : "text-red-600 dark:text-red-400 font-bold ml-1";
+          icon.textContent = blank.correct ? "✓" : "✗";
+          li.appendChild(icon);
+        }
+
+        // Revealed answer (select mode — after 2 failed attempts)
+        if (blank.checked && !blank.correct && blank.attempts >= 2 && !blank.revealed) {
+          const showBtn = document.createElement("button");
+          showBtn.type = "button";
+          showBtn.dataset.fibReveal = String(idx);
+          showBtn.dataset.fibUid = uid;
+          showBtn.className = "ml-2 text-xs text-teal-600 dark:text-teal-400 underline hover:text-teal-800 dark:hover:text-teal-300";
+          showBtn.textContent = "Show Answer";
+          li.appendChild(showBtn);
+        }
+
+        if (blank.revealed) {
+          const ans = document.createElement("span");
+          ans.className = "ml-2 text-sm text-teal-700 dark:text-teal-300 font-medium";
+          ans.textContent = `(${item.answer})`;
+          li.appendChild(ans);
+        }
+      }
+
+      // After-blank text
+      if (parts[1]) {
+        li.appendChild(document.createTextNode(parts[1]));
+      }
+
+      container.appendChild(li);
+    });
+  }
+
+  // ─── Check a single blank ────────────────────────────────────────────
+
+  function checkBlank(uid: string, state: FIBState, idx: number): void {
+    const blank = state.blanks[idx];
+    if (blank.revealed) return;
+
+    blank.checked = true;
+    blank.attempts++;
+    blank.correct = normalize(blank.value) === normalize(state.items[idx].answer);
+
+    if (blank.correct) {
+      announce(uid, `Blank ${idx + 1}: Correct!`);
+    } else {
+      const hint = blank.attempts >= 2 ? " You can reveal the answer." : "";
+      announce(uid, `Blank ${idx + 1}: Incorrect.${hint}`);
+    }
+  }
+
+  // ─── Update result banner ────────────────────────────────────────────
+
+  function updateResultBanner(uid: string, state: FIBState): void {
+    const resultEl = document.getElementById(`${uid}-result`);
+    if (!resultEl) return;
+
+    const checked = state.blanks.filter((b) => b.checked);
+    if (checked.length === 0) return;
+
+    const correct = state.blanks.filter((b) => b.correct).length;
+    const total = state.items.length;
+
+    resultEl.classList.remove("hidden");
+
+    if (correct === total) {
+      resultEl.className = [
+        "mb-4", "px-4", "py-3", "rounded-lg", "text-sm", "font-medium",
+        "bg-green-50", "dark:bg-green-900/30",
+        "border", "border-green-400", "dark:border-green-600",
+        "text-green-800", "dark:text-green-200",
+      ].join(" ");
+      resultEl.textContent = `All ${total} correct! Great work.`;
+    } else {
+      resultEl.className = [
+        "mb-4", "px-4", "py-3", "rounded-lg", "text-sm", "font-medium",
+        "bg-amber-50", "dark:bg-amber-900/30",
+        "border", "border-amber-400", "dark:border-amber-600",
+        "text-amber-800", "dark:text-amber-200",
+      ].join(" ");
+      resultEl.textContent = `${correct} of ${total} correct. Review the highlighted blanks and try again.`;
+    }
+
+    announce(uid, `Results: ${correct} of ${total} correct.`);
+  }
+
+  // ─── Init ───────────────────────────────────────────────────────────────
+
+  function initFillInBlank(): void {
+    document.querySelectorAll<HTMLElement>(".fill-in-blank").forEach((root) => {
+      const uid = root.dataset.fibId;
+      if (!uid || root.dataset.fibInit === "true") return;
+      root.dataset.fibInit = "true";
+
+      const mode = (root.dataset.fibMode || "type") as "type" | "select";
+      const items: FIBItem[] = JSON.parse(root.dataset.fibItems || "[]");
+
+      const state: FIBState = {
+        mode,
+        items,
+        blanks: items.map(() => ({
+          value: "",
+          checked: false,
+          correct: false,
+          attempts: 0,
+          revealed: false,
+        })),
+        shuffledAnswers: shuffleArray(items.map((it) => it.answer)),
+      };
+
+      // ── DOM references and button helpers (must be before event listeners) ──
+
+      const checkBtn = document.getElementById(`${uid}-check`) as HTMLButtonElement | null;
+      const resetBtn = document.getElementById(`${uid}-reset`) as HTMLButtonElement | null;
+      const resultEl = document.getElementById(`${uid}-result`);
+
+      function enableCheckBtn(btn: HTMLButtonElement | null): void {
+        if (!btn) return;
+        btn.disabled = false;
+        btn.removeAttribute("aria-disabled");
+        btn.classList.remove("opacity-40", "cursor-not-allowed");
+      }
+
+      function disableCheckBtn(btn: HTMLButtonElement | null): void {
+        if (!btn) return;
+        btn.disabled = true;
+        btn.setAttribute("aria-disabled", "true");
+        btn.classList.add("opacity-40", "cursor-not-allowed");
+      }
+
+      renderSentences(uid, state);
+
+      // ── Delegated input tracking ──────────────────────────────────────
+
+      root.addEventListener("input", (e) => {
+        const target = e.target as HTMLElement;
+        if (target.dataset.fibUid !== uid) return;
+
+        const idx = parseInt(target.dataset.fibIdx || "", 10);
+        if (isNaN(idx)) return;
+
+        if (target instanceof HTMLInputElement) {
+          state.blanks[idx].value = target.value;
+          // Reset checked state on edit so user can re-check
+          if (state.blanks[idx].checked && !state.blanks[idx].correct) {
+            state.blanks[idx].checked = false;
+            enableCheckBtn(checkBtn);
+            // Clear red styling and feedback icon without full re-render (preserves focus)
+            target.classList.remove("border-red-500", "dark:border-red-400", "text-red-700", "dark:text-red-300");
+            target.classList.add("border-gray-400", "dark:border-gray-500", "text-gray-900", "dark:text-gray-100");
+            // Remove feedback icon and Show Answer button (siblings after input)
+            const li = target.closest("li");
+            if (li) {
+              const toRemove = li.querySelectorAll("[aria-hidden], [data-fib-reveal]");
+              toRemove.forEach((el) => el.remove());
+            }
+          }
+        }
+      });
+
+      root.addEventListener("change", (e) => {
+        const target = e.target as HTMLElement;
+        if (target.dataset.fibUid !== uid) return;
+
+        const idx = parseInt(target.dataset.fibIdx || "", 10);
+        if (isNaN(idx)) return;
+
+        if (target instanceof HTMLSelectElement) {
+          state.blanks[idx].value = target.value;
+          // Reset checked state on change so user can re-check
+          if (state.blanks[idx].checked && !state.blanks[idx].correct) {
+            state.blanks[idx].checked = false;
+            enableCheckBtn(checkBtn);
+            renderSentences(uid, state);
+          }
+        }
+      });
+
+      // ── Enter key on individual input → check that blank ──────────────
+
+      root.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter") return;
+        const target = e.target as HTMLElement;
+        if (!(target instanceof HTMLInputElement) || target.dataset.fibUid !== uid) return;
+
+        const idx = parseInt(target.dataset.fibIdx || "", 10);
+        if (isNaN(idx)) return;
+
+        e.preventDefault();
+        checkBlank(uid, state, idx);
+        renderSentences(uid, state);
+        updateResultBanner(uid, state);
+      });
+
+      // ── Reveal button delegation ──────────────────────────────────────
+
+      root.addEventListener("click", (e) => {
+        const target = e.target as HTMLElement;
+        const revealBtn = target.closest<HTMLElement>("[data-fib-reveal]");
+        if (!revealBtn || revealBtn.dataset.fibUid !== uid) return;
+
+        const idx = parseInt(revealBtn.dataset.fibReveal || "", 10);
+        if (isNaN(idx)) return;
+
+        state.blanks[idx].revealed = true;
+        state.blanks[idx].correct = true;
+        state.blanks[idx].checked = true;
+        state.blanks[idx].value = state.items[idx].answer;
+        renderSentences(uid, state);
+        updateResultBanner(uid, state);
+        announce(uid, `Answer revealed: ${state.items[idx].answer}`);
+      });
+
+      // ── Check All button ──────────────────────────────────────────────
+
+      checkBtn?.addEventListener("click", () => {
+        state.blanks.forEach((_, idx) => checkBlank(uid, state, idx));
+        renderSentences(uid, state);
+        updateResultBanner(uid, state);
+
+        const allCorrect = state.blanks.every((b) => b.correct || b.revealed);
+        if (allCorrect) {
+          disableCheckBtn(checkBtn);
+        }
+        if (resetBtn) resetBtn.classList.remove("hidden");
+      });
+
+      // ── Reset button ──────────────────────────────────────────────────
+
+      resetBtn?.addEventListener("click", () => {
+        state.blanks = items.map(() => ({
+          value: "",
+          checked: false,
+          correct: false,
+          attempts: 0,
+          revealed: false,
+        }));
+        state.shuffledAnswers = shuffleArray(items.map((it) => it.answer));
+
+        renderSentences(uid, state);
+
+        if (resultEl) {
+          resultEl.classList.add("hidden");
+          resultEl.textContent = "";
+        }
+        enableCheckBtn(checkBtn);
+        if (resetBtn) resetBtn.classList.add("hidden");
+
+        announce(uid, "Exercise reset. All blanks cleared.");
+
+        // Focus the first input
+        const firstInput = document.getElementById(`${uid}-input-0`);
+        if (firstInput) firstInput.focus();
+      });
+    });
+  }
+
+  // ─── Run ─────────────────────────────────────────────────────────────
+
+  initFillInBlank();
+  document.addEventListener("astro:page-load", initFillInBlank);
+</script>

@@ -14,6 +14,7 @@ import KeyTerm from '../../components/KeyTerm.astro';
 import Callout from '../../components/Callout.astro';
 import DeepDive from '../../components/DeepDive.astro';
 import ComparisonSlider from '../../components/ComparisonSlider.astro';
+import FillInBlank from '../../components/FillInBlank.astro';
 
 ## What is Cloud Computing?
 
@@ -71,6 +72,25 @@ Do not confuse the **shared responsibility model** with full provider responsibi
 <Callout type="tip">
 For the AZ-900 exam, remember the mnemonic **"On Broad Resource Rapid Measured"** (On-demand, Broad network access, Resource pooling, Rapid elasticity, Measured service) to recall the five key cloud characteristics quickly.
 </Callout>
+
+<FillInBlank
+  title="Cloud Concepts Review"
+  mode="type"
+  items={[
+    { text: "Cloud computing delivers ___ over the internet.", answer: "computing services" },
+    { text: "The ___ model means you only pay for what you use.", answer: "consumption-based" },
+    { text: "___ allows resources to scale rapidly with demand.", answer: "Elasticity" },
+  ]}
+/>
+
+<FillInBlank
+  title="Shared Responsibility"
+  mode="select"
+  items={[
+    { text: "Regardless of service type, the customer is always responsible for ___ management.", answer: "data" },
+    { text: "In the ___ model, the cloud provider manages the most infrastructure.", answer: "SaaS" },
+  ]}
+/>
 
 <KeyTakeaways>
 - Cloud computing delivers computing services over the internet, enabling on-demand access to servers, storage, databases, networking, and more.
