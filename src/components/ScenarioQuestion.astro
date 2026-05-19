@@ -1,0 +1,395 @@
+---
+// src/components/ScenarioQuestion.astro
+
+interface Option {
+  text: string;
+  feedback: string;
+  correct?: boolean;
+}
+
+interface Props {
+  title?: string;
+  scenario: string;
+  options: Option[];
+}
+
+const { title, scenario, options } = Astro.props;
+
+const uid = `sq-${Math.random().toString(36).slice(2, 9)}`;
+const dataJson = JSON.stringify({ scenario, options });
+---
+
+<div
+  class="scenario-question my-10 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+  data-sq-id={uid}
+  data-sq-data={dataJson}
+>
+  {/* Header bar */}
+  <div class="flex items-center gap-2.5 px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <svg
+      class="w-5 h-5 flex-shrink-0 text-teal-600 dark:text-teal-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+    <span class="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+      Scenario Question
+    </span>
+    {title && (
+      <span class="text-sm font-medium text-gray-800 dark:text-gray-100 ml-1">
+        — {title}
+      </span>
+    )}
+  </div>
+
+  {/* Body */}
+  <div class="bg-white dark:bg-gray-900 p-5 sm:p-6">
+    {/* ARIA live region */}
+    <div
+      id={`${uid}-live`}
+      aria-live="polite"
+      aria-atomic="true"
+      class="sr-only"
+    ></div>
+
+    {/* Content rendered by JS */}
+    <div id={`${uid}-content`}></div>
+  </div>
+</div>
+
+<script>
+  // ─── Types ────────────────────────────────────────────────────────────────
+
+  interface SQOption {
+    text: string;
+    feedback: string;
+    correct?: boolean;
+  }
+
+  interface SQData {
+    scenario: string;
+    options: SQOption[];
+  }
+
+  interface SQState {
+    data: SQData;
+    selectedIndex: number | null;
+    answered: boolean;
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  function announce(uid: string, message: string): void {
+    const live = document.getElementById(`${uid}-live`);
+    if (!live) return;
+    live.textContent = "";
+    requestAnimationFrame(() => {
+      live.textContent = message;
+    });
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
+
+  function render(uid: string, state: SQState): void {
+    const content = document.getElementById(`${uid}-content`);
+    if (!content) return;
+    content.innerHTML = "";
+
+    const { scenario, options } = state.data;
+
+    // Scenario text
+    const scenarioEl = document.createElement("p");
+    scenarioEl.className = "text-base text-gray-800 dark:text-gray-100 leading-relaxed mb-5";
+    scenarioEl.textContent = scenario;
+    content.appendChild(scenarioEl);
+
+    // Options list
+    const optionsList = document.createElement("div");
+    optionsList.className = "space-y-2 mb-5";
+    optionsList.setAttribute("role", "group");
+    optionsList.setAttribute("aria-label", "Answer options");
+
+    options.forEach((option, idx) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.sqOption = String(idx);
+      btn.dataset.sqUid = uid;
+
+      const isSelected = state.selectedIndex === idx;
+      const isCorrect = !!option.correct;
+
+      const base = [
+        "w-full", "text-left", "px-4", "py-3",
+        "rounded-lg", "border-2",
+        "text-sm", "font-medium",
+        "transition-all", "duration-150",
+        "focus:outline-none", "focus:ring-2", "focus:ring-teal-500", "focus:ring-offset-1",
+        "flex", "items-start", "gap-3",
+      ];
+
+      if (state.answered) {
+        btn.disabled = true;
+
+        if (isCorrect) {
+          // Correct option always gets green indicator after answer
+          base.push(
+            "border-green-500", "dark:border-green-400",
+            "bg-green-50", "dark:bg-green-900/20",
+            "text-green-900", "dark:text-green-100",
+            "cursor-default"
+          );
+        } else if (isSelected) {
+          // Selected wrong answer
+          base.push(
+            "border-amber-500", "dark:border-amber-400",
+            "bg-amber-50", "dark:bg-amber-900/20",
+            "text-amber-900", "dark:text-amber-100",
+            "cursor-default"
+          );
+        } else {
+          // Other unselected options
+          base.push(
+            "border-gray-200", "dark:border-gray-700",
+            "bg-gray-50", "dark:bg-gray-800/50",
+            "text-gray-500", "dark:text-gray-400",
+            "cursor-default", "opacity-60"
+          );
+        }
+      } else {
+        // Unanswered state
+        base.push(
+          "border-gray-200", "dark:border-gray-700",
+          "bg-white", "dark:bg-gray-800",
+          "text-gray-700", "dark:text-gray-200",
+          "hover:border-teal-400", "dark:hover:border-teal-500",
+          "hover:bg-teal-50", "dark:hover:bg-teal-900/20",
+          "cursor-pointer"
+        );
+      }
+
+      btn.className = base.join(" ");
+
+      // Icon indicator
+      const iconSpan = document.createElement("span");
+      iconSpan.setAttribute("aria-hidden", "true");
+      iconSpan.className = "flex-shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold border";
+
+      if (state.answered && isCorrect) {
+        iconSpan.className += " border-green-500 bg-green-500 text-white";
+        iconSpan.textContent = "✓";
+      } else if (state.answered && isSelected && !isCorrect) {
+        iconSpan.className += " border-amber-500 bg-amber-500 text-white";
+        iconSpan.textContent = "✗";
+      } else {
+        // Letter label: A, B, C, D...
+        iconSpan.className += " border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800";
+        iconSpan.textContent = String.fromCharCode(65 + idx); // A, B, C...
+      }
+
+      btn.appendChild(iconSpan);
+
+      const textSpan = document.createElement("span");
+      textSpan.className = "flex-1";
+      textSpan.textContent = option.text;
+      btn.appendChild(textSpan);
+
+      optionsList.appendChild(btn);
+    });
+
+    content.appendChild(optionsList);
+
+    // Feedback area (only shown after answering)
+    if (state.answered && state.selectedIndex !== null) {
+      const selected = options[state.selectedIndex];
+      const isCorrect = !!selected.correct;
+
+      const feedbackDiv = document.createElement("div");
+      feedbackDiv.id = `${uid}-feedback`;
+      feedbackDiv.setAttribute("tabindex", "-1");
+      feedbackDiv.setAttribute("role", "status");
+
+      if (isCorrect) {
+        feedbackDiv.className = [
+          "px-4", "py-3", "rounded-lg", "mb-4",
+          "border-l-4", "border-green-500", "dark:border-green-400",
+          "bg-green-50", "dark:bg-green-900/20",
+          "text-green-900", "dark:text-green-100",
+        ].join(" ");
+
+        const label = document.createElement("p");
+        label.className = "text-sm font-semibold mb-1 text-green-700 dark:text-green-300";
+        label.textContent = "Correct!";
+        feedbackDiv.appendChild(label);
+
+        const feedbackText = document.createElement("p");
+        feedbackText.className = "text-sm";
+        feedbackText.textContent = selected.feedback;
+        feedbackDiv.appendChild(feedbackText);
+      } else {
+        feedbackDiv.className = [
+          "px-4", "py-3", "rounded-lg", "mb-4",
+          "border-l-4", "border-amber-500", "dark:border-amber-400",
+          "bg-amber-50", "dark:bg-amber-900/20",
+          "text-amber-900", "dark:text-amber-100",
+        ].join(" ");
+
+        const label = document.createElement("p");
+        label.className = "text-sm font-semibold mb-1 text-amber-700 dark:text-amber-300";
+        label.textContent = "Not quite.";
+        feedbackDiv.appendChild(label);
+
+        const feedbackText = document.createElement("p");
+        feedbackText.className = "text-sm";
+        feedbackText.textContent = selected.feedback;
+        feedbackDiv.appendChild(feedbackText);
+      }
+
+      content.appendChild(feedbackDiv);
+
+      // Success banner (correct answer)
+      if (isCorrect) {
+        const banner = document.createElement("div");
+        banner.className = [
+          "flex", "items-center", "gap-2",
+          "px-4", "py-2", "rounded-lg", "mb-4",
+          "bg-green-100", "dark:bg-green-900/30",
+          "text-green-800", "dark:text-green-200",
+          "text-sm", "font-medium",
+        ].join(" ");
+        banner.setAttribute("role", "status");
+
+        const checkIcon = document.createElement("span");
+        checkIcon.setAttribute("aria-hidden", "true");
+        checkIcon.textContent = "🎉";
+        banner.appendChild(checkIcon);
+
+        const bannerText = document.createElement("span");
+        bannerText.textContent = "Well done! You got it right.";
+        banner.appendChild(bannerText);
+
+        content.appendChild(banner);
+      }
+
+      // Try Again button (only for incorrect answers)
+      if (!isCorrect) {
+        const actionsDiv = document.createElement("div");
+        actionsDiv.className = "flex justify-end";
+
+        const tryAgainBtn = document.createElement("button");
+        tryAgainBtn.type = "button";
+        tryAgainBtn.dataset.sqTryAgain = uid;
+        tryAgainBtn.className = [
+          "px-4", "py-2", "text-sm", "font-medium", "rounded-lg",
+          "border", "border-gray-300", "dark:border-gray-600",
+          "text-gray-700", "dark:text-gray-200",
+          "bg-white", "dark:bg-gray-800",
+          "hover:bg-gray-50", "dark:hover:bg-gray-700",
+          "transition-colors",
+        ].join(" ");
+        tryAgainBtn.textContent = "Try Again";
+
+        actionsDiv.appendChild(tryAgainBtn);
+        content.appendChild(actionsDiv);
+      }
+    }
+  }
+
+  // ─── Init ─────────────────────────────────────────────────────────────────
+
+  function initScenarioQuestion(): void {
+    document.querySelectorAll<HTMLElement>(".scenario-question").forEach((root) => {
+      const uid = root.dataset.sqId;
+      if (!uid || root.dataset.sqInit === "true") return;
+      root.dataset.sqInit = "true";
+
+      const rawData: SQData = JSON.parse(root.dataset.sqData || "{}");
+
+      if (!rawData.options || rawData.options.length === 0) {
+        const content = document.getElementById(`${uid}-content`);
+        if (content) {
+          const empty = document.createElement("p");
+          empty.className = "text-sm italic text-gray-400 dark:text-gray-500";
+          empty.textContent = "No options provided.";
+          content.appendChild(empty);
+        }
+        return;
+      }
+
+      const correctCount = rawData.options.filter(o => o.correct).length;
+      if (correctCount === 0) console.warn(`[ScenarioQuestion uid=${uid}] No option marked correct.`);
+      if (correctCount > 1) console.warn(`[ScenarioQuestion uid=${uid}] Multiple options marked correct (${correctCount}).`);
+
+      const state: SQState = {
+        data: rawData,
+        selectedIndex: null,
+        answered: false,
+      };
+
+      render(uid, state);
+
+      // ── Event delegation on root ──────────────────────────────────────────
+
+      root.addEventListener("click", (e) => {
+        const target = e.target as HTMLElement;
+
+        // Option button clicked
+        const optionBtn = target.closest<HTMLElement>("[data-sq-option]");
+        if (optionBtn && optionBtn.dataset.sqUid === uid && !state.answered) {
+          const idx = parseInt(optionBtn.dataset.sqOption || "", 10);
+          if (isNaN(idx)) return;
+
+          state.selectedIndex = idx;
+          state.answered = true;
+
+          const selected = state.data.options[idx];
+          const isCorrect = !!selected.correct;
+
+          render(uid, state);
+
+          // Move focus to feedback
+          requestAnimationFrame(() => {
+            const feedback = document.getElementById(`${uid}-feedback`);
+            if (feedback) feedback.focus();
+          });
+
+          const announcement = isCorrect
+            ? `Correct! ${selected.feedback}`
+            : `Incorrect. ${selected.feedback}`;
+          announce(uid, announcement);
+
+          return;
+        }
+
+        // Try Again button clicked
+        const tryAgainBtn = target.closest<HTMLElement>("[data-sq-try-again]");
+        if (tryAgainBtn && tryAgainBtn.dataset.sqTryAgain === uid) {
+          state.selectedIndex = null;
+          state.answered = false;
+
+          render(uid, state);
+          announce(uid, "Question reset. Choose an answer.");
+
+          // Focus the first option button
+          requestAnimationFrame(() => {
+            const firstOption = root.querySelector<HTMLButtonElement>("[data-sq-option]");
+            if (firstOption) firstOption.focus();
+          });
+        }
+      });
+
+    });
+  }
+
+  // ─── Run ─────────────────────────────────────────────────────────────────
+
+  initScenarioQuestion();
+  document.addEventListener("astro:page-load", initScenarioQuestion);
+</script>

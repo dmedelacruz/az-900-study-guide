@@ -15,6 +15,7 @@ import Callout from '../../components/Callout.astro';
 import DeepDive from '../../components/DeepDive.astro';
 import ComparisonSlider from '../../components/ComparisonSlider.astro';
 import FillInBlank from '../../components/FillInBlank.astro';
+import ScenarioQuestion from '../../components/ScenarioQuestion.astro';
 
 ## What is Cloud Computing?
 
@@ -89,6 +90,16 @@ For the AZ-900 exam, remember the mnemonic **"On Broad Resource Rapid Measured"*
   items={[
     { text: "Regardless of service type, the customer is always responsible for ___ management.", answer: "data" },
     { text: "In the ___ model, the cloud provider manages the most infrastructure.", answer: "SaaS" },
+  ]}
+/>
+
+<ScenarioQuestion
+  title="Choosing the Right Service Model"
+  scenario="A startup wants to deploy a custom web application. They want full control over the operating system and runtime environment, but don't want to manage physical hardware. Which cloud service model should they choose?"
+  options={[
+    { text: "Software as a Service (SaaS)", feedback: "SaaS provides ready-made applications like Microsoft 365 or Salesforce. You wouldn't have control over the OS or runtime — the provider manages everything except your data and access." },
+    { text: "Platform as a Service (PaaS)", feedback: "PaaS handles the OS and runtime for you, so you'd lose the full control over the operating system that this scenario requires. PaaS is ideal when you want to focus only on your application code." },
+    { text: "Infrastructure as a Service (IaaS)", feedback: "IaaS gives you virtual machines with full control over the OS, runtime, and middleware, while the cloud provider manages the physical hardware, networking, and storage. This matches exactly what the startup needs.", correct: true },
   ]}
 />
 
