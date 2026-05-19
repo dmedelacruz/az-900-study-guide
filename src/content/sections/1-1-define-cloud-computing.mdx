@@ -16,6 +16,7 @@ import DeepDive from '../../components/DeepDive.astro';
 import ComparisonSlider from '../../components/ComparisonSlider.astro';
 import FillInBlank from '../../components/FillInBlank.astro';
 import ScenarioQuestion from '../../components/ScenarioQuestion.astro';
+import BuildIt from '../../components/BuildIt.astro';
 
 ## What is Cloud Computing?
 
@@ -100,6 +101,21 @@ For the AZ-900 exam, remember the mnemonic **"On Broad Resource Rapid Measured"*
     { text: "Software as a Service (SaaS)", feedback: "SaaS provides ready-made applications like Microsoft 365 or Salesforce. You wouldn't have control over the OS or runtime — the provider manages everything except your data and access." },
     { text: "Platform as a Service (PaaS)", feedback: "PaaS handles the OS and runtime for you, so you'd lose the full control over the operating system that this scenario requires. PaaS is ideal when you want to focus only on your application code." },
     { text: "Infrastructure as a Service (IaaS)", feedback: "IaaS gives you virtual machines with full control over the OS, runtime, and middleware, while the cloud provider manages the physical hardware, networking, and storage. This matches exactly what the startup needs.", correct: true },
+  ]}
+/>
+
+<BuildIt
+  title="Cloud Service Stack"
+  instruction="Arrange these cloud infrastructure layers from bottom (physical) to top (application)"
+  steps={[
+    { label: "Physical Networking", description: "The foundational network cables, switches, and routers that connect data centers." },
+    { label: "Physical Servers", description: "The hardware machines that provide raw compute power in data centers." },
+    { label: "Storage", description: "Physical and virtualized storage systems for persisting data." },
+    { label: "Virtualization", description: "The hypervisor layer that creates and manages virtual machines on physical hardware." },
+    { label: "Operating System", description: "The OS running on virtual machines that manages software and hardware interaction." },
+    { label: "Middleware & Runtime", description: "Frameworks, runtimes, and services that applications depend on to execute." },
+    { label: "Applications", description: "The software and services that end users interact with directly." },
+    { label: "Data & Access", description: "The information stored and processed by applications, plus identity and access controls." },
   ]}
 />
 

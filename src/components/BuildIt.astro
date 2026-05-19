@@ -1,0 +1,729 @@
+---
+// src/components/BuildIt.astro
+
+interface Step {
+  label: string;
+  description: string;
+}
+
+interface Props {
+  title?: string;
+  instruction?: string;
+  steps: Step[];
+}
+
+const {
+  title,
+  instruction = "Drag the components into the correct order to build this architecture",
+  steps,
+} = Astro.props;
+
+// Unique ID for this instance
+const uid = `bi-${Math.random().toString(36).slice(2, 9)}`;
+
+// Serialize to data attributes for JS pickup
+const stepsJson = JSON.stringify(steps);
+---
+
+<div
+  class="build-it my-10 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+  data-bi-id={uid}
+  data-steps={stepsJson}
+  data-instruction={instruction}
+>
+  <!-- Header bar -->
+  <div class="flex items-center gap-2.5 px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <!-- Build / stack icon -->
+    <svg
+      class="w-5 h-5 flex-shrink-0 text-teal-600 dark:text-teal-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+      />
+    </svg>
+    <span class="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+      Build Exercise
+    </span>
+    {title && (
+      <span class="text-sm font-medium text-gray-800 dark:text-gray-100 ml-1">
+        &mdash; {title}
+      </span>
+    )}
+  </div>
+
+  <!-- Body -->
+  <div class="bg-white dark:bg-gray-900 p-5 sm:p-6">
+
+    <!-- Instruction -->
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">
+      {instruction}
+    </p>
+
+    <!-- ARIA live region for screen reader announcements -->
+    <div
+      id={`${uid}-live`}
+      aria-live="polite"
+      aria-atomic="true"
+      class="sr-only"
+    ></div>
+
+    <!-- Component pool -->
+    <div class="mb-6">
+      <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+        Components
+      </p>
+      <div
+        id={`${uid}-pool`}
+        class="bi-pool flex flex-wrap gap-2 min-h-[48px] p-2 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+        role="group"
+        aria-label="Component pool — drag items from here"
+      >
+        <!-- Items injected by JS after shuffling -->
+      </div>
+    </div>
+
+    <!-- Build area (ordered drop zone) -->
+    <div class="mb-6">
+      <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+        Build Order
+      </p>
+      <div
+        id={`${uid}-build`}
+        class="bi-build flex flex-col gap-2 min-h-[100px] p-3 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 transition-colors duration-150"
+        role="list"
+        aria-label="Build area — drop components here in the correct order"
+      >
+        <!-- Slots injected by JS -->
+      </div>
+    </div>
+
+    <!-- Score / success banner (hidden until check) -->
+    <div
+      id={`${uid}-result`}
+      class="hidden mb-4 px-4 py-3 rounded-lg text-sm font-medium"
+      role="status"
+      aria-live="polite"
+    ></div>
+
+    <!-- Action buttons -->
+    <div class="flex gap-3 justify-end">
+      <button
+        id={`${uid}-reset`}
+        class="hidden px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        type="button"
+      >
+        Reset
+      </button>
+      <button
+        id={`${uid}-check`}
+        class="px-4 py-2 text-sm font-medium rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        type="button"
+        disabled
+        aria-disabled="true"
+      >
+        Check Answers
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── Types ────────────────────────────────────────────────────────────────
+
+  interface BIStep {
+    label: string;
+    description: string;
+  }
+
+  interface BIState {
+    steps: BIStep[];
+    /** Ordered list of item IDs placed in the build area */
+    buildOrder: string[];
+    /** Set of item IDs still in the pool */
+    poolItems: string[];
+    checked: boolean;
+    /** tap/keyboard selected item id */
+    selected: string | null;
+    /** All item IDs in shuffled order (for pool display) */
+    allItemIds: string[];
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  function shuffleArray<T>(arr: T[]): T[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function makeItemId(uid: string, idx: number): string {
+    return `${uid}-item-${idx}`;
+  }
+
+  function idxFromItemId(id: string): number {
+    return parseInt(id.split("-item-")[1], 10);
+  }
+
+  function announce(uid: string, message: string): void {
+    const live = document.getElementById(`${uid}-live`);
+    if (!live) return;
+    live.textContent = "";
+    requestAnimationFrame(() => {
+      live.textContent = message;
+    });
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
+
+  function createBIPill(
+    uid: string,
+    id: string,
+    state: BIState,
+    position?: number
+  ): HTMLButtonElement {
+    const idx = idxFromItemId(id);
+    const step = state.steps[idx];
+    const inPool = state.poolItems.includes(id);
+    const isSelected = state.selected === id;
+
+    const btn = document.createElement("button");
+    btn.id = id;
+    btn.type = "button";
+    btn.draggable = !state.checked;
+    btn.dataset.biItem = id;
+    btn.dataset.biUid = uid;
+    btn.setAttribute(
+      "aria-label",
+      `${step.label}${inPool ? ", in pool" : `, position ${(position ?? 0) + 1} in build area`}`
+    );
+    if (position !== undefined) {
+      btn.setAttribute("role", "listitem");
+      btn.setAttribute("aria-selected", isSelected ? "true" : "false");
+    } else {
+      btn.setAttribute("aria-pressed", isSelected ? "true" : "false");
+    }
+
+    const base = [
+      "bi-item",
+      "inline-flex", "items-center", "gap-1.5",
+      "px-3", "py-1.5",
+      "rounded-full",
+      "text-sm", "font-medium",
+      "shadow-sm",
+      "border",
+      "select-none",
+      "transition-all", "duration-150",
+      "focus:outline-none", "focus:ring-2", "focus:ring-teal-500", "focus:ring-offset-1",
+    ];
+
+    if (state.checked) {
+      btn.draggable = false;
+      btn.disabled = true;
+      if (!inPool && position !== undefined) {
+        const correct = position === idx;
+        base.push(
+          ...(correct
+            ? ["bg-green-50", "dark:bg-green-900/30", "border-green-400", "dark:border-green-500", "text-green-800", "dark:text-green-200"]
+            : ["bg-red-50", "dark:bg-red-900/30", "border-red-400", "dark:border-red-500", "text-red-800", "dark:text-red-200"]),
+          "cursor-default"
+        );
+
+        // Position number
+        const posSpan = document.createElement("span");
+        posSpan.className = "text-xs font-bold opacity-70 mr-0.5";
+        posSpan.textContent = `${(position ?? 0) + 1}.`;
+        posSpan.setAttribute("aria-hidden", "true");
+
+        const textSpan = document.createElement("span");
+        textSpan.textContent = step.label;
+
+        const icon = document.createElement("span");
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = correct ? " \u2713" : " \u2717";
+        icon.className = correct
+          ? "text-green-600 dark:text-green-400 font-bold"
+          : "text-red-600 dark:text-red-400 font-bold";
+
+        btn.appendChild(posSpan);
+        btn.appendChild(textSpan);
+        btn.appendChild(icon);
+        btn.className = base.join(" ");
+        return btn;
+      } else {
+        base.push(
+          "bg-gray-100", "dark:bg-gray-700",
+          "border-gray-300", "dark:border-gray-500",
+          "text-gray-500", "dark:text-gray-400",
+          "cursor-default"
+        );
+      }
+    } else if (isSelected) {
+      base.push(
+        "bg-teal-100", "dark:bg-teal-900/40",
+        "border-teal-500", "dark:border-teal-400",
+        "text-teal-800", "dark:text-teal-200",
+        "ring-2", "ring-teal-400",
+        "cursor-grab"
+      );
+    } else {
+      base.push(
+        "bg-white", "dark:bg-gray-800",
+        "border-gray-200", "dark:border-gray-600",
+        "text-gray-700", "dark:text-gray-200",
+        "hover:border-teal-400", "dark:hover:border-teal-500",
+        "hover:bg-teal-50", "dark:hover:bg-teal-900/20",
+        "cursor-grab", "active:cursor-grabbing"
+      );
+    }
+
+    // Add position number for non-checked build items
+    if (position !== undefined && !state.checked) {
+      const posSpan = document.createElement("span");
+      posSpan.className = "text-xs font-bold opacity-70 mr-0.5";
+      posSpan.textContent = `${position + 1}.`;
+      posSpan.setAttribute("aria-hidden", "true");
+      btn.appendChild(posSpan);
+
+      const textSpan = document.createElement("span");
+      textSpan.textContent = step.label;
+      btn.appendChild(textSpan);
+    } else {
+      btn.textContent = step.label;
+    }
+
+    btn.className = base.join(" ");
+    return btn;
+  }
+
+  function renderPool(uid: string, state: BIState): void {
+    const pool = document.getElementById(`${uid}-pool`);
+    if (!pool) return;
+    pool.innerHTML = "";
+
+    if (state.poolItems.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "text-xs text-gray-400 dark:text-gray-500 italic self-center px-2";
+      empty.textContent = "All components placed";
+      pool.appendChild(empty);
+    } else {
+      // Display pool items in their shuffled order
+      state.allItemIds
+        .filter((id) => state.poolItems.includes(id))
+        .forEach((id) => pool.appendChild(createBIPill(uid, id, state)));
+    }
+  }
+
+  function renderBuild(uid: string, state: BIState): void {
+    const build = document.getElementById(`${uid}-build`);
+    if (!build) return;
+    build.innerHTML = "";
+
+    if (state.buildOrder.length === 0) {
+      const ph = document.createElement("p");
+      ph.className = "bi-placeholder text-xs text-gray-400 dark:text-gray-500 italic self-center py-4";
+      ph.textContent = "Drop components here in the correct order";
+      build.appendChild(ph);
+    } else {
+      state.buildOrder.forEach((id, pos) => {
+        const row = document.createElement("div");
+        row.className = "bi-slot flex items-start gap-2";
+        row.dataset.biSlot = String(pos);
+        row.dataset.biUid = uid;
+
+        const pill = createBIPill(uid, id, state, pos);
+        row.appendChild(pill);
+
+        // After check, show description for each step
+        if (state.checked) {
+          const idx = idxFromItemId(id);
+          const step = state.steps[idx];
+          const isCorrect = pos === idx;
+          const desc = document.createElement("p");
+          desc.className = [
+            "text-xs", "mt-0.5", "ml-1", "italic",
+            isCorrect
+              ? "text-green-600 dark:text-green-400"
+              : "text-red-600 dark:text-red-400",
+          ].join(" ");
+          // Show correct description: what SHOULD be at this position
+          if (isCorrect) {
+            desc.textContent = step.description;
+          } else {
+            desc.textContent = `Expected: ${state.steps[pos].label} — ${state.steps[pos].description}`;
+          }
+          row.appendChild(desc);
+        }
+
+        build.appendChild(row);
+      });
+
+      // If not checked and not all placed, show a drop-between indicator at the end
+      if (!state.checked && state.poolItems.length > 0) {
+        const dropHint = document.createElement("div");
+        dropHint.className = "bi-drop-end flex items-center justify-center py-2 text-xs text-gray-400 dark:text-gray-500 italic border-2 border-dashed border-transparent";
+        dropHint.dataset.biSlot = String(state.buildOrder.length);
+        dropHint.dataset.biUid = uid;
+        dropHint.textContent = `Position ${state.buildOrder.length + 1}`;
+        build.appendChild(dropHint);
+      }
+    }
+
+    // Build area border color after check
+    if (state.checked) {
+      const allCorrect = state.buildOrder.every(
+        (id, pos) => idxFromItemId(id) === pos
+      );
+      build.classList.remove("border-gray-200", "border-green-400", "border-red-400");
+      if (allCorrect && state.buildOrder.length === state.steps.length) {
+        build.classList.add("border-green-400");
+      } else {
+        build.classList.add("border-red-400");
+      }
+    }
+  }
+
+  function updateCheckButton(uid: string, state: BIState): void {
+    const btn = document.getElementById(`${uid}-check`) as HTMLButtonElement | null;
+    if (!btn) return;
+    const allPlaced = state.poolItems.length === 0;
+    const enabled = allPlaced && !state.checked;
+    btn.disabled = !enabled;
+    btn.setAttribute("aria-disabled", String(!enabled));
+  }
+
+  function render(uid: string, state: BIState): void {
+    renderPool(uid, state);
+    renderBuild(uid, state);
+    updateCheckButton(uid, state);
+  }
+
+  // ─── Main init ────────────────────────────────────────────────────────────
+
+  function initBuildIt(): void {
+    document.querySelectorAll<HTMLElement>(".build-it").forEach((root) => {
+      const uid = root.dataset.biId;
+      if (!uid || root.dataset.biInit === "true") return;
+      root.dataset.biInit = "true";
+
+      const rawSteps: BIStep[] = JSON.parse(root.dataset.steps || "[]");
+
+      const allItemIds = rawSteps.map((_, i) => makeItemId(uid, i));
+      const shuffled = shuffleArray(allItemIds);
+
+      const state: BIState = {
+        steps: rawSteps,
+        buildOrder: [],
+        poolItems: [...shuffled],
+        checked: false,
+        selected: null,
+        allItemIds: shuffled,
+      };
+
+      render(uid, state);
+
+      // ── Track active drag item ───────────────────────────────────────────
+      let dragItemId: string | null = null;
+
+      // ── Delegated event listeners on root ───────────────────────────────
+
+      root.addEventListener("dragstart", (e) => {
+        const pill = (e.target as HTMLElement).closest<HTMLElement>("[data-bi-item]");
+        if (!pill || pill.dataset.biUid !== uid || state.checked) return;
+        dragItemId = pill.dataset.biItem || null;
+        if (!dragItemId) return;
+        (e as DragEvent).dataTransfer!.effectAllowed = "move";
+        (e as DragEvent).dataTransfer!.setData("text/plain", dragItemId);
+        announce(uid, `Picked up ${state.steps[idxFromItemId(dragItemId)].label}. Drop in the build area.`);
+        setTimeout(() => pill.classList.add("opacity-40"), 0);
+      });
+
+      root.addEventListener("dragend", (e) => {
+        const pill = (e.target as HTMLElement).closest<HTMLElement>("[data-bi-item]");
+        if (pill) pill.classList.remove("opacity-40");
+        dragItemId = null;
+      });
+
+      // ── Drop targets ──────────────────────────────────────────────────────
+
+      function attachDropTarget(el: HTMLElement, target: "pool" | "build"): void {
+        el.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          (e as DragEvent).dataTransfer!.dropEffect = "move";
+          el.classList.add("bg-teal-50", "dark:bg-teal-900/20", "border-teal-400");
+        });
+
+        el.addEventListener("dragleave", (e) => {
+          if (!el.contains(e.relatedTarget as Node)) {
+            el.classList.remove("bg-teal-50", "dark:bg-teal-900/20", "border-teal-400");
+          }
+        });
+
+        el.addEventListener("drop", (e) => {
+          e.preventDefault();
+          el.classList.remove("bg-teal-50", "dark:bg-teal-900/20", "border-teal-400");
+
+          const id = (e as DragEvent).dataTransfer!.getData("text/plain") || dragItemId;
+          if (!id || !state.allItemIds.includes(id)) return;
+
+          const wasInPool = state.poolItems.includes(id);
+          const wasInBuild = state.buildOrder.includes(id);
+          const itemLabel = state.steps[idxFromItemId(id)].label;
+
+          if (target === "pool") {
+            // Return to pool
+            if (wasInBuild) {
+              state.buildOrder = state.buildOrder.filter((x) => x !== id);
+              state.poolItems.push(id);
+              announce(uid, `${itemLabel} returned to pool`);
+            }
+          } else {
+            // Add to build area
+            if (wasInPool) {
+              state.poolItems = state.poolItems.filter((x) => x !== id);
+              state.buildOrder.push(id);
+              announce(uid, `${itemLabel} placed at position ${state.buildOrder.length}`);
+            } else if (wasInBuild) {
+              // Reorder: remove and append to end
+              state.buildOrder = state.buildOrder.filter((x) => x !== id);
+              state.buildOrder.push(id);
+              announce(uid, `${itemLabel} moved to position ${state.buildOrder.length}`);
+            }
+          }
+
+          render(uid, state);
+        });
+      }
+
+      const pool = document.getElementById(`${uid}-pool`);
+      if (pool) attachDropTarget(pool, "pool");
+
+      const build = document.getElementById(`${uid}-build`);
+      if (build) attachDropTarget(build, "build");
+
+      // ── Click delegation (tap-to-place + keyboard-accessible) ───────────
+
+      root.addEventListener("click", (e) => {
+        if (state.checked) return;
+
+        const pill = (e.target as HTMLElement).closest<HTMLElement>("[data-bi-item]");
+        const isBuild = !!(e.target as HTMLElement).closest(`#${uid}-build`);
+        const isPool = !!(e.target as HTMLElement).closest(`#${uid}-pool`);
+
+        if (pill && pill.dataset.biUid === uid) {
+          const id = pill.dataset.biItem!;
+          if (state.selected === id) {
+            // Deselect
+            state.selected = null;
+          } else if (state.selected && state.selected !== id) {
+            // If both are in the build area, swap them
+            const selInBuild = state.buildOrder.includes(state.selected);
+            const tgtInBuild = state.buildOrder.includes(id);
+
+            if (selInBuild && tgtInBuild) {
+              const selIdx = state.buildOrder.indexOf(state.selected);
+              const tgtIdx = state.buildOrder.indexOf(id);
+              [state.buildOrder[selIdx], state.buildOrder[tgtIdx]] = [state.buildOrder[tgtIdx], state.buildOrder[selIdx]];
+              const selLabel = state.steps[idxFromItemId(state.selected)].label;
+              const tgtLabel = state.steps[idxFromItemId(id)].label;
+              announce(uid, `Swapped ${selLabel} and ${tgtLabel}`);
+              state.selected = null;
+            } else {
+              // Select the new item instead
+              state.selected = id;
+              const txt = state.steps[idxFromItemId(id)].label;
+              announce(uid, `${txt} selected. Tap the build area to place it, or tap the pool to return it.`);
+            }
+          } else {
+            state.selected = id;
+            const txt = state.steps[idxFromItemId(id)].label;
+            announce(uid, `${txt} selected. Tap the build area to place it, or tap the pool to return it.`);
+          }
+          render(uid, state);
+          return;
+        }
+
+        if (state.selected) {
+          const selectedId = state.selected;
+          const itemLabel = state.steps[idxFromItemId(selectedId)].label;
+          const wasInPool = state.poolItems.includes(selectedId);
+          const wasInBuild = state.buildOrder.includes(selectedId);
+
+          if (isBuild) {
+            if (wasInPool) {
+              state.poolItems = state.poolItems.filter((x) => x !== selectedId);
+              state.buildOrder.push(selectedId);
+              announce(uid, `${itemLabel} placed at position ${state.buildOrder.length}`);
+            }
+            state.selected = null;
+            render(uid, state);
+            return;
+          }
+
+          if (isPool) {
+            if (wasInBuild) {
+              state.buildOrder = state.buildOrder.filter((x) => x !== selectedId);
+              state.poolItems.push(selectedId);
+              announce(uid, `${itemLabel} returned to pool`);
+            }
+            state.selected = null;
+            render(uid, state);
+            return;
+          }
+        }
+      });
+
+      // ── Keyboard delegation ──────────────────────────────────────────────
+
+      root.addEventListener("keydown", (e) => {
+        const key = e.key;
+
+        const pill = (e.target as HTMLElement).closest<HTMLElement>("[data-bi-item]");
+
+        if (key === "Escape") {
+          if (state.selected) {
+            state.selected = null;
+            render(uid, state);
+            announce(uid, "Selection cancelled");
+          }
+          return;
+        }
+
+        if (pill && pill.dataset.biUid === uid && (key === "Enter" || key === " ")) {
+          e.preventDefault();
+          pill.click();
+          return;
+        }
+
+        // Arrow keys to reorder items in the build area
+        if (pill && pill.dataset.biUid === uid && (key === "ArrowUp" || key === "ArrowDown")) {
+          const id = pill.dataset.biItem!;
+          const buildIdx = state.buildOrder.indexOf(id);
+          if (buildIdx === -1) return;
+
+          e.preventDefault();
+          const newIdx = key === "ArrowUp" ? buildIdx - 1 : buildIdx + 1;
+          if (newIdx < 0 || newIdx >= state.buildOrder.length) return;
+
+          // Swap
+          [state.buildOrder[buildIdx], state.buildOrder[newIdx]] = [state.buildOrder[newIdx], state.buildOrder[buildIdx]];
+          const label = state.steps[idxFromItemId(id)].label;
+          announce(uid, `${label} moved to position ${newIdx + 1}`);
+          render(uid, state);
+
+          // Refocus the moved item
+          requestAnimationFrame(() => {
+            const movedBtn = document.getElementById(id);
+            if (movedBtn) movedBtn.focus();
+          });
+          return;
+        }
+
+        // Enter on the build area itself (not on a pill) — place selected item
+        const isBuild = (e.target as HTMLElement).closest(`#${uid}-build`);
+        const isPool = (e.target as HTMLElement).closest(`#${uid}-pool`);
+
+        if ((isBuild || isPool) && (key === "Enter" || key === " ")) {
+          e.preventDefault();
+          (e.target as HTMLElement).click();
+        }
+      });
+
+      // ── Check button ─────────────────────────────────────────────────────
+
+      const checkBtn = document.getElementById(`${uid}-check`) as HTMLButtonElement | null;
+      const resetBtn = document.getElementById(`${uid}-reset`) as HTMLButtonElement | null;
+      const resultEl = document.getElementById(`${uid}-result`);
+
+      checkBtn?.addEventListener("click", () => {
+        if (state.checked) return;
+        state.checked = true;
+        state.selected = null;
+
+        const total = state.steps.length;
+        let correct = 0;
+        state.buildOrder.forEach((id, pos) => {
+          if (idxFromItemId(id) === pos) correct++;
+        });
+
+        render(uid, state);
+
+        if (checkBtn) {
+          checkBtn.disabled = true;
+          checkBtn.setAttribute("aria-disabled", "true");
+        }
+        if (resetBtn) resetBtn.classList.remove("hidden");
+
+        if (resultEl) {
+          resultEl.classList.remove("hidden");
+          if (correct === total) {
+            resultEl.className = [
+              "mb-4", "px-4", "py-3", "rounded-lg", "text-sm", "font-medium",
+              "bg-green-50", "dark:bg-green-900/30",
+              "border", "border-green-400", "dark:border-green-600",
+              "text-green-800", "dark:text-green-200",
+            ].join(" ");
+            resultEl.textContent = `All ${total} correct! Great work.`;
+          } else {
+            resultEl.className = [
+              "mb-4", "px-4", "py-3", "rounded-lg", "text-sm", "font-medium",
+              "bg-amber-50", "dark:bg-amber-900/30",
+              "border", "border-amber-400", "dark:border-amber-600",
+              "text-amber-800", "dark:text-amber-200",
+            ].join(" ");
+            resultEl.textContent = `${correct} of ${total} correct. Review the highlighted items and try again.`;
+          }
+        }
+
+        announce(uid, `Results: ${correct} of ${total} correct.`);
+      });
+
+      // ── Reset button ─────────────────────────────────────────────────────
+
+      resetBtn?.addEventListener("click", () => {
+        state.checked = false;
+        state.selected = null;
+
+        // Return all to pool and re-shuffle
+        state.allItemIds = shuffleArray(state.allItemIds);
+        state.poolItems = [...state.allItemIds];
+        state.buildOrder = [];
+
+        // Clear build area border overrides
+        const buildEl = document.getElementById(`${uid}-build`);
+        if (buildEl) {
+          buildEl.classList.remove("border-green-400", "border-red-400", "border-teal-400");
+          buildEl.classList.add("border-gray-200", "dark:border-gray-700");
+        }
+
+        render(uid, state);
+
+        if (checkBtn) {
+          checkBtn.disabled = true;
+          checkBtn.setAttribute("aria-disabled", "true");
+        }
+        if (resetBtn) resetBtn.classList.add("hidden");
+
+        if (resultEl) {
+          resultEl.classList.add("hidden");
+          resultEl.textContent = "";
+        }
+
+        announce(uid, "Exercise reset. All components returned to pool.");
+      });
+    });
+  }
+
+  // Run on initial load and after Astro view transitions
+  initBuildIt();
+  document.addEventListener("astro:page-load", initBuildIt);
+</script>
