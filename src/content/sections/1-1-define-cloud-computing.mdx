@@ -13,6 +13,7 @@ import KeyTakeaways from '../../components/KeyTakeaways.astro';
 import KeyTerm from '../../components/KeyTerm.astro';
 import Callout from '../../components/Callout.astro';
 import DeepDive from '../../components/DeepDive.astro';
+import ComparisonSlider from '../../components/ComparisonSlider.astro';
 
 ## What is Cloud Computing?
 
@@ -36,6 +37,22 @@ In cloud computing, responsibilities are shared between the cloud provider and t
 | Applications | Customer | Customer | Customer | Provider |
 | OS | Customer | Customer | Provider | Provider |
 | Infrastructure | Customer | Provider | Provider | Provider |
+
+<ComparisonSlider
+  title="Shared Responsibility by Service Model"
+  models={["On-premises", "IaaS", "PaaS", "SaaS"]}
+  layers={[
+    { name: "Applications", managedBy: { "On-premises": "customer", "IaaS": "customer", "PaaS": "customer", "SaaS": "provider" } },
+    { name: "Data", managedBy: { "On-premises": "customer", "IaaS": "customer", "PaaS": "customer", "SaaS": "shared" } },
+    { name: "Runtime", managedBy: { "On-premises": "customer", "IaaS": "customer", "PaaS": "provider", "SaaS": "provider" } },
+    { name: "Middleware", managedBy: { "On-premises": "customer", "IaaS": "customer", "PaaS": "provider", "SaaS": "provider" } },
+    { name: "OS", managedBy: { "On-premises": "customer", "IaaS": "customer", "PaaS": "provider", "SaaS": "provider" } },
+    { name: "Virtualization", managedBy: { "On-premises": "customer", "IaaS": "provider", "PaaS": "provider", "SaaS": "provider" } },
+    { name: "Servers", managedBy: { "On-premises": "customer", "IaaS": "provider", "PaaS": "provider", "SaaS": "provider" } },
+    { name: "Storage", managedBy: { "On-premises": "customer", "IaaS": "provider", "PaaS": "provider", "SaaS": "provider" } },
+    { name: "Networking", managedBy: { "On-premises": "customer", "IaaS": "provider", "PaaS": "provider", "SaaS": "provider" } },
+  ]}
+/>
 
 <DeepDive title="NIST Definition of Cloud Computing">
 The National Institute of Standards and Technology (NIST) provides the most widely accepted definition of cloud computing in Special Publication 800-145. According to NIST, cloud computing is a model for enabling ubiquitous, convenient, on-demand network access to a shared pool of configurable computing resources that can be rapidly provisioned and released with minimal management effort or service provider interaction.

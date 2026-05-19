@@ -1,0 +1,418 @@
+---
+// src/components/ComparisonSlider.astro
+
+interface Layer {
+  name: string;
+  managedBy: Record<string, "customer" | "provider" | "shared">;
+}
+
+interface Props {
+  title?: string;
+  models: string[];
+  layers: Layer[];
+  customerLabel?: string;
+  providerLabel?: string;
+}
+
+const {
+  title,
+  models,
+  layers,
+  customerLabel = "You manage",
+  providerLabel = "Azure manages",
+} = Astro.props;
+
+// Unique ID for this instance — needed for multiple components on one page
+const uid = `cs-${Math.random().toString(36).slice(2, 9)}`;
+
+// Serialize to data attributes for JS pickup
+const modelsJson = JSON.stringify(models);
+const layersJson = JSON.stringify(layers);
+---
+
+<div
+  class="comparison-slider my-10 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+  data-cs-id={uid}
+  data-models={modelsJson}
+  data-layers={layersJson}
+  data-customer-label={customerLabel}
+  data-provider-label={providerLabel}
+>
+  <!-- Header bar — same pattern as DragDropMatch / ComparisonTable -->
+  <div class="flex items-center gap-2.5 px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <!-- Slider / layers icon -->
+    <svg
+      class="w-5 h-5 flex-shrink-0 text-blue-600 dark:text-blue-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M4 6h16M4 10h16M4 14h16M4 18h16"
+      />
+    </svg>
+    <span class="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+      Comparison Slider
+    </span>
+    {title && (
+      <span class="text-sm font-medium text-gray-800 dark:text-gray-100 ml-1">
+        — {title}
+      </span>
+    )}
+  </div>
+
+  <!-- Body -->
+  <div class="bg-white dark:bg-gray-900 p-5 sm:p-6">
+
+    <!-- ARIA live region for screen reader announcements -->
+    <div
+      id={`${uid}-live`}
+      aria-live="polite"
+      aria-atomic="true"
+      class="sr-only"
+    ></div>
+
+    <!-- Active model display -->
+    <div class="mb-5 text-center">
+      <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">
+        Active Model
+      </p>
+      <p
+        id={`${uid}-active-model`}
+        class="text-xl font-bold text-gray-900 dark:text-gray-50"
+      >
+        {models[0]}
+      </p>
+    </div>
+
+    <!-- Range slider -->
+    <div class="mb-6 px-1">
+      <input
+        id={`${uid}-slider`}
+        type="range"
+        min="0"
+        max={models.length - 1}
+        step="1"
+        value="0"
+        class="cs-range w-full cursor-pointer"
+        aria-label="Select service model"
+        aria-valuetext={models[0]}
+      />
+      <!-- Model labels below slider -->
+      <div class="flex justify-between mt-2 px-0.5">
+        {models.map((model) => (
+          <span class="text-xs text-gray-500 dark:text-gray-400 text-center leading-tight" style={`width: ${100 / models.length}%`}>
+            {model}
+          </span>
+        ))}
+      </div>
+    </div>
+
+    <!-- Responsibility stack -->
+    <div
+      id={`${uid}-stack`}
+      class="mb-5 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
+      role="list"
+      aria-label="Responsibility layers"
+    >
+      {layers.map((layer) => {
+        const initialOwner = layer.managedBy[models[0]] ?? "customer";
+        return (
+          <div
+            class="cs-layer flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-800 last:border-b-0 transition-colors duration-300"
+            data-layer-name={layer.name}
+            data-managed-by={JSON.stringify(layer.managedBy)}
+            data-owner={initialOwner}
+            role="listitem"
+          >
+            <!-- Layer name -->
+            <span class="w-28 flex-shrink-0 text-sm font-medium text-gray-700 dark:text-gray-200">
+              {layer.name}
+            </span>
+            <!-- Responsibility badge -->
+            <span
+              class="cs-badge flex-1 flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-300"
+              aria-label={`${layer.name}: managed by ${initialOwner === "customer" ? customerLabel : initialOwner === "provider" ? providerLabel : "both"}`}
+            >
+            </span>
+          </div>
+        );
+      })}
+    </div>
+
+    <!-- Legend -->
+    <div class="flex flex-wrap gap-4 justify-center text-xs font-medium">
+      <span class="flex items-center gap-1.5">
+        <span class="inline-block w-3 h-3 rounded-full bg-blue-500 dark:bg-blue-400"></span>
+        <span class="text-gray-600 dark:text-gray-300">{customerLabel}</span>
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="inline-block w-3 h-3 rounded-full bg-teal-500 dark:bg-teal-400"></span>
+        <span class="text-gray-600 dark:text-gray-300">{providerLabel}</span>
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="inline-block w-3 h-3 rounded-full bg-amber-500 dark:bg-amber-400"></span>
+        <span class="text-gray-600 dark:text-gray-300">Shared</span>
+      </span>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  /* ── Range input track ─────────────────────────────────────────────────── */
+  .cs-range {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 9999px;
+    background: #e5e7eb; /* gray-200 */
+    outline: none;
+  }
+
+  :global(.dark) .cs-range {
+    background: #374151; /* gray-700 */
+  }
+
+  .cs-range:focus-visible {
+    outline: 2px solid #3b82f6; /* blue-500 */
+    outline-offset: 3px;
+  }
+
+  /* ── Thumb — WebKit ────────────────────────────────────────────────────── */
+  .cs-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 9999px;
+    background: #3b82f6; /* blue-500 */
+    border: 3px solid #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .cs-range::-webkit-slider-thumb:hover {
+    background: #2563eb; /* blue-600 */
+    transform: scale(1.1);
+  }
+
+  :global(.dark) .cs-range::-webkit-slider-thumb {
+    background: #60a5fa; /* blue-400 */
+    border-color: #111827; /* gray-900 */
+  }
+
+  :global(.dark) .cs-range::-webkit-slider-thumb:hover {
+    background: #3b82f6; /* blue-500 */
+  }
+
+  /* ── Thumb — Firefox ───────────────────────────────────────────────────── */
+  .cs-range::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 9999px;
+    background: #3b82f6;
+    border: 3px solid #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .cs-range::-moz-range-thumb:hover {
+    background: #2563eb;
+    transform: scale(1.1);
+  }
+
+  :global(.dark) .cs-range::-moz-range-thumb {
+    background: #60a5fa;
+    border-color: #111827;
+  }
+
+  :global(.dark) .cs-range::-moz-range-thumb:hover {
+    background: #3b82f6;
+  }
+
+  /* ── Thumb — IE/Edge legacy ────────────────────────────────────────────── */
+  .cs-range::-ms-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 9999px;
+    background: #3b82f6;
+    border: 3px solid #ffffff;
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  // ─── Types ──────────────────────────────────────────────────────────────
+
+  type Owner = "customer" | "provider" | "shared";
+
+  interface CSLayer {
+    name: string;
+    managedBy: Record<string, Owner>;
+  }
+
+  // ─── Color maps ─────────────────────────────────────────────────────────
+
+  // Applied as Tailwind-compatible inline classes via JS (can't use dark: variants
+  // inline, so we detect dark mode via classList on <html>)
+  const LIGHT_BG: Record<Owner, string> = {
+    customer: "#eff6ff",  // blue-50
+    provider: "#f0fdfa",  // teal-50
+    shared:   "#fffbeb",  // amber-50
+  };
+  const DARK_BG: Record<Owner, string> = {
+    customer: "rgba(59,130,246,0.15)",  // blue-500 / 15%
+    provider: "rgba(20,184,166,0.15)",  // teal-500 / 15%
+    shared:   "rgba(245,158,11,0.15)",  // amber-500 / 15%
+  };
+  const LIGHT_TEXT: Record<Owner, string> = {
+    customer: "#1d4ed8",  // blue-700
+    provider: "#0f766e",  // teal-700
+    shared:   "#b45309",  // amber-700
+  };
+  const DARK_TEXT: Record<Owner, string> = {
+    customer: "#93c5fd",  // blue-300
+    provider: "#5eead4",  // teal-300
+    shared:   "#fcd34d",  // amber-300
+  };
+
+  const LIGHT_BADGE_BG: Record<Owner, string> = {
+    customer: "#dbeafe",  // blue-100
+    provider: "#ccfbf1",  // teal-100
+    shared:   "#fef3c7",  // amber-100
+  };
+  const DARK_BADGE_BG: Record<Owner, string> = {
+    customer: "rgba(59,130,246,0.25)",
+    provider: "rgba(20,184,166,0.25)",
+    shared:   "rgba(245,158,11,0.25)",
+  };
+  const LABELS: Record<Owner, (c: string, p: string) => string> = {
+    customer: (c) => c,
+    provider: (_, p) => p,
+    shared:   () => "Shared",
+  };
+
+  // ─── Helpers ────────────────────────────────────────────────────────────
+
+  function isDark(): boolean {
+    return document.documentElement.classList.contains("dark");
+  }
+
+  function announce(uid: string, message: string): void {
+    const live = document.getElementById(`${uid}-live`);
+    if (!live) return;
+    live.textContent = "";
+    requestAnimationFrame(() => { live.textContent = message; });
+  }
+
+  // ─── Render ─────────────────────────────────────────────────────────────
+
+  function applyModel(
+    uid: string,
+    modelName: string,
+    layers: CSLayer[],
+    customerLabel: string,
+    providerLabel: string
+  ): void {
+    const dark = isDark();
+
+    // Update active model label
+    const activeEl = document.getElementById(`${uid}-active-model`);
+    if (activeEl) activeEl.textContent = modelName;
+
+    // Update each layer bar
+    const stack = document.getElementById(`${uid}-stack`);
+    if (!stack) return;
+
+    const layerEls = stack.querySelectorAll<HTMLElement>(".cs-layer");
+    layerEls.forEach((el) => {
+      const layerName = el.dataset.layerName!;
+      const managedBy: Record<string, Owner> = JSON.parse(el.dataset.managedBy || "{}");
+      const owner: Owner = managedBy[modelName] ?? "customer";
+
+      // Update data attr (for reference)
+      el.dataset.owner = owner;
+
+      // Layer row bg — subtle tint
+      el.style.backgroundColor = dark ? DARK_BG[owner] : LIGHT_BG[owner];
+
+      // Badge
+      const badge = el.querySelector<HTMLElement>(".cs-badge");
+      if (badge) {
+        badge.textContent = LABELS[owner](customerLabel, providerLabel);
+        badge.style.color = dark ? DARK_TEXT[owner] : LIGHT_TEXT[owner];
+        badge.style.backgroundColor = dark ? DARK_BADGE_BG[owner] : LIGHT_BADGE_BG[owner];
+
+        badge.setAttribute(
+          "aria-label",
+          `${layerName}: ${LABELS[owner](customerLabel, providerLabel)}`
+        );
+      }
+    });
+  }
+
+  // ─── Init ────────────────────────────────────────────────────────────────
+
+  function initComparisonSlider(): void {
+    document.querySelectorAll<HTMLElement>(".comparison-slider").forEach((root) => {
+      const uid = root.dataset.csId;
+      if (!uid || root.dataset.csInit === "true") return;
+      root.dataset.csInit = "true";
+
+      const models: string[] = JSON.parse(root.dataset.models || "[]");
+      const layers: CSLayer[] = JSON.parse(root.dataset.layers || "[]");
+      const customerLabel = root.dataset.customerLabel || "You manage";
+      const providerLabel = root.dataset.providerLabel || "Azure manages";
+
+      if (models.length === 0) return;
+
+      const slider = document.getElementById(`${uid}-slider`) as HTMLInputElement | null;
+      if (!slider) return;
+
+      // Hide slider when only one model (static display)
+      if (models.length <= 1) {
+        const sliderContainer = slider.closest(".mb-6") as HTMLElement | null;
+        if (sliderContainer) sliderContainer.style.display = "none";
+      }
+
+      // Set slider max correctly (in case SSR value differs)
+      slider.max = String(models.length - 1);
+      slider.value = "0";
+      slider.setAttribute("aria-valuetext", models[0]);
+
+      // Initial render
+      applyModel(uid, models[0], layers, customerLabel, providerLabel);
+
+      // React to slider changes
+      slider.addEventListener("input", () => {
+        const idx = parseInt(slider.value, 10);
+        const modelName = models[idx] ?? models[0];
+        applyModel(uid, modelName, layers, customerLabel, providerLabel);
+        slider.setAttribute("aria-valuetext", modelName);
+        announce(uid, `Showing ${modelName} responsibility model`);
+      });
+
+      // Re-apply colors when dark mode toggles (observe class changes on <html>)
+      const observer = new MutationObserver(() => {
+        const idx = parseInt(slider.value, 10);
+        const modelName = models[idx] ?? models[0];
+        applyModel(uid, modelName, layers, customerLabel, providerLabel);
+      });
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+    });
+  }
+
+  // Run on initial load and after Astro view transitions
+  initComparisonSlider();
+  document.addEventListener("astro:page-load", initComparisonSlider);
+</script>
