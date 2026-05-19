@@ -1,0 +1,652 @@
+---
+// src/components/DragDropMatch.astro
+
+interface Item {
+  text: string;
+  category: string;
+}
+
+interface Props {
+  title?: string;
+  categories: string[];
+  items: Item[];
+}
+
+const { title, categories, items } = Astro.props;
+
+// Unique ID for this instance — needed for multiple components on one page
+const uid = `ddm-${Math.random().toString(36).slice(2, 9)}`;
+
+// Serialize to data attributes for JS pickup
+const categoriesJson = JSON.stringify(categories);
+const itemsJson = JSON.stringify(items);
+---
+
+<div
+  class="drag-drop-match my-10 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+  data-ddm-id={uid}
+  data-categories={categoriesJson}
+  data-items={itemsJson}
+>
+  <!-- Header bar — same pattern as InteractiveDiagram / ComparisonTable -->
+  <div class="flex items-center gap-2.5 px-5 py-3.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <!-- Shuffle/link icon signals "matching" -->
+    <svg
+      class="w-5 h-5 flex-shrink-0 text-teal-600 dark:text-teal-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+      />
+    </svg>
+    <span class="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+      Matching Exercise
+    </span>
+    {title && (
+      <span class="text-sm font-medium text-gray-800 dark:text-gray-100 ml-1">
+        — {title}
+      </span>
+    )}
+  </div>
+
+  <!-- Body -->
+  <div class="bg-white dark:bg-gray-900 p-5 sm:p-6">
+
+    <!-- Instruction -->
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">
+      Drag each item to its correct category
+    </p>
+
+    <!-- ARIA live region for screen reader announcements -->
+    <div
+      id={`${uid}-live`}
+      aria-live="polite"
+      aria-atomic="true"
+      class="sr-only"
+    ></div>
+
+    <!-- Item pool -->
+    <div class="mb-6">
+      <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+        Items
+      </p>
+      <div
+        id={`${uid}-pool`}
+        class="ddm-pool flex flex-wrap gap-2 min-h-[48px] p-2 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+        role="group"
+        aria-label="Item pool — drag items from here"
+      >
+        <!-- Items are injected by JS after shuffling -->
+      </div>
+    </div>
+
+    <!-- Drop zones -->
+    <div class="mb-6">
+      <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+        Categories
+      </p>
+      <div
+        id={`${uid}-zones`}
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+      >
+        <!-- Zones are injected by JS -->
+      </div>
+    </div>
+
+    <!-- Score / success banner (hidden until check) -->
+    <div
+      id={`${uid}-result`}
+      class="hidden mb-4 px-4 py-3 rounded-lg text-sm font-medium"
+      role="status"
+      aria-live="polite"
+    ></div>
+
+    <!-- Action buttons -->
+    <div class="flex gap-3 justify-end">
+      <button
+        id={`${uid}-reset`}
+        class="hidden px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        type="button"
+      >
+        Reset
+      </button>
+      <button
+        id={`${uid}-check`}
+        class="px-4 py-2 text-sm font-medium rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        type="button"
+        disabled
+        aria-disabled="true"
+      >
+        Check Answers
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── Types ────────────────────────────────────────────────────────────────
+
+  interface DDMItem {
+    text: string;
+    category: string;
+  }
+
+  interface DDMState {
+    categories: string[];
+    items: DDMItem[];
+    /** itemId → category name, or null if still in pool */
+    placements: Record<string, string | null>;
+    checked: boolean;
+    /** tap/keyboard selected item id */
+    selected: string | null;
+    itemOrder: string[];
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  function shuffleArray<T>(arr: T[]): T[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function sanitizeId(str: string): string {
+    return str.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").toLowerCase();
+  }
+
+  function makeZoneId(uid: string, cat: string): string {
+    return `${uid}-zone-${sanitizeId(cat)}`;
+  }
+
+  function makeItemId(uid: string, idx: number): string {
+    return `${uid}-item-${idx}`;
+  }
+
+  function idxFromItemId(id: string): number {
+    return parseInt(id.split("-item-")[1], 10);
+  }
+
+  function announce(uid: string, message: string): void {
+    const live = document.getElementById(`${uid}-live`);
+    if (!live) return;
+    live.textContent = "";
+    requestAnimationFrame(() => {
+      live.textContent = message;
+    });
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
+
+  function createItemPill(uid: string, id: string, state: DDMState): HTMLButtonElement {
+    const idx = idxFromItemId(id);
+    const item = state.items[idx];
+    const inPool = state.placements[id] === null;
+    const isSelected = state.selected === id;
+
+    const btn = document.createElement("button");
+    btn.id = id;
+    btn.type = "button";
+    btn.draggable = !state.checked;
+    btn.dataset.ddmItem = id;
+    btn.dataset.ddmUid = uid;
+    // <button> already has implicit role="button" — no need to set explicitly
+    btn.setAttribute(
+      "aria-label",
+      `${item.text}${inPool ? ", in pool" : `, in ${state.placements[id]} category`}`
+    );
+    btn.setAttribute("aria-pressed", isSelected ? "true" : "false");
+
+    const base = [
+      "ddm-item",
+      "inline-flex", "items-center", "gap-1.5",
+      "px-3", "py-1.5",
+      "rounded-full",
+      "text-sm", "font-medium",
+      "shadow-sm",
+      "border",
+      "select-none",
+      "transition-all", "duration-150",
+      "focus:outline-none", "focus:ring-2", "focus:ring-teal-500", "focus:ring-offset-1",
+    ];
+
+    if (state.checked) {
+      btn.draggable = false;
+      btn.disabled = true;
+      const placed = state.placements[id];
+      if (placed !== null) {
+        const correct = item.category === placed;
+        base.push(
+          ...(correct
+            ? ["bg-green-50", "dark:bg-green-900/30", "border-green-400", "dark:border-green-500", "text-green-800", "dark:text-green-200"]
+            : ["bg-red-50", "dark:bg-red-900/30", "border-red-400", "dark:border-red-500", "text-red-800", "dark:text-red-200"]),
+          "cursor-default"
+        );
+        const icon = document.createElement("span");
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = correct ? " ✓" : " ✗";
+        icon.className = correct
+          ? "text-green-600 dark:text-green-400 font-bold"
+          : "text-red-600 dark:text-red-400 font-bold";
+        btn.textContent = item.text;
+        btn.appendChild(icon);
+        btn.className = base.join(" ");
+        return btn;
+      } else {
+        base.push(
+          "bg-gray-100", "dark:bg-gray-700",
+          "border-gray-300", "dark:border-gray-500",
+          "text-gray-500", "dark:text-gray-400",
+          "cursor-default"
+        );
+      }
+    } else if (isSelected) {
+      base.push(
+        "bg-teal-100", "dark:bg-teal-900/40",
+        "border-teal-500", "dark:border-teal-400",
+        "text-teal-800", "dark:text-teal-200",
+        "ring-2", "ring-teal-400",
+        "cursor-grab"
+      );
+    } else {
+      base.push(
+        "bg-white", "dark:bg-gray-800",
+        "border-gray-200", "dark:border-gray-600",
+        "text-gray-700", "dark:text-gray-200",
+        "hover:border-teal-400", "dark:hover:border-teal-500",
+        "hover:bg-teal-50", "dark:hover:bg-teal-900/20",
+        "cursor-grab", "active:cursor-grabbing"
+      );
+    }
+
+    btn.textContent = item.text;
+    btn.className = base.join(" ");
+    return btn;
+  }
+
+  function renderPool(uid: string, state: DDMState): void {
+    const pool = document.getElementById(`${uid}-pool`);
+    if (!pool) return;
+    pool.innerHTML = "";
+
+    const poolItems = state.itemOrder.filter((id) => state.placements[id] === null);
+
+    if (poolItems.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "text-xs text-gray-400 dark:text-gray-500 italic self-center px-2";
+      empty.textContent = "All items placed";
+      pool.appendChild(empty);
+    } else {
+      poolItems.forEach((id) => pool.appendChild(createItemPill(uid, id, state)));
+    }
+  }
+
+  function renderZones(uid: string, state: DDMState): void {
+    state.categories.forEach((cat) => {
+      const zoneId = makeZoneId(uid, cat);
+      const zone = document.getElementById(zoneId);
+      if (!zone) return;
+
+      const droppedArea = zone.querySelector<HTMLElement>(".ddm-dropped");
+      if (!droppedArea) return;
+
+      droppedArea.innerHTML = "";
+
+      const droppedIds = state.itemOrder.filter((id) => state.placements[id] === cat);
+
+      if (droppedIds.length === 0) {
+        const ph = document.createElement("p");
+        ph.className = "ddm-placeholder text-xs text-gray-400 dark:text-gray-500 italic";
+        ph.textContent = "Drop here";
+        droppedArea.appendChild(ph);
+      } else {
+        droppedIds.forEach((id) => droppedArea.appendChild(createItemPill(uid, id, state)));
+      }
+
+      // Zone border color after check
+      if (state.checked) {
+        const allCorrect = droppedIds.every(
+          (id) => state.items[idxFromItemId(id)].category === cat
+        );
+        zone.classList.remove(
+          "border-gray-200", "border-teal-400",
+          "border-green-400", "border-red-400"
+        );
+        if (droppedIds.length === 0) {
+          zone.classList.add("border-gray-200");
+        } else if (allCorrect) {
+          zone.classList.add("border-green-400");
+        } else {
+          zone.classList.add("border-red-400");
+        }
+      }
+
+      // Zones are always focusable for inspection/keyboard navigation
+      zone.setAttribute("tabindex", "0");
+    });
+  }
+
+  function updateCheckButton(uid: string, state: DDMState): void {
+    const btn = document.getElementById(`${uid}-check`) as HTMLButtonElement | null;
+    if (!btn) return;
+    const allPlaced = Object.values(state.placements).every((v) => v !== null);
+    const enabled = allPlaced && !state.checked;
+    btn.disabled = !enabled;
+    btn.setAttribute("aria-disabled", String(!enabled));
+  }
+
+  function createZoneEl(uid: string, cat: string): HTMLElement {
+    const zoneId = makeZoneId(uid, cat);
+
+    const zone = document.createElement("div");
+    zone.id = zoneId;
+    zone.dataset.ddmZone = cat;
+    zone.dataset.ddmUid = uid;
+    zone.setAttribute("role", "group");
+    zone.setAttribute("aria-label", `${cat} drop zone`);
+    zone.className = [
+      "ddm-zone",
+      "rounded-lg", "border-2", "border-dashed",
+      "border-gray-200", "dark:border-gray-700",
+      "bg-gray-50", "dark:bg-gray-800/50",
+      "p-3", "min-h-[100px]",
+      "flex", "flex-col", "gap-2",
+      "transition-colors", "duration-150",
+    ].join(" ");
+
+    const label = document.createElement("p");
+    label.className = "text-xs font-semibold uppercase tracking-wider text-teal-700 dark:text-teal-400 mb-1 pointer-events-none";
+    label.textContent = cat;
+    zone.appendChild(label);
+
+    const droppedArea = document.createElement("div");
+    droppedArea.className = "ddm-dropped flex flex-col gap-2 flex-1";
+    const ph = document.createElement("p");
+    ph.className = "ddm-placeholder text-xs text-gray-400 dark:text-gray-500 italic pointer-events-none";
+    ph.textContent = "Drop here";
+    droppedArea.appendChild(ph);
+    zone.appendChild(droppedArea);
+
+    return zone;
+  }
+
+  function render(uid: string, state: DDMState): void {
+    renderPool(uid, state);
+    renderZones(uid, state);
+    updateCheckButton(uid, state);
+  }
+
+  // ─── Main init ────────────────────────────────────────────────────────────
+
+  function initDragDropMatch(): void {
+    document.querySelectorAll<HTMLElement>(".drag-drop-match").forEach((root) => {
+      const uid = root.dataset.ddmId;
+      if (!uid || root.dataset.ddmInit === "true") return;
+      root.dataset.ddmInit = "true";
+
+      const categories: string[] = JSON.parse(root.dataset.categories || "[]");
+      const rawItems: DDMItem[] = JSON.parse(root.dataset.items || "[]");
+
+      const state: DDMState = {
+        categories,
+        items: rawItems,
+        placements: {},
+        checked: false,
+        selected: null,
+        itemOrder: shuffleArray(rawItems.map((_, i) => makeItemId(uid, i))),
+      };
+      state.itemOrder.forEach((id) => (state.placements[id] = null));
+
+      // Build static zone shells (only once — their inner content re-renders)
+      const zonesContainer = document.getElementById(`${uid}-zones`);
+      if (zonesContainer) {
+        zonesContainer.innerHTML = "";
+        categories.forEach((cat) => zonesContainer.appendChild(createZoneEl(uid, cat)));
+      }
+
+      render(uid, state);
+
+      // ── Track active drag item ───────────────────────────────────────────
+      let dragItemId: string | null = null;
+
+      // ── Delegated event listeners on root ───────────────────────────────
+      // Using delegation so we never need to re-attach on re-renders.
+
+      root.addEventListener("dragstart", (e) => {
+        const pill = (e.target as HTMLElement).closest<HTMLElement>("[data-ddm-item]");
+        if (!pill || pill.dataset.ddmUid !== uid || state.checked) return;
+        dragItemId = pill.dataset.ddmItem || null;
+        if (!dragItemId) return;
+        (e as DragEvent).dataTransfer!.effectAllowed = "move";
+        (e as DragEvent).dataTransfer!.setData("text/plain", dragItemId);
+        announce(uid, `Picked up ${state.items[idxFromItemId(dragItemId)].text}. Drop on a category.`);
+        setTimeout(() => pill.classList.add("opacity-40"), 0);
+      });
+
+      root.addEventListener("dragend", (e) => {
+        const pill = (e.target as HTMLElement).closest<HTMLElement>("[data-ddm-item]");
+        if (pill) pill.classList.remove("opacity-40");
+        dragItemId = null;
+      });
+
+      // dragover / dragleave / drop on zones and pool — attach directly since
+      // these elements are permanent (only their children change)
+      function attachDropTarget(el: HTMLElement, targetCategory: string | null): void {
+        el.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          (e as DragEvent).dataTransfer!.dropEffect = "move";
+          el.classList.add("bg-teal-50", "dark:bg-teal-900/20", "border-teal-400");
+        });
+
+        el.addEventListener("dragleave", (e) => {
+          // Only clear if leaving the element itself, not a child
+          if (!el.contains(e.relatedTarget as Node)) {
+            el.classList.remove("bg-teal-50", "dark:bg-teal-900/20", "border-teal-400");
+          }
+        });
+
+        el.addEventListener("drop", (e) => {
+          e.preventDefault();
+          el.classList.remove("bg-teal-50", "dark:bg-teal-900/20", "border-teal-400");
+
+          const id = (e as DragEvent).dataTransfer!.getData("text/plain") || dragItemId;
+          if (!id || !(id in state.placements)) return;
+
+          state.placements[id] = targetCategory;
+          render(uid, state);
+
+          const itemText = state.items[idxFromItemId(id)].text;
+          announce(
+            uid,
+            targetCategory ? `${itemText} moved to ${targetCategory}` : `${itemText} returned to pool`
+          );
+        });
+      }
+
+      // Attach to the permanent pool element
+      const pool = document.getElementById(`${uid}-pool`);
+      if (pool) attachDropTarget(pool, null);
+
+      // Attach to each permanent zone element
+      categories.forEach((cat) => {
+        const zoneId = makeZoneId(uid, cat);
+        const zone = document.getElementById(zoneId);
+        if (zone) attachDropTarget(zone, cat);
+      });
+
+      // ── Click delegation (tap-to-place + keyboard-accessible) ───────────
+
+      root.addEventListener("click", (e) => {
+        if (state.checked) return;
+
+        const pill = (e.target as HTMLElement).closest<HTMLElement>("[data-ddm-item]");
+        const zone = (e.target as HTMLElement).closest<HTMLElement>("[data-ddm-zone]");
+        const isPool = !!(e.target as HTMLElement).closest(`#${uid}-pool`);
+
+        if (pill && pill.dataset.ddmUid === uid) {
+          // Item tapped
+          const id = pill.dataset.ddmItem!;
+          if (state.selected === id) {
+            state.selected = null;
+          } else {
+            state.selected = id;
+            const txt = state.items[idxFromItemId(id)].text;
+            announce(uid, `${txt} selected. Tap a category to place it, or tap the pool to return it.`);
+          }
+          render(uid, state);
+          return;
+        }
+
+        if (state.selected) {
+          if (zone && zone.dataset.ddmUid === uid) {
+            // Zone tapped while item selected
+            const cat = zone.dataset.ddmZone!;
+            const id = state.selected;
+            state.placements[id] = cat;
+            const txt = state.items[idxFromItemId(id)].text;
+            state.selected = null;
+            render(uid, state);
+            announce(uid, `${txt} placed in ${cat}`);
+            return;
+          }
+
+          if (isPool) {
+            // Pool tapped while item selected — return item
+            const id = state.selected;
+            state.placements[id] = null;
+            state.selected = null;
+            render(uid, state);
+            announce(uid, `${state.items[idxFromItemId(id)].text} returned to pool`);
+          }
+        }
+      });
+
+      // ── Keyboard delegation ──────────────────────────────────────────────
+
+      root.addEventListener("keydown", (e) => {
+        const key = e.key;
+
+        const pill = (e.target as HTMLElement).closest<HTMLElement>("[data-ddm-item]");
+        const zone = (e.target as HTMLElement).closest<HTMLElement>("[data-ddm-zone]");
+
+        if (key === "Escape") {
+          if (state.selected) {
+            state.selected = null;
+            render(uid, state);
+            announce(uid, "Selection cancelled");
+          }
+          return;
+        }
+
+        if (pill && pill.dataset.ddmUid === uid && (key === "Enter" || key === " ")) {
+          e.preventDefault();
+          pill.click();
+          return;
+        }
+
+        if (zone && zone.dataset.ddmUid === uid && (key === "Enter" || key === " ")) {
+          e.preventDefault();
+          zone.click();
+        }
+      });
+
+      // ── Check button ─────────────────────────────────────────────────────
+
+      const checkBtn = document.getElementById(`${uid}-check`) as HTMLButtonElement | null;
+      const resetBtn = document.getElementById(`${uid}-reset`) as HTMLButtonElement | null;
+      const resultEl = document.getElementById(`${uid}-result`);
+
+      checkBtn?.addEventListener("click", () => {
+        if (state.checked) return;
+        state.checked = true;
+        state.selected = null;
+
+        const total = state.items.length;
+        let correct = 0;
+        state.itemOrder.forEach((id) => {
+          const cat = state.placements[id];
+          if (cat !== null && state.items[idxFromItemId(id)].category === cat) correct++;
+        });
+
+        render(uid, state);
+
+        if (checkBtn) {
+          checkBtn.disabled = true;
+          checkBtn.setAttribute("aria-disabled", "true");
+        }
+        if (resetBtn) resetBtn.classList.remove("hidden");
+
+        if (resultEl) {
+          resultEl.classList.remove("hidden");
+          if (correct === total) {
+            resultEl.className = [
+              "mb-4", "px-4", "py-3", "rounded-lg", "text-sm", "font-medium",
+              "bg-green-50", "dark:bg-green-900/30",
+              "border", "border-green-400", "dark:border-green-600",
+              "text-green-800", "dark:text-green-200",
+            ].join(" ");
+            resultEl.textContent = `All ${total} correct! Great work.`;
+          } else {
+            resultEl.className = [
+              "mb-4", "px-4", "py-3", "rounded-lg", "text-sm", "font-medium",
+              "bg-amber-50", "dark:bg-amber-900/30",
+              "border", "border-amber-400", "dark:border-amber-600",
+              "text-amber-800", "dark:text-amber-200",
+            ].join(" ");
+            resultEl.textContent = `${correct} of ${total} correct. Review the highlighted items and try again.`;
+          }
+        }
+
+        announce(uid, `Results: ${correct} of ${total} correct.`);
+      });
+
+      // ── Reset button ─────────────────────────────────────────────────────
+
+      resetBtn?.addEventListener("click", () => {
+        state.checked = false;
+        state.selected = null;
+
+        // Return all to pool and re-shuffle
+        state.itemOrder = shuffleArray([...state.itemOrder]);
+        state.itemOrder.forEach((id) => (state.placements[id] = null));
+
+        // Clear zone border overrides
+        categories.forEach((cat) => {
+          const zoneId = makeZoneId(uid, cat);
+          const zone = document.getElementById(zoneId);
+          if (zone) {
+            zone.classList.remove("border-green-400", "border-red-400", "border-teal-400");
+            zone.classList.add("border-gray-200");
+          }
+        });
+
+        render(uid, state);
+
+        if (checkBtn) {
+          checkBtn.disabled = true;
+          checkBtn.setAttribute("aria-disabled", "true");
+        }
+        if (resetBtn) resetBtn.classList.add("hidden");
+
+        if (resultEl) {
+          resultEl.classList.add("hidden");
+          resultEl.textContent = "";
+        }
+
+        announce(uid, "Exercise reset. All items returned to pool.");
+      });
+    });
+  }
+
+  // Run on initial load and after Astro view transitions
+  initDragDropMatch();
+  document.addEventListener("astro:page-load", initDragDropMatch);
+</script>
