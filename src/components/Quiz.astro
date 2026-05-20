@@ -84,6 +84,8 @@ const dataJson = JSON.stringify({ sectionId, questions });
 </div>
 
 <script>
+  import { awardQuizXP } from "../lib/xpStore";
+
   // ─── Types ────────────────────────────────────────────────────────────────
 
   interface MultipleChoiceQuestion {
@@ -797,6 +799,9 @@ const dataJson = JSON.stringify({ sectionId, questions });
     } catch (e) {
       // localStorage may be unavailable
     }
+
+    // Award XP for completing the quiz
+    awardQuizXP(state.data.sectionId, percentage === 100);
 
     // Score header
     const scoreCard = document.createElement("div");
