@@ -1,0 +1,43 @@
+---
+// src/components/BadgeDisplay.astro — Inline badge icon for the mastery badge system
+
+interface Props {
+  tier: 'bronze' | 'silver' | 'gold';
+  size?: 'sm' | 'md';
+}
+
+const { tier, size = 'md' } = Astro.props;
+
+const tierConfig = {
+  bronze: {
+    letter: 'B',
+    classes: 'bg-amber-700 dark:bg-amber-800 text-white',
+  },
+  silver: {
+    letter: 'S',
+    classes: 'bg-slate-400 dark:bg-slate-500 text-white',
+  },
+  gold: {
+    letter: 'G',
+    classes: 'bg-amber-400 dark:bg-amber-500 text-amber-900 dark:text-amber-950',
+  },
+} as const;
+
+const sizeClasses = {
+  sm: 'w-5 h-5 text-[10px]',
+  md: 'w-7 h-7 text-sm',
+} as const;
+
+const config = tierConfig[tier];
+const sizeClass = sizeClasses[size];
+const ariaLabel = `${tier[0].toUpperCase() + tier.slice(1)} badge`;
+---
+
+<span
+  class={`inline-flex items-center justify-center rounded-full font-bold leading-none ${config.classes} ${sizeClass}`}
+  role="img"
+  aria-label={ariaLabel}
+  title={ariaLabel}
+>
+  {config.letter}
+</span>

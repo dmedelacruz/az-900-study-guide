@@ -85,6 +85,7 @@ const dataJson = JSON.stringify({ sectionId, questions });
 
 <script>
   import { awardQuizXP } from "../lib/xpStore";
+  import { awardBadge } from "../lib/badgeStore";
 
   // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -833,6 +834,49 @@ const dataJson = JSON.stringify({ sectionId, questions });
       ? "Great job! You're on the right track."
       : "Keep studying and try again!";
     scoreCard.appendChild(scoreSub);
+
+    // Badge award
+    const badgeResult = awardBadge(state.data.sectionId, percentage);
+    if (badgeResult) {
+      const badgeContainer = document.createElement("div");
+      badgeContainer.className = "mt-3 flex items-center justify-center gap-2";
+
+      const badgeSpan = document.createElement("span");
+      const tierStyles: Record<"bronze" | "silver" | "gold", { classes: string; letter: string; label: string }> = {
+        bronze: {
+          classes: "bg-amber-700 dark:bg-amber-800 text-white",
+          letter: "B",
+          label: "Bronze badge",
+        },
+        silver: {
+          classes: "bg-slate-400 dark:bg-slate-500 text-white",
+          letter: "S",
+          label: "Silver badge",
+        },
+        gold: {
+          classes: "bg-amber-400 dark:bg-amber-500 text-amber-900 dark:text-amber-950",
+          letter: "G",
+          label: "Gold badge",
+        },
+      };
+      const style = tierStyles[badgeResult.tier];
+      badgeSpan.className = `w-7 h-7 text-sm inline-flex items-center justify-center rounded-full font-bold leading-none ${style.classes}`;
+      badgeSpan.setAttribute("role", "img");
+      badgeSpan.setAttribute("aria-label", style.label);
+      badgeSpan.setAttribute("title", style.label);
+      badgeSpan.textContent = style.letter;
+      badgeContainer.appendChild(badgeSpan);
+
+      const tierName = badgeResult.tier.charAt(0).toUpperCase() + badgeResult.tier.slice(1);
+      const badgeMsg = document.createElement("span");
+      badgeMsg.className = "text-sm font-medium text-gray-700 dark:text-gray-300";
+      badgeMsg.textContent = badgeResult.isUpgrade
+        ? `Badge upgraded to ${tierName}!`
+        : `You earned a ${tierName} badge!`;
+      badgeContainer.appendChild(badgeMsg);
+
+      scoreCard.appendChild(badgeContainer);
+    }
 
     content.appendChild(scoreCard);
 
