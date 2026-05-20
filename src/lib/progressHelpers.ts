@@ -3,8 +3,7 @@
 import { getTotalXP, getXPHistory, type XPEntry } from './xpStore';
 import { getAllBadges, type BadgeEntry, type BadgeTier } from './badgeStore';
 import { getStreak } from './streakStore';
-
-const SECTIONS_READ_KEY = 'az900-sections-read';
+import { getReadSections, getAllQuizScores, type QuizScore } from './progressStore';
 
 export interface DomainProgress {
   domain: string;
@@ -15,6 +14,7 @@ export interface DomainProgress {
     href: string;
     isRead: boolean;
     badge: { tier: BadgeTier; percentage: number } | null;
+    quizScore: QuizScore | null;
   }[];
   readCount: number;
   totalCount: number;
@@ -29,6 +29,7 @@ export interface DashboardData {
   overallTotalCount: number;
   badgeCounts: { bronze: number; silver: number; gold: number };
   weakSections: { id: string; title: string; href: string; percentage: number }[];
+  quizScores: Record<string, QuizScore>;
 }
 
 export interface SectionInput {
@@ -43,27 +44,13 @@ export interface DomainInput {
   sections: SectionInput[];
 }
 
-function loadReadSections(): Set<string> {
-  try {
-    const raw = localStorage.getItem(SECTIONS_READ_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as unknown;
-      if (Array.isArray(parsed)) {
-        return new Set(parsed as string[]);
-      }
-    }
-  } catch {
-    // localStorage unavailable or corrupted
-  }
-  return new Set();
-}
-
 export function getDashboardData(domainInputs: DomainInput[]): DashboardData {
   const totalXP = getTotalXP();
   const xpHistory = getXPHistory();
   const streak = getStreak();
   const allBadges = getAllBadges();
-  const readSections = loadReadSections();
+  const readSections = getReadSections();
+  const quizScores = getAllQuizScores();
 
   let overallReadCount = 0;
   let overallTotalCount = 0;
@@ -75,6 +62,7 @@ export function getDashboardData(domainInputs: DomainInput[]): DashboardData {
       const isRead = readSections.has(s.id);
       const badgeEntry = allBadges[s.id] ?? null;
       const badge = badgeEntry ? { tier: badgeEntry.tier, percentage: badgeEntry.percentage } : null;
+      const quizScore = quizScores[s.id] ?? null;
 
       if (badge) {
         badgeCounts[badge.tier]++;
@@ -83,7 +71,7 @@ export function getDashboardData(domainInputs: DomainInput[]): DashboardData {
         }
       }
 
-      return { id: s.id, title: s.title, href: s.href, isRead, badge };
+      return { id: s.id, title: s.title, href: s.href, isRead, badge, quizScore };
     });
 
     const readCount = sections.filter((s) => s.isRead).length;
@@ -110,5 +98,6 @@ export function getDashboardData(domainInputs: DomainInput[]): DashboardData {
     overallTotalCount,
     badgeCounts,
     weakSections,
+    quizScores,
   };
 }

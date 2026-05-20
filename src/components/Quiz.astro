@@ -86,6 +86,7 @@ const dataJson = JSON.stringify({ sectionId, questions });
 <script>
   import { awardQuizXP } from "../lib/xpStore";
   import { awardBadge } from "../lib/badgeStore";
+  import { saveQuizScore } from "../lib/progressStore";
 
   // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -789,17 +790,8 @@ const dataJson = JSON.stringify({ sectionId, questions });
     const total = state.results.length;
     const percentage = Math.round((correctCount / total) * 100);
 
-    // Save to localStorage
-    try {
-      localStorage.setItem(`quiz-score-${state.data.sectionId}`, JSON.stringify({
-        score: correctCount,
-        total: total,
-        percentage: percentage,
-        timestamp: Date.now(),
-      }));
-    } catch {
-      // localStorage may be unavailable
-    }
+    // Save quiz score
+    saveQuizScore(state.data.sectionId, correctCount, total);
 
     // Award XP for completing the quiz
     awardQuizXP(state.data.sectionId, percentage === 100);

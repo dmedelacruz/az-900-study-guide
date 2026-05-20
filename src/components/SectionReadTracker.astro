@@ -26,32 +26,9 @@ const { sectionId } = Astro.props;
 
 <script>
   import { awardReadingXP } from '../lib/xpStore';
+  import { isSectionRead, markSectionRead, unmarkSectionRead } from '../lib/progressStore';
 
-  const SECTIONS_READ_KEY = 'az900-sections-read';
   const SCROLL_THRESHOLD = 0.8;
-
-  function loadReadSections(): Set<string> {
-    try {
-      const raw = localStorage.getItem(SECTIONS_READ_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as unknown;
-        if (Array.isArray(parsed)) {
-          return new Set(parsed as string[]);
-        }
-      }
-    } catch {
-      // localStorage unavailable or corrupted — start fresh
-    }
-    return new Set();
-  }
-
-  function saveReadSections(sections: Set<string>): void {
-    try {
-      localStorage.setItem(SECTIONS_READ_KEY, JSON.stringify([...sections]));
-    } catch {
-      // localStorage unavailable — silently ignore
-    }
-  }
 
   function markAsRead(
     sectionId: string,
@@ -66,9 +43,7 @@ const { sectionId } = Astro.props;
     label.classList.add('text-green-600', 'dark:text-green-400');
     label.classList.remove('text-gray-500', 'dark:text-gray-400');
 
-    const readSections = loadReadSections();
-    readSections.add(sectionId);
-    saveReadSections(readSections);
+    markSectionRead(sectionId);
 
     if (awardXP) {
       awardReadingXP(sectionId);
@@ -83,9 +58,7 @@ const { sectionId } = Astro.props;
     label.classList.remove('text-green-600', 'dark:text-green-400');
     label.classList.add('text-gray-500', 'dark:text-gray-400');
 
-    const readSections = loadReadSections();
-    readSections.delete(sectionId);
-    saveReadSections(readSections);
+    unmarkSectionRead(sectionId);
   }
 
   function initTracker(): void {
@@ -103,8 +76,7 @@ const { sectionId } = Astro.props;
       if (!checkbox || !label) return;
 
       // Restore persisted read state (no XP re-award)
-      const readSections = loadReadSections();
-      if (readSections.has(sectionId)) {
+      if (isSectionRead(sectionId)) {
         checkbox.checked = true;
         label.textContent = 'Section read \u2713';
         label.classList.add('text-green-600', 'dark:text-green-400');
@@ -132,7 +104,7 @@ const { sectionId } = Astro.props;
       });
 
       // Only register scroll listener if section is not already read
-      if (!readSections.has(sectionId)) {
+      if (!isSectionRead(sectionId)) {
         window.addEventListener('scroll', scrollHandler, { passive: true });
       }
     });
