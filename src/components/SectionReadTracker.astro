@@ -1,0 +1,142 @@
+---
+// src/components/SectionReadTracker.astro — Scroll-based section read tracker with XP award
+
+interface Props {
+  sectionId: string;
+}
+
+const { sectionId } = Astro.props;
+---
+
+<div
+  data-section-id={sectionId}
+  data-component="section-read-tracker"
+  class="mt-8 flex items-center gap-2"
+>
+  <label class="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-500 dark:text-gray-400">
+    <input
+      type="checkbox"
+      data-read-checkbox
+      class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-green-500 accent-green-500 cursor-pointer"
+      aria-label="Mark section as read"
+    />
+    <span data-read-label>Mark section as read</span>
+  </label>
+</div>
+
+<script>
+  import { awardReadingXP } from '../lib/xpStore';
+
+  const SECTIONS_READ_KEY = 'az900-sections-read';
+  const SCROLL_THRESHOLD = 0.8;
+
+  function loadReadSections(): Set<string> {
+    try {
+      const raw = localStorage.getItem(SECTIONS_READ_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as unknown;
+        if (Array.isArray(parsed)) {
+          return new Set(parsed as string[]);
+        }
+      }
+    } catch {
+      // localStorage unavailable or corrupted — start fresh
+    }
+    return new Set();
+  }
+
+  function saveReadSections(sections: Set<string>): void {
+    try {
+      localStorage.setItem(SECTIONS_READ_KEY, JSON.stringify([...sections]));
+    } catch {
+      // localStorage unavailable — silently ignore
+    }
+  }
+
+  function markAsRead(
+    sectionId: string,
+    checkbox: HTMLInputElement,
+    label: HTMLElement,
+    awardXP: boolean
+  ): void {
+    if (checkbox.checked) return; // already marked
+
+    checkbox.checked = true;
+    label.textContent = 'Section read \u2713';
+    label.classList.add('text-green-600', 'dark:text-green-400');
+    label.classList.remove('text-gray-500', 'dark:text-gray-400');
+
+    const readSections = loadReadSections();
+    readSections.add(sectionId);
+    saveReadSections(readSections);
+
+    if (awardXP) {
+      awardReadingXP(sectionId);
+    }
+  }
+
+  function unmarkAsRead(
+    sectionId: string,
+    label: HTMLElement
+  ): void {
+    label.textContent = 'Mark section as read';
+    label.classList.remove('text-green-600', 'dark:text-green-400');
+    label.classList.add('text-gray-500', 'dark:text-gray-400');
+
+    const readSections = loadReadSections();
+    readSections.delete(sectionId);
+    saveReadSections(readSections);
+  }
+
+  function initTracker(): void {
+    const wrapper = document.querySelector<HTMLElement>('[data-component="section-read-tracker"]');
+    if (!wrapper) return;
+
+    const sectionId = wrapper.dataset.sectionId;
+    if (!sectionId) return;
+
+    const checkbox = wrapper.querySelector<HTMLInputElement>('[data-read-checkbox]');
+    const label = wrapper.querySelector<HTMLElement>('[data-read-label]');
+    if (!checkbox || !label) return;
+
+    // Restore persisted read state (no XP re-award)
+    const readSections = loadReadSections();
+    if (readSections.has(sectionId)) {
+      checkbox.checked = true;
+      label.textContent = 'Section read \u2713';
+      label.classList.add('text-green-600', 'dark:text-green-400');
+      label.classList.remove('text-gray-500', 'dark:text-gray-400');
+    }
+
+    // Manual toggle handler
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        markAsRead(sectionId, checkbox, label, /* awardXP */ true);
+        // No need for scroll listener if manually checked
+        window.removeEventListener('scroll', scrollHandler);
+      } else {
+        unmarkAsRead(sectionId, label);
+      }
+    });
+
+    // Scroll-based auto-detection
+    function scrollHandler(): void {
+      const scrolled = window.scrollY + window.innerHeight;
+      const total = document.documentElement.scrollHeight;
+      if (scrolled / total >= SCROLL_THRESHOLD) {
+        markAsRead(sectionId!, checkbox!, label!, /* awardXP */ true);
+        // Threshold reached — clean up listener for performance
+        window.removeEventListener('scroll', scrollHandler);
+      }
+    }
+
+    // Only register scroll listener if section is not already read
+    if (!readSections.has(sectionId)) {
+      window.addEventListener('scroll', scrollHandler, { passive: true });
+    }
+  }
+
+  // Init on first load and on Astro client-side navigation
+  initTracker();
+  document.addEventListener('astro:page-load', initTracker);
+</script>

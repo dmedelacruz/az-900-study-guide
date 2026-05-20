@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import SectionReadTracker from '../../components/SectionReadTracker.astro';
 
 export async function getStaticPaths() {
   const sections = await getCollection('sections');
@@ -19,4 +20,5 @@ const { Content } = await render(entry);
   <article class="prose prose-blue dark:prose-invert max-w-none">
     <Content />
   </article>
+  <SectionReadTracker sectionId={entry.id} />
 </BaseLayout>
