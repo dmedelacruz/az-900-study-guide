@@ -1,0 +1,215 @@
+---
+// src/pages/dashboard.astro — Progress dashboard page
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { navData } from '../data/navData';
+
+// Build domain inputs for the client-side script (serialized as JSON)
+const domainInputs = navData.map((group) => ({
+  domain: group.domain,
+  weight: group.weight,
+  sections: group.sections.map((s) => {
+    // Extract section ID from href: e.g. "/az-900-study-guide/sections/1-1-define-cloud-computing/" -> "1-1-define-cloud-computing"
+    const parts = s.href.split('/').filter(Boolean);
+    return {
+      id: parts[parts.length - 1] || s.href,
+      title: s.title,
+      href: s.href,
+    };
+  }),
+}));
+---
+
+<BaseLayout title="Progress Dashboard | AZ-900 Study Guide">
+  <h1 class="mb-8">Progress Dashboard</h1>
+
+  <!-- Loading state -->
+  <div id="dashboard-loading" class="text-gray-500 dark:text-gray-400">Loading your progress...</div>
+
+  <!-- Dashboard content (hidden until JS populates it) -->
+  <div id="dashboard-content" class="hidden space-y-10">
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+        <div id="stat-xp" class="text-2xl font-bold text-blue-600 dark:text-blue-400">0</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Total XP</div>
+      </div>
+      <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+        <div id="stat-streak" class="text-2xl font-bold text-orange-500 dark:text-orange-400">0</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Day Streak</div>
+      </div>
+      <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+        <div id="stat-read" class="text-2xl font-bold text-green-600 dark:text-green-400">0/0</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Sections Read</div>
+      </div>
+      <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+        <div id="stat-longest" class="text-2xl font-bold text-purple-600 dark:text-purple-400">0</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Longest Streak</div>
+      </div>
+    </div>
+
+    <!-- Badge summary -->
+    <div>
+      <h2 class="mb-4">Mastery Badges</h2>
+      <div class="flex items-center gap-6">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-full font-bold text-sm bg-amber-400 dark:bg-amber-500 text-amber-900 dark:text-amber-950" role="img" aria-label="Gold badge">G</span>
+          <span id="badge-gold" class="text-sm font-medium text-gray-700 dark:text-gray-300">0</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-full font-bold text-sm bg-slate-400 dark:bg-slate-500 text-white" role="img" aria-label="Silver badge">S</span>
+          <span id="badge-silver" class="text-sm font-medium text-gray-700 dark:text-gray-300">0</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-full font-bold text-sm bg-amber-700 dark:bg-amber-800 text-white" role="img" aria-label="Bronze badge">B</span>
+          <span id="badge-bronze" class="text-sm font-medium text-gray-700 dark:text-gray-300">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Domain progress -->
+    <div>
+      <h2 class="mb-4">Domain Progress</h2>
+      <div id="domain-progress" class="space-y-6"></div>
+    </div>
+
+    <!-- Weak areas -->
+    <div id="weak-areas-section" class="hidden">
+      <h2 class="mb-4">Areas to Review</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">Sections where you scored below 85%:</p>
+      <ul id="weak-areas-list" class="space-y-2 list-none pl-0"></ul>
+    </div>
+
+  </div>
+
+  <!-- Domain data for client-side script -->
+  <script is:inline define:vars={{ domainInputs }}>
+    window.__dashboardDomainInputs = domainInputs;
+  </script>
+
+  <script>
+    import { getDashboardData, type DomainInput } from '../lib/progressHelpers';
+
+    function renderDashboard(): void {
+      const domainInputs = (window as any).__dashboardDomainInputs as DomainInput[];
+      const data = getDashboardData(domainInputs);
+
+      // Stats
+      document.getElementById('stat-xp')!.textContent = data.totalXP.toLocaleString();
+      document.getElementById('stat-streak')!.textContent = String(data.streak.currentStreak);
+      document.getElementById('stat-read')!.textContent = `${data.overallReadCount}/${data.overallTotalCount}`;
+      document.getElementById('stat-longest')!.textContent = String(data.streak.longestStreak);
+
+      // Badges
+      document.getElementById('badge-gold')!.textContent = String(data.badgeCounts.gold);
+      document.getElementById('badge-silver')!.textContent = String(data.badgeCounts.silver);
+      document.getElementById('badge-bronze')!.textContent = String(data.badgeCounts.bronze);
+
+      // Domain progress
+      const container = document.getElementById('domain-progress')!;
+      container.innerHTML = '';
+
+      const badgeTierClasses: Record<string, string> = {
+        gold: 'bg-amber-400 dark:bg-amber-500 text-amber-900 dark:text-amber-950',
+        silver: 'bg-slate-400 dark:bg-slate-500 text-white',
+        bronze: 'bg-amber-700 dark:bg-amber-800 text-white',
+      };
+
+      for (const domain of data.domains) {
+        const pct = domain.totalCount > 0 ? Math.round((domain.readCount / domain.totalCount) * 100) : 0;
+
+        const div = document.createElement('div');
+
+        // Header row
+        const header = document.createElement('div');
+        header.className = 'flex items-baseline justify-between mb-1';
+        const h3 = document.createElement('h3');
+        h3.className = 'text-base font-semibold text-gray-900 dark:text-gray-100';
+        h3.textContent = domain.domain;
+        const countSpan = document.createElement('span');
+        countSpan.className = 'text-sm text-gray-500 dark:text-gray-400';
+        countSpan.textContent = `${domain.readCount}/${domain.totalCount} read`;
+        header.appendChild(h3);
+        header.appendChild(countSpan);
+        div.appendChild(header);
+
+        // Progress bar
+        const barOuter = document.createElement('div');
+        barOuter.className = 'w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-3';
+        const barInner = document.createElement('div');
+        barInner.className = 'bg-blue-600 dark:bg-blue-500 h-2.5 rounded-full transition-all duration-300';
+        barInner.style.width = `${pct}%`;
+        barOuter.appendChild(barInner);
+        div.appendChild(barOuter);
+
+        // Section list
+        const list = document.createElement('ul');
+        list.className = 'grid gap-1 list-none pl-0 mb-0';
+        for (const s of domain.sections) {
+          const li = document.createElement('li');
+          li.className = 'flex items-center gap-2 text-sm';
+
+          const icon = document.createElement('span');
+          icon.className = s.isRead ? 'text-green-500 text-sm' : 'text-gray-300 dark:text-gray-600 text-sm';
+          icon.setAttribute('aria-label', s.isRead ? 'Read' : 'Not read');
+          icon.setAttribute('role', 'img');
+          icon.innerHTML = s.isRead ? '&#10003;' : '&#8226;';
+          li.appendChild(icon);
+
+          const link = document.createElement('a');
+          link.href = s.href;
+          link.className = 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 no-underline';
+          link.textContent = s.title;
+          li.appendChild(link);
+
+          if (s.badge) {
+            const badge = document.createElement('span');
+            badge.className = `inline-flex items-center justify-center w-5 h-5 rounded-full font-bold text-[10px] ${badgeTierClasses[s.badge.tier]}`;
+            badge.setAttribute('role', 'img');
+            badge.setAttribute('aria-label', `${s.badge.tier[0].toUpperCase() + s.badge.tier.slice(1)} badge`);
+            badge.textContent = s.badge.tier[0].toUpperCase();
+            li.appendChild(badge);
+
+            const pctLabel = document.createElement('span');
+            pctLabel.className = 'text-xs text-gray-400';
+            pctLabel.textContent = `${s.badge.percentage}%`;
+            li.appendChild(pctLabel);
+          }
+
+          list.appendChild(li);
+        }
+        div.appendChild(list);
+        container.appendChild(div);
+      }
+
+      // Weak areas
+      if (data.weakSections.length > 0) {
+        const section = document.getElementById('weak-areas-section')!;
+        section.classList.remove('hidden');
+        const list = document.getElementById('weak-areas-list')!;
+        list.innerHTML = '';
+        for (const weak of data.weakSections) {
+          const li = document.createElement('li');
+          const link = document.createElement('a');
+          link.href = weak.href;
+          link.className = 'text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 no-underline';
+          link.textContent = weak.title;
+          li.appendChild(link);
+          const pctSpan = document.createElement('span');
+          pctSpan.className = 'text-xs text-red-500 dark:text-red-400 font-medium ml-2';
+          pctSpan.textContent = `${weak.percentage}%`;
+          li.appendChild(pctSpan);
+          list.appendChild(li);
+        }
+      }
+
+      // Show content, hide loading
+      document.getElementById('dashboard-loading')!.classList.add('hidden');
+      document.getElementById('dashboard-content')!.classList.remove('hidden');
+    }
+
+    renderDashboard();
+    document.addEventListener('astro:page-load', renderDashboard);
+  </script>
+</BaseLayout>
