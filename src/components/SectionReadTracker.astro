@@ -89,51 +89,53 @@ const { sectionId } = Astro.props;
   }
 
   function initTracker(): void {
-    const wrapper = document.querySelector<HTMLElement>('[data-component="section-read-tracker"]');
-    if (!wrapper) return;
+    const wrappers = document.querySelectorAll<HTMLElement>('[data-component="section-read-tracker"]');
 
-    const sectionId = wrapper.dataset.sectionId;
-    if (!sectionId) return;
+    wrappers.forEach((wrapper) => {
+      if (wrapper.dataset.init === 'true') return;
+      wrapper.dataset.init = 'true';
 
-    const checkbox = wrapper.querySelector<HTMLInputElement>('[data-read-checkbox]');
-    const label = wrapper.querySelector<HTMLElement>('[data-read-label]');
-    if (!checkbox || !label) return;
+      const sectionId = wrapper.dataset.sectionId;
+      if (!sectionId) return;
 
-    // Restore persisted read state (no XP re-award)
-    const readSections = loadReadSections();
-    if (readSections.has(sectionId)) {
-      checkbox.checked = true;
-      label.textContent = 'Section read \u2713';
-      label.classList.add('text-green-600', 'dark:text-green-400');
-      label.classList.remove('text-gray-500', 'dark:text-gray-400');
-    }
+      const checkbox = wrapper.querySelector<HTMLInputElement>('[data-read-checkbox]');
+      const label = wrapper.querySelector<HTMLElement>('[data-read-label]');
+      if (!checkbox || !label) return;
 
-    // Manual toggle handler
-    checkbox.addEventListener('change', () => {
-      if (checkbox.checked) {
-        markAsRead(sectionId, checkbox, label, /* awardXP */ true);
-        // No need for scroll listener if manually checked
-        window.removeEventListener('scroll', scrollHandler);
-      } else {
-        unmarkAsRead(sectionId, label);
+      // Restore persisted read state (no XP re-award)
+      const readSections = loadReadSections();
+      if (readSections.has(sectionId)) {
+        checkbox.checked = true;
+        label.textContent = 'Section read \u2713';
+        label.classList.add('text-green-600', 'dark:text-green-400');
+        label.classList.remove('text-gray-500', 'dark:text-gray-400');
+      }
+
+      // Scroll-based auto-detection
+      function scrollHandler(): void {
+        const scrolled = window.scrollY + window.innerHeight;
+        const total = document.documentElement.scrollHeight;
+        if (scrolled / total >= SCROLL_THRESHOLD) {
+          markAsRead(sectionId!, checkbox!, label!, /* awardXP */ true);
+          window.removeEventListener('scroll', scrollHandler);
+        }
+      }
+
+      // Manual toggle handler
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) {
+          markAsRead(sectionId, checkbox, label, /* awardXP */ true);
+          window.removeEventListener('scroll', scrollHandler);
+        } else {
+          unmarkAsRead(sectionId, label);
+        }
+      });
+
+      // Only register scroll listener if section is not already read
+      if (!readSections.has(sectionId)) {
+        window.addEventListener('scroll', scrollHandler, { passive: true });
       }
     });
-
-    // Scroll-based auto-detection
-    function scrollHandler(): void {
-      const scrolled = window.scrollY + window.innerHeight;
-      const total = document.documentElement.scrollHeight;
-      if (scrolled / total >= SCROLL_THRESHOLD) {
-        markAsRead(sectionId!, checkbox!, label!, /* awardXP */ true);
-        // Threshold reached — clean up listener for performance
-        window.removeEventListener('scroll', scrollHandler);
-      }
-    }
-
-    // Only register scroll listener if section is not already read
-    if (!readSections.has(sectionId)) {
-      window.addEventListener('scroll', scrollHandler, { passive: true });
-    }
   }
 
   // Init on first load and on Astro client-side navigation

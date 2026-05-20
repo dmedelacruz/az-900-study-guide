@@ -125,19 +125,12 @@
       toast.addEventListener('animationend', () => clearTimeout(removeTimer), { once: true });
     }, DISPLAY_MS);
 
-    // If the page unloads before the timer fires, clean up
-    toast.dataset.dismissTimer = String(dismissTimer);
   }
 
-  function initXpToast(): void {
-    document.addEventListener('xp:earned', (e: Event) => {
-      const detail = (e as CustomEvent<XpEarnedDetail>).detail;
-      if (!detail) return;
-      showToast(detail);
-    });
-  }
-
-  initXpToast();
-  // Re-register listener on Astro page transitions
-  document.addEventListener('astro:page-load', initXpToast);
+  // Listen once on document — Astro module scripts run once so no duplicate risk
+  document.addEventListener('xp:earned', (e: Event) => {
+    const detail = (e as CustomEvent<XpEarnedDetail>).detail;
+    if (!detail) return;
+    showToast(detail);
+  });
 </script>
