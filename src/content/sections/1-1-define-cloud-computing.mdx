@@ -119,6 +119,62 @@ For the AZ-900 exam, remember the mnemonic **"On Broad Resource Rapid Measured"*
   ]}
 />
 
+import Quiz from '../../components/Quiz.astro';
+
+<Quiz
+  title="Cloud Computing Basics"
+  sectionId="1-1"
+  questions={[
+    {
+      type: "multiple-choice",
+      question: "Which of the following best describes cloud computing?",
+      options: [
+        "Installing software on a local computer",
+        "Delivery of computing services over the internet",
+        "Using a private server room within your office",
+        "Buying hardware to increase compute capacity"
+      ],
+      correct: 1,
+      explanation: "Cloud computing is the delivery of computing services—including servers, storage, databases, networking, software—over the internet to offer faster innovation, flexible resources, and economies of scale."
+    },
+    {
+      type: "true-false",
+      question: "In cloud computing, the customer is always responsible for their data and access management, regardless of the service model.",
+      correct: true,
+      explanation: "Regardless of whether you use IaaS, PaaS, or SaaS, you are always responsible for protecting your data and managing access (identities and accounts)."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which cloud characteristic allows resources to be provisioned and released automatically to match demand?",
+      options: [
+        "Broad network access",
+        "Resource pooling",
+        "Rapid elasticity",
+        "Measured service"
+      ],
+      correct: 2,
+      explanation: "Rapid elasticity means capabilities can be elastically provisioned and released—in some cases automatically—to scale rapidly outward and inward with demand."
+    },
+    {
+      type: "matching",
+      question: "Match each cloud characteristic to its correct definition.",
+      pairs: [
+        { term: "On-demand self-service", definition: "Provision resources without requiring human interaction with the provider" },
+        { term: "Resource pooling", definition: "Provider resources serve multiple consumers using a multi-tenant model" },
+        { term: "Measured service", definition: "Resource usage is monitored, controlled, and billed transparently" },
+        { term: "Broad network access", definition: "Resources are available over the network via standard mechanisms" }
+      ],
+      explanation: "These are the five essential characteristics of cloud computing defined by NIST. Understanding them helps distinguish true cloud services from traditional hosting."
+    },
+    {
+      type: "true-false",
+      question: "A multi-tenant model means each customer has their own dedicated physical hardware.",
+      correct: false,
+      explanation: "Multi-tenancy means a single instance of resources serves multiple customers (tenants), with each tenant's data isolated. Customers share physical hardware but their workloads are logically separated."
+    }
+  ]}
+/>
+
 <KeyTakeaways>
 - Cloud computing delivers computing services over the internet, enabling on-demand access to servers, storage, databases, networking, and more.
 - The five key characteristics are: on-demand self-service, broad network access, resource pooling, rapid elasticity, and measured service.

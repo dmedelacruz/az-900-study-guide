@@ -1,0 +1,1197 @@
+---
+// src/components/Quiz.astro
+
+interface MultipleChoiceQuestion {
+  type: "multiple-choice";
+  question: string;
+  options: string[];
+  correct: number;
+  explanation: string;
+}
+
+interface TrueFalseQuestion {
+  type: "true-false";
+  question: string;
+  correct: boolean;
+  explanation: string;
+}
+
+interface MatchingQuestion {
+  type: "matching";
+  question: string;
+  pairs: { term: string; definition: string }[];
+  explanation: string;
+}
+
+type QuizQuestion = MultipleChoiceQuestion | TrueFalseQuestion | MatchingQuestion;
+
+interface Props {
+  title?: string;
+  sectionId: string;
+  questions: QuizQuestion[];
+}
+
+const { title, sectionId, questions } = Astro.props;
+
+const uid = `quiz-${Math.random().toString(36).slice(2, 9)}`;
+const dataJson = JSON.stringify({ sectionId, questions });
+---
+
+<div
+  class="quiz-component my-10 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+  data-quiz-id={uid}
+  data-quiz-data={dataJson}
+>
+  {/* Header bar */}
+  <div class="flex items-center gap-2.5 px-5 py-3.5 bg-indigo-50 dark:bg-indigo-900/20 border-b border-gray-200 dark:border-gray-700">
+    <svg
+      class="w-5 h-5 flex-shrink-0 text-indigo-600 dark:text-indigo-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+      />
+    </svg>
+    <span class="text-sm font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-300">
+      Section Quiz
+    </span>
+    {title && (
+      <span class="text-sm font-medium text-gray-800 dark:text-gray-100 ml-1">
+        — {title}
+      </span>
+    )}
+  </div>
+
+  {/* Body */}
+  <div class="bg-white dark:bg-gray-900 p-5 sm:p-6">
+    {/* ARIA live region */}
+    <div
+      id={`${uid}-live`}
+      aria-live="polite"
+      aria-atomic="true"
+      class="sr-only"
+    ></div>
+
+    {/* Content rendered by JS */}
+    <div id={`${uid}-content`}></div>
+  </div>
+</div>
+
+<script>
+  // ─── Types ────────────────────────────────────────────────────────────────
+
+  interface MultipleChoiceQuestion {
+    type: "multiple-choice";
+    question: string;
+    options: string[];
+    correct: number;
+    explanation: string;
+  }
+
+  interface TrueFalseQuestion {
+    type: "true-false";
+    question: string;
+    correct: boolean;
+    explanation: string;
+  }
+
+  interface MatchingQuestion {
+    type: "matching";
+    question: string;
+    pairs: { term: string; definition: string }[];
+    explanation: string;
+  }
+
+  type QuizQuestion = MultipleChoiceQuestion | TrueFalseQuestion | MatchingQuestion;
+
+  interface QuizData {
+    sectionId: string;
+    questions: QuizQuestion[];
+  }
+
+  interface QuestionResult {
+    question: string;
+    userAnswer: string;
+    correctAnswer: string;
+    correct: boolean;
+  }
+
+  interface QuizState {
+    data: QuizData;
+    questionOrder: number[];
+    currentIndex: number;
+    selectedOption: number | null;       // MC or TF selection
+    matchingState: MatchingState | null; // matching question state
+    answered: boolean;
+    results: QuestionResult[];
+    showResults: boolean;
+  }
+
+  interface MatchingState {
+    shuffledDefs: string[];
+    pairs: Map<number, number>; // termIndex -> defIndex
+    selectedTerm: number | null;
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  function announce(uid: string, message: string): void {
+    const live = document.getElementById(`${uid}-live`);
+    if (!live) return;
+    live.textContent = "";
+    requestAnimationFrame(() => {
+      live.textContent = message;
+    });
+  }
+
+  function shuffleArray<T>(arr: T[]): T[] {
+    const shuffled = [...arr];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
+
+  function createShuffledOrder(length: number): number[] {
+    return shuffleArray(Array.from({ length }, (_, i) => i));
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
+
+  function renderQuiz(uid: string, state: QuizState): void {
+    const content = document.getElementById(`${uid}-content`);
+    if (!content) return;
+    content.innerHTML = "";
+
+    if (state.showResults) {
+      renderResults(uid, state, content);
+      return;
+    }
+
+    const qIdx = state.questionOrder[state.currentIndex];
+    const question = state.data.questions[qIdx];
+    const total = state.questionOrder.length;
+    const current = state.currentIndex + 1;
+
+    // Progress bar
+    const progressWrap = document.createElement("div");
+    progressWrap.className = "mb-5";
+
+    const progressLabel = document.createElement("div");
+    progressLabel.className = "flex justify-between items-center mb-2 text-sm text-gray-600 dark:text-gray-400";
+
+    const qNumber = document.createElement("span");
+    qNumber.className = "font-medium";
+    qNumber.textContent = `Question ${current} of ${total}`;
+    progressLabel.appendChild(qNumber);
+
+    const scoreLabel = document.createElement("span");
+    const correctSoFar = state.results.filter(r => r.correct).length;
+    scoreLabel.textContent = `Score: ${correctSoFar}/${state.results.length}`;
+    progressLabel.appendChild(scoreLabel);
+
+    progressWrap.appendChild(progressLabel);
+
+    const progressBar = document.createElement("div");
+    progressBar.className = "w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden";
+    progressBar.setAttribute("role", "progressbar");
+    progressBar.setAttribute("aria-valuenow", String(current));
+    progressBar.setAttribute("aria-valuemin", "0");
+    progressBar.setAttribute("aria-valuemax", String(total));
+    progressBar.setAttribute("aria-label", `Question ${current} of ${total}`);
+
+    const progressFill = document.createElement("div");
+    const pct = Math.round((current / total) * 100);
+    progressFill.className = "h-full bg-indigo-500 dark:bg-indigo-400 rounded-full transition-all duration-300";
+    progressFill.style.width = `${pct}%`;
+    progressBar.appendChild(progressFill);
+    progressWrap.appendChild(progressBar);
+    content.appendChild(progressWrap);
+
+    // Question text
+    const questionEl = document.createElement("p");
+    questionEl.className = "text-base font-medium text-gray-800 dark:text-gray-100 leading-relaxed mb-5";
+    questionEl.textContent = question.question;
+    content.appendChild(questionEl);
+
+    // Render by type
+    if (question.type === "multiple-choice") {
+      renderMultipleChoice(uid, state, question, content);
+    } else if (question.type === "true-false") {
+      renderTrueFalse(uid, state, question, content);
+    } else if (question.type === "matching") {
+      renderMatching(uid, state, question, content);
+    }
+
+    // Feedback area
+    if (state.answered) {
+      renderFeedback(uid, state, question, content);
+    }
+  }
+
+  function renderMultipleChoice(
+    uid: string,
+    state: QuizState,
+    question: MultipleChoiceQuestion,
+    content: HTMLElement
+  ): void {
+    const optionsList = document.createElement("div");
+    optionsList.className = "space-y-2 mb-5";
+    optionsList.setAttribute("role", "radiogroup");
+    optionsList.setAttribute("aria-label", "Answer options");
+
+    question.options.forEach((option, idx) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.quizMcOption = String(idx);
+      btn.dataset.quizUid = uid;
+
+      const isSelected = state.selectedOption === idx;
+      const isCorrect = idx === question.correct;
+
+      const base = [
+        "w-full", "text-left", "px-4", "py-3",
+        "rounded-lg", "border-2",
+        "text-sm", "font-medium",
+        "transition-all", "duration-150",
+        "focus:outline-none", "focus:ring-2", "focus:ring-indigo-500", "focus:ring-offset-1",
+        "flex", "items-start", "gap-3",
+      ];
+
+      if (state.answered) {
+        btn.disabled = true;
+        if (isCorrect) {
+          base.push(
+            "border-green-500", "dark:border-green-400",
+            "bg-green-50", "dark:bg-green-900/20",
+            "text-green-900", "dark:text-green-100",
+            "cursor-default"
+          );
+        } else if (isSelected) {
+          base.push(
+            "border-amber-500", "dark:border-amber-400",
+            "bg-amber-50", "dark:bg-amber-900/20",
+            "text-amber-900", "dark:text-amber-100",
+            "cursor-default"
+          );
+        } else {
+          base.push(
+            "border-gray-200", "dark:border-gray-700",
+            "bg-gray-50", "dark:bg-gray-800/50",
+            "text-gray-500", "dark:text-gray-400",
+            "cursor-default", "opacity-60"
+          );
+        }
+      } else {
+        if (isSelected) {
+          base.push(
+            "border-indigo-500", "dark:border-indigo-400",
+            "bg-indigo-50", "dark:bg-indigo-900/20",
+            "text-indigo-900", "dark:text-indigo-100",
+            "cursor-pointer"
+          );
+        } else {
+          base.push(
+            "border-gray-200", "dark:border-gray-700",
+            "bg-white", "dark:bg-gray-800",
+            "text-gray-700", "dark:text-gray-200",
+            "hover:border-indigo-400", "dark:hover:border-indigo-500",
+            "hover:bg-indigo-50", "dark:hover:bg-indigo-900/20",
+            "cursor-pointer"
+          );
+        }
+      }
+
+      btn.className = base.join(" ");
+      btn.setAttribute("role", "radio");
+      btn.setAttribute("aria-checked", isSelected ? "true" : "false");
+
+      // Icon
+      const iconSpan = document.createElement("span");
+      iconSpan.setAttribute("aria-hidden", "true");
+      iconSpan.className = "flex-shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold border";
+
+      if (state.answered && isCorrect) {
+        iconSpan.className += " border-green-500 bg-green-500 text-white";
+        iconSpan.textContent = "\u2713";
+      } else if (state.answered && isSelected && !isCorrect) {
+        iconSpan.className += " border-amber-500 bg-amber-500 text-white";
+        iconSpan.textContent = "\u2717";
+      } else if (isSelected) {
+        iconSpan.className += " border-indigo-500 bg-indigo-500 text-white";
+        iconSpan.textContent = String.fromCharCode(65 + idx);
+      } else {
+        iconSpan.className += " border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800";
+        iconSpan.textContent = String.fromCharCode(65 + idx);
+      }
+
+      btn.appendChild(iconSpan);
+
+      const textSpan = document.createElement("span");
+      textSpan.className = "flex-1";
+      textSpan.textContent = option;
+      btn.appendChild(textSpan);
+
+      optionsList.appendChild(btn);
+    });
+
+    content.appendChild(optionsList);
+
+    // Check Answer button
+    if (!state.answered) {
+      renderCheckButton(uid, state.selectedOption !== null, content);
+    }
+  }
+
+  function renderTrueFalse(
+    uid: string,
+    state: QuizState,
+    question: TrueFalseQuestion,
+    content: HTMLElement
+  ): void {
+    const optionsList = document.createElement("div");
+    optionsList.className = "flex gap-3 mb-5";
+    optionsList.setAttribute("role", "radiogroup");
+    optionsList.setAttribute("aria-label", "True or False");
+
+    [true, false].forEach((val, idx) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.quizTfOption = val ? "true" : "false";
+      btn.dataset.quizUid = uid;
+
+      const isSelected = state.selectedOption === idx;
+      const isCorrect = question.correct === val;
+
+      const base = [
+        "flex-1", "px-5", "py-3",
+        "rounded-lg", "border-2",
+        "text-sm", "font-semibold",
+        "transition-all", "duration-150",
+        "focus:outline-none", "focus:ring-2", "focus:ring-indigo-500", "focus:ring-offset-1",
+        "text-center",
+      ];
+
+      if (state.answered) {
+        btn.disabled = true;
+        if (isCorrect) {
+          base.push(
+            "border-green-500", "dark:border-green-400",
+            "bg-green-50", "dark:bg-green-900/20",
+            "text-green-900", "dark:text-green-100",
+            "cursor-default"
+          );
+        } else if (isSelected) {
+          base.push(
+            "border-amber-500", "dark:border-amber-400",
+            "bg-amber-50", "dark:bg-amber-900/20",
+            "text-amber-900", "dark:text-amber-100",
+            "cursor-default"
+          );
+        } else {
+          base.push(
+            "border-gray-200", "dark:border-gray-700",
+            "bg-gray-50", "dark:bg-gray-800/50",
+            "text-gray-500", "dark:text-gray-400",
+            "cursor-default", "opacity-60"
+          );
+        }
+      } else {
+        if (isSelected) {
+          base.push(
+            "border-indigo-500", "dark:border-indigo-400",
+            "bg-indigo-50", "dark:bg-indigo-900/20",
+            "text-indigo-900", "dark:text-indigo-100",
+            "cursor-pointer"
+          );
+        } else {
+          base.push(
+            "border-gray-200", "dark:border-gray-700",
+            "bg-white", "dark:bg-gray-800",
+            "text-gray-700", "dark:text-gray-200",
+            "hover:border-indigo-400", "dark:hover:border-indigo-500",
+            "hover:bg-indigo-50", "dark:hover:bg-indigo-900/20",
+            "cursor-pointer"
+          );
+        }
+      }
+
+      btn.className = base.join(" ");
+      btn.setAttribute("role", "radio");
+      btn.setAttribute("aria-checked", isSelected ? "true" : "false");
+      btn.textContent = val ? "True" : "False";
+
+      optionsList.appendChild(btn);
+    });
+
+    content.appendChild(optionsList);
+
+    if (!state.answered) {
+      renderCheckButton(uid, state.selectedOption !== null, content);
+    }
+  }
+
+  function renderMatching(
+    uid: string,
+    state: QuizState,
+    question: MatchingQuestion,
+    content: HTMLElement
+  ): void {
+    if (!state.matchingState) return;
+    const ms = state.matchingState;
+
+    // Instructions
+    const instructions = document.createElement("p");
+    instructions.className = "text-sm text-gray-600 dark:text-gray-400 mb-4";
+    instructions.textContent = "Click a term, then click its matching definition to pair them.";
+    content.appendChild(instructions);
+
+    const grid = document.createElement("div");
+    grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5";
+
+    // Terms column
+    const termsCol = document.createElement("div");
+    termsCol.className = "space-y-2";
+
+    const termsLabel = document.createElement("p");
+    termsLabel.className = "text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2";
+    termsLabel.textContent = "Terms";
+    termsCol.appendChild(termsLabel);
+
+    question.pairs.forEach((pair, idx) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.quizMatchTerm = String(idx);
+      btn.dataset.quizUid = uid;
+
+      const isPaired = ms.pairs.has(idx);
+      const isActiveTerm = ms.selectedTerm === idx;
+
+      const base = [
+        "w-full", "text-left", "px-3", "py-2",
+        "rounded-lg", "border-2",
+        "text-sm", "font-medium",
+        "transition-all", "duration-150",
+        "focus:outline-none", "focus:ring-2", "focus:ring-indigo-500", "focus:ring-offset-1",
+      ];
+
+      if (state.answered) {
+        btn.disabled = true;
+        // Check if this term was correctly paired
+        const defIdx = ms.pairs.get(idx);
+        const correctDefText = pair.definition;
+        const userDefText = defIdx !== undefined ? ms.shuffledDefs[defIdx] : "";
+        const isCorrectPair = userDefText === correctDefText;
+
+        if (isCorrectPair) {
+          base.push(
+            "border-green-500", "dark:border-green-400",
+            "bg-green-50", "dark:bg-green-900/20",
+            "text-green-900", "dark:text-green-100",
+            "cursor-default"
+          );
+        } else {
+          base.push(
+            "border-amber-500", "dark:border-amber-400",
+            "bg-amber-50", "dark:bg-amber-900/20",
+            "text-amber-900", "dark:text-amber-100",
+            "cursor-default"
+          );
+        }
+      } else if (isActiveTerm) {
+        base.push(
+          "border-indigo-500", "dark:border-indigo-400",
+          "bg-indigo-50", "dark:bg-indigo-900/20",
+          "text-indigo-900", "dark:text-indigo-100",
+          "cursor-pointer"
+        );
+      } else if (isPaired) {
+        base.push(
+          "border-indigo-300", "dark:border-indigo-600",
+          "bg-indigo-50/50", "dark:bg-indigo-900/10",
+          "text-indigo-800", "dark:text-indigo-200",
+          "cursor-pointer"
+        );
+      } else {
+        base.push(
+          "border-gray-200", "dark:border-gray-700",
+          "bg-white", "dark:bg-gray-800",
+          "text-gray-700", "dark:text-gray-200",
+          "hover:border-indigo-400", "dark:hover:border-indigo-500",
+          "cursor-pointer"
+        );
+      }
+
+      btn.className = base.join(" ");
+
+      // Show pair number if paired
+      const termText = document.createElement("span");
+      if (isPaired) {
+        const pairNum = document.createElement("span");
+        pairNum.className = "inline-flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500 text-white text-xs font-bold mr-2";
+        pairNum.textContent = String(idx + 1);
+        btn.appendChild(pairNum);
+      }
+      termText.textContent = pair.term;
+      btn.appendChild(termText);
+
+      termsCol.appendChild(btn);
+    });
+
+    // Definitions column
+    const defsCol = document.createElement("div");
+    defsCol.className = "space-y-2";
+
+    const defsLabel = document.createElement("p");
+    defsLabel.className = "text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2";
+    defsLabel.textContent = "Definitions";
+    defsCol.appendChild(defsLabel);
+
+    ms.shuffledDefs.forEach((def, idx) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.quizMatchDef = String(idx);
+      btn.dataset.quizUid = uid;
+
+      // Check if this def is already paired
+      const pairedTermIdx = getPairedTermForDef(ms, idx);
+      const isPaired = pairedTermIdx !== null;
+
+      const base = [
+        "w-full", "text-left", "px-3", "py-2",
+        "rounded-lg", "border-2",
+        "text-sm",
+        "transition-all", "duration-150",
+        "focus:outline-none", "focus:ring-2", "focus:ring-indigo-500", "focus:ring-offset-1",
+      ];
+
+      if (state.answered) {
+        btn.disabled = true;
+        // Check if the term that paired with this def was correct
+        if (pairedTermIdx !== null) {
+          const correctDefText = question.pairs[pairedTermIdx].definition;
+          const isCorrectPair = def === correctDefText;
+          if (isCorrectPair) {
+            base.push(
+              "border-green-500", "dark:border-green-400",
+              "bg-green-50", "dark:bg-green-900/20",
+              "text-green-900", "dark:text-green-100",
+              "cursor-default"
+            );
+          } else {
+            base.push(
+              "border-amber-500", "dark:border-amber-400",
+              "bg-amber-50", "dark:bg-amber-900/20",
+              "text-amber-900", "dark:text-amber-100",
+              "cursor-default"
+            );
+          }
+        } else {
+          base.push(
+            "border-gray-200", "dark:border-gray-700",
+            "bg-gray-50", "dark:bg-gray-800/50",
+            "text-gray-500", "dark:text-gray-400",
+            "cursor-default", "opacity-60"
+          );
+        }
+      } else if (isPaired) {
+        base.push(
+          "border-indigo-300", "dark:border-indigo-600",
+          "bg-indigo-50/50", "dark:bg-indigo-900/10",
+          "text-indigo-800", "dark:text-indigo-200",
+          "cursor-pointer"
+        );
+      } else if (ms.selectedTerm !== null) {
+        // A term is selected, highlight available defs
+        base.push(
+          "border-gray-200", "dark:border-gray-700",
+          "bg-white", "dark:bg-gray-800",
+          "text-gray-700", "dark:text-gray-200",
+          "hover:border-indigo-400", "dark:hover:border-indigo-500",
+          "hover:bg-indigo-50", "dark:hover:bg-indigo-900/20",
+          "cursor-pointer",
+          "ring-1", "ring-indigo-200", "dark:ring-indigo-700"
+        );
+      } else {
+        base.push(
+          "border-gray-200", "dark:border-gray-700",
+          "bg-white", "dark:bg-gray-800",
+          "text-gray-700", "dark:text-gray-200",
+          "cursor-pointer"
+        );
+      }
+
+      btn.className = base.join(" ");
+
+      if (isPaired && pairedTermIdx !== null) {
+        const pairNum = document.createElement("span");
+        pairNum.className = "inline-flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500 text-white text-xs font-bold mr-2";
+        pairNum.textContent = String(pairedTermIdx + 1);
+        btn.appendChild(pairNum);
+      }
+
+      const defText = document.createElement("span");
+      defText.textContent = def;
+      btn.appendChild(defText);
+
+      defsCol.appendChild(btn);
+    });
+
+    grid.appendChild(termsCol);
+    grid.appendChild(defsCol);
+    content.appendChild(grid);
+
+    if (!state.answered) {
+      const allPaired = ms.pairs.size === question.pairs.length;
+      renderCheckButton(uid, allPaired, content);
+    }
+  }
+
+  function getPairedTermForDef(ms: MatchingState, defIdx: number): number | null {
+    for (const [termIdx, dIdx] of ms.pairs.entries()) {
+      if (dIdx === defIdx) return termIdx;
+    }
+    return null;
+  }
+
+  function renderCheckButton(uid: string, enabled: boolean, content: HTMLElement): void {
+    const wrap = document.createElement("div");
+    wrap.className = "flex justify-end";
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.dataset.quizCheck = uid;
+
+    const base = [
+      "px-5", "py-2.5", "text-sm", "font-semibold", "rounded-lg",
+      "transition-colors",
+      "focus:outline-none", "focus:ring-2", "focus:ring-indigo-500", "focus:ring-offset-1",
+    ];
+
+    if (enabled) {
+      base.push(
+        "bg-indigo-600", "dark:bg-indigo-500",
+        "text-white",
+        "hover:bg-indigo-700", "dark:hover:bg-indigo-600",
+        "cursor-pointer"
+      );
+    } else {
+      base.push(
+        "bg-gray-200", "dark:bg-gray-700",
+        "text-gray-400", "dark:text-gray-500",
+        "cursor-not-allowed"
+      );
+      btn.disabled = true;
+    }
+
+    btn.className = base.join(" ");
+    btn.textContent = "Check Answer";
+    wrap.appendChild(btn);
+    content.appendChild(wrap);
+  }
+
+  function renderFeedback(
+    uid: string,
+    state: QuizState,
+    question: QuizQuestion,
+    content: HTMLElement
+  ): void {
+    const result = state.results[state.results.length - 1];
+    if (!result) return;
+
+    const isCorrect = result.correct;
+
+    const feedbackDiv = document.createElement("div");
+    feedbackDiv.id = `${uid}-feedback`;
+    feedbackDiv.setAttribute("tabindex", "-1");
+    feedbackDiv.setAttribute("role", "status");
+
+    if (isCorrect) {
+      feedbackDiv.className = [
+        "px-4", "py-3", "rounded-lg", "mb-4",
+        "border-l-4", "border-green-500", "dark:border-green-400",
+        "bg-green-50", "dark:bg-green-900/20",
+        "text-green-900", "dark:text-green-100",
+      ].join(" ");
+
+      const label = document.createElement("p");
+      label.className = "text-sm font-semibold mb-1 text-green-700 dark:text-green-300";
+      label.textContent = "Correct!";
+      feedbackDiv.appendChild(label);
+    } else {
+      feedbackDiv.className = [
+        "px-4", "py-3", "rounded-lg", "mb-4",
+        "border-l-4", "border-amber-500", "dark:border-amber-400",
+        "bg-amber-50", "dark:bg-amber-900/20",
+        "text-amber-900", "dark:text-amber-100",
+      ].join(" ");
+
+      const label = document.createElement("p");
+      label.className = "text-sm font-semibold mb-1 text-amber-700 dark:text-amber-300";
+      label.textContent = "Not quite.";
+      feedbackDiv.appendChild(label);
+
+      const correctAnswerEl = document.createElement("p");
+      correctAnswerEl.className = "text-sm font-medium mb-1";
+      correctAnswerEl.textContent = `Correct answer: ${result.correctAnswer}`;
+      feedbackDiv.appendChild(correctAnswerEl);
+    }
+
+    const explanation = document.createElement("p");
+    explanation.className = "text-sm";
+    explanation.textContent = question.explanation;
+    feedbackDiv.appendChild(explanation);
+
+    content.appendChild(feedbackDiv);
+
+    // Navigation button
+    const navWrap = document.createElement("div");
+    navWrap.className = "flex justify-end mt-3";
+
+    const isLast = state.currentIndex === state.questionOrder.length - 1;
+
+    const navBtn = document.createElement("button");
+    navBtn.type = "button";
+
+    if (isLast) {
+      navBtn.dataset.quizSeeResults = uid;
+      navBtn.textContent = "See Results";
+    } else {
+      navBtn.dataset.quizNext = uid;
+      navBtn.textContent = "Next Question";
+    }
+
+    navBtn.className = [
+      "px-5", "py-2.5", "text-sm", "font-semibold", "rounded-lg",
+      "bg-indigo-600", "dark:bg-indigo-500",
+      "text-white",
+      "hover:bg-indigo-700", "dark:hover:bg-indigo-600",
+      "transition-colors",
+      "focus:outline-none", "focus:ring-2", "focus:ring-indigo-500", "focus:ring-offset-1",
+    ].join(" ");
+
+    navWrap.appendChild(navBtn);
+    content.appendChild(navWrap);
+  }
+
+  function renderResults(uid: string, state: QuizState, content: HTMLElement): void {
+    const correctCount = state.results.filter(r => r.correct).length;
+    const total = state.results.length;
+    const percentage = Math.round((correctCount / total) * 100);
+
+    // Save to localStorage
+    try {
+      localStorage.setItem(`quiz-score-${state.data.sectionId}`, JSON.stringify({
+        score: correctCount,
+        total: total,
+        percentage: percentage,
+        timestamp: Date.now(),
+      }));
+    } catch (e) {
+      // localStorage may be unavailable
+    }
+
+    // Score header
+    const scoreCard = document.createElement("div");
+    scoreCard.className = [
+      "text-center", "py-6", "px-4", "mb-6",
+      "rounded-lg", "border",
+      percentage >= 70
+        ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20"
+        : "border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20",
+    ].join(" ");
+
+    const scoreTitle = document.createElement("p");
+    scoreTitle.className = "text-lg font-bold text-gray-800 dark:text-gray-100 mb-2";
+    scoreTitle.textContent = "Quiz Complete!";
+    scoreCard.appendChild(scoreTitle);
+
+    const scoreText = document.createElement("p");
+    scoreText.className = "text-2xl font-bold mb-1 " + (
+      percentage >= 70
+        ? "text-green-700 dark:text-green-300"
+        : "text-amber-700 dark:text-amber-300"
+    );
+    scoreText.textContent = `${correctCount} out of ${total} correct (${percentage}%)`;
+    scoreCard.appendChild(scoreText);
+
+    const scoreSub = document.createElement("p");
+    scoreSub.className = "text-sm text-gray-600 dark:text-gray-400";
+    scoreSub.textContent = percentage >= 70
+      ? "Great job! You're on the right track."
+      : "Keep studying and try again!";
+    scoreCard.appendChild(scoreSub);
+
+    content.appendChild(scoreCard);
+
+    // Per-question summary
+    const summaryTitle = document.createElement("p");
+    summaryTitle.className = "text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3";
+    summaryTitle.textContent = "Question Summary";
+    content.appendChild(summaryTitle);
+
+    const summaryList = document.createElement("div");
+    summaryList.className = "space-y-3 mb-6";
+
+    state.results.forEach((result, idx) => {
+      const item = document.createElement("div");
+      item.className = [
+        "px-4", "py-3", "rounded-lg", "border",
+        result.correct
+          ? "border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10"
+          : "border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10",
+      ].join(" ");
+
+      const header = document.createElement("div");
+      header.className = "flex items-start gap-2 mb-1";
+
+      const icon = document.createElement("span");
+      icon.className = "flex-shrink-0 mt-0.5 text-sm font-bold " + (
+        result.correct
+          ? "text-green-600 dark:text-green-400"
+          : "text-amber-600 dark:text-amber-400"
+      );
+      icon.textContent = result.correct ? "\u2713" : "\u2717";
+      icon.setAttribute("aria-label", result.correct ? "Correct" : "Incorrect");
+      header.appendChild(icon);
+
+      const qText = document.createElement("span");
+      qText.className = "text-sm font-medium text-gray-800 dark:text-gray-100";
+      qText.textContent = `${idx + 1}. ${result.question}`;
+      header.appendChild(qText);
+
+      item.appendChild(header);
+
+      const details = document.createElement("div");
+      details.className = "ml-6 text-sm";
+
+      const userAns = document.createElement("p");
+      userAns.className = result.correct
+        ? "text-green-700 dark:text-green-300"
+        : "text-amber-700 dark:text-amber-300";
+      userAns.textContent = `Your answer: ${result.userAnswer}`;
+      details.appendChild(userAns);
+
+      if (!result.correct) {
+        const correctAns = document.createElement("p");
+        correctAns.className = "text-green-700 dark:text-green-300";
+        correctAns.textContent = `Correct answer: ${result.correctAnswer}`;
+        details.appendChild(correctAns);
+      }
+
+      item.appendChild(details);
+      summaryList.appendChild(item);
+    });
+
+    content.appendChild(summaryList);
+
+    // Try Again button
+    const actionsDiv = document.createElement("div");
+    actionsDiv.className = "flex justify-center";
+
+    const tryAgainBtn = document.createElement("button");
+    tryAgainBtn.type = "button";
+    tryAgainBtn.dataset.quizTryAgain = uid;
+    tryAgainBtn.className = [
+      "px-6", "py-2.5", "text-sm", "font-semibold", "rounded-lg",
+      "bg-indigo-600", "dark:bg-indigo-500",
+      "text-white",
+      "hover:bg-indigo-700", "dark:hover:bg-indigo-600",
+      "transition-colors",
+      "focus:outline-none", "focus:ring-2", "focus:ring-indigo-500", "focus:ring-offset-1",
+    ].join(" ");
+    tryAgainBtn.textContent = "Try Again";
+
+    actionsDiv.appendChild(tryAgainBtn);
+    content.appendChild(actionsDiv);
+
+    // Announce score
+    announce(uid, `Quiz complete. You scored ${correctCount} out of ${total}, ${percentage} percent.`);
+  }
+
+  // ─── Answer checking ──────────────────────────────────────────────────────
+
+  function checkAnswer(state: QuizState): QuestionResult {
+    const qIdx = state.questionOrder[state.currentIndex];
+    const question = state.data.questions[qIdx];
+
+    if (question.type === "multiple-choice") {
+      if (state.selectedOption === null) return { question: question.question, userAnswer: "", correctAnswer: question.options[question.correct], correct: false };
+      const userIdx = state.selectedOption;
+      const isCorrect = userIdx === question.correct;
+      return {
+        question: question.question,
+        userAnswer: question.options[userIdx],
+        correctAnswer: question.options[question.correct],
+        correct: isCorrect,
+      };
+    } else if (question.type === "true-false") {
+      const userVal = state.selectedOption === 0; // 0 = true, 1 = false
+      const isCorrect = userVal === question.correct;
+      return {
+        question: question.question,
+        userAnswer: userVal ? "True" : "False",
+        correctAnswer: question.correct ? "True" : "False",
+        correct: isCorrect,
+      };
+    } else {
+      // matching
+      const ms = state.matchingState!;
+      let allCorrect = true;
+      const userPairs: string[] = [];
+      const correctPairs: string[] = [];
+
+      question.pairs.forEach((pair, idx) => {
+        const defIdx = ms.pairs.get(idx);
+        const userDef = defIdx !== undefined ? ms.shuffledDefs[defIdx] : "(none)";
+        const correctDef = pair.definition;
+
+        userPairs.push(`${pair.term} -> ${userDef}`);
+        correctPairs.push(`${pair.term} -> ${correctDef}`);
+
+        if (userDef !== correctDef) allCorrect = false;
+      });
+
+      return {
+        question: question.question,
+        userAnswer: userPairs.join("; "),
+        correctAnswer: correctPairs.join("; "),
+        correct: allCorrect,
+      };
+    }
+  }
+
+  function initMatchingState(question: MatchingQuestion): MatchingState {
+    return {
+      shuffledDefs: shuffleArray(question.pairs.map(p => p.definition)),
+      pairs: new Map(),
+      selectedTerm: null,
+    };
+  }
+
+  // ─── Init ─────────────────────────────────────────────────────────────────
+
+  function initQuiz(): void {
+    document.querySelectorAll<HTMLElement>(".quiz-component").forEach((root) => {
+      const uid = root.dataset.quizId;
+      if (!uid || root.dataset.quizInit === "true") return;
+      root.dataset.quizInit = "true";
+
+      const rawData: QuizData = JSON.parse(root.dataset.quizData || "{}");
+
+      if (!rawData.questions || rawData.questions.length === 0) {
+        const content = document.getElementById(`${uid}-content`);
+        if (content) {
+          const empty = document.createElement("p");
+          empty.className = "text-sm italic text-gray-400 dark:text-gray-500";
+          empty.textContent = "No questions provided.";
+          content.appendChild(empty);
+        }
+        return;
+      }
+
+      const state: QuizState = {
+        data: rawData,
+        questionOrder: createShuffledOrder(rawData.questions.length),
+        currentIndex: 0,
+        selectedOption: null,
+        matchingState: null,
+        answered: false,
+        results: [],
+        showResults: false,
+      };
+
+      // Init matching state if first question is matching
+      const firstQIdx = state.questionOrder[0];
+      const firstQ = rawData.questions[firstQIdx];
+      if (firstQ.type === "matching") {
+        state.matchingState = initMatchingState(firstQ as MatchingQuestion);
+      }
+
+      renderQuiz(uid, state);
+
+      // ── Event delegation on root ──────────────────────────────────────────
+
+      root.addEventListener("click", (e) => {
+        const target = e.target as HTMLElement;
+
+        // Multiple choice option
+        const mcBtn = target.closest<HTMLElement>("[data-quiz-mc-option]");
+        if (mcBtn && mcBtn.dataset.quizUid === uid && !state.answered) {
+          const idx = parseInt(mcBtn.dataset.quizMcOption || "", 10);
+          if (isNaN(idx)) return;
+          state.selectedOption = idx;
+          renderQuiz(uid, state);
+          return;
+        }
+
+        // True/False option
+        const tfBtn = target.closest<HTMLElement>("[data-quiz-tf-option]");
+        if (tfBtn && tfBtn.dataset.quizUid === uid && !state.answered) {
+          const val = tfBtn.dataset.quizTfOption === "true";
+          state.selectedOption = val ? 0 : 1;
+          renderQuiz(uid, state);
+          return;
+        }
+
+        // Matching term
+        const termBtn = target.closest<HTMLElement>("[data-quiz-match-term]");
+        if (termBtn && termBtn.dataset.quizUid === uid && !state.answered && state.matchingState) {
+          const idx = parseInt(termBtn.dataset.quizMatchTerm || "", 10);
+          if (isNaN(idx)) return;
+
+          if (state.matchingState.selectedTerm === idx) {
+            // Deselect
+            state.matchingState.selectedTerm = null;
+          } else {
+            state.matchingState.selectedTerm = idx;
+          }
+          renderQuiz(uid, state);
+          return;
+        }
+
+        // Matching definition
+        const defBtn = target.closest<HTMLElement>("[data-quiz-match-def]");
+        if (defBtn && defBtn.dataset.quizUid === uid && !state.answered && state.matchingState) {
+          const defIdx = parseInt(defBtn.dataset.quizMatchDef || "", 10);
+          if (isNaN(defIdx)) return;
+
+          const ms = state.matchingState;
+
+          if (ms.selectedTerm !== null) {
+            // Check if this def is already paired to another term — remove that pairing
+            for (const [tIdx, dIdx] of ms.pairs.entries()) {
+              if (dIdx === defIdx) {
+                ms.pairs.delete(tIdx);
+                break;
+              }
+            }
+            ms.pairs.set(ms.selectedTerm, defIdx);
+            ms.selectedTerm = null;
+            renderQuiz(uid, state);
+          } else {
+            // If clicking a def that's already paired, select its term for re-pairing
+            const pairedTerm = getPairedTermForDef(ms, defIdx);
+            if (pairedTerm !== null) {
+              ms.selectedTerm = pairedTerm;
+              renderQuiz(uid, state);
+            }
+          }
+          return;
+        }
+
+        // Check Answer
+        const checkBtn = target.closest<HTMLElement>("[data-quiz-check]");
+        if (checkBtn && checkBtn.dataset.quizCheck === uid && !state.answered) {
+          const result = checkAnswer(state);
+          state.results.push(result);
+          state.answered = true;
+          renderQuiz(uid, state);
+
+          // Focus feedback and announce
+          requestAnimationFrame(() => {
+            const feedback = document.getElementById(`${uid}-feedback`);
+            if (feedback) feedback.focus();
+          });
+
+          const msg = result.correct
+            ? `Correct! ${getCurrentQuestion(state).explanation}`
+            : `Incorrect. The correct answer is: ${result.correctAnswer}. ${getCurrentQuestion(state).explanation}`;
+          announce(uid, msg);
+          return;
+        }
+
+        // Next Question
+        const nextBtn = target.closest<HTMLElement>("[data-quiz-next]");
+        if (nextBtn && nextBtn.dataset.quizNext === uid) {
+          state.currentIndex++;
+          state.selectedOption = null;
+          state.answered = false;
+          state.matchingState = null;
+
+          const qIdx = state.questionOrder[state.currentIndex];
+          const nextQ = state.data.questions[qIdx];
+          if (nextQ.type === "matching") {
+            state.matchingState = initMatchingState(nextQ as MatchingQuestion);
+          }
+
+          renderQuiz(uid, state);
+          announce(uid, `Question ${state.currentIndex + 1} of ${state.questionOrder.length}.`);
+
+          // Focus first option
+          requestAnimationFrame(() => {
+            const firstOption = root.querySelector<HTMLButtonElement>(
+              "[data-quiz-mc-option], [data-quiz-tf-option], [data-quiz-match-term]"
+            );
+            if (firstOption) firstOption.focus();
+          });
+          return;
+        }
+
+        // See Results
+        const resultsBtn = target.closest<HTMLElement>("[data-quiz-see-results]");
+        if (resultsBtn && resultsBtn.dataset.quizSeeResults === uid) {
+          state.showResults = true;
+          renderQuiz(uid, state);
+
+          // Focus results area
+          requestAnimationFrame(() => {
+            const contentEl = document.getElementById(`${uid}-content`);
+            if (contentEl) {
+              contentEl.setAttribute("tabindex", "-1");
+              contentEl.focus();
+            }
+          });
+          return;
+        }
+
+        // Try Again
+        const tryAgainBtn = target.closest<HTMLElement>("[data-quiz-try-again]");
+        if (tryAgainBtn && tryAgainBtn.dataset.quizTryAgain === uid) {
+          state.questionOrder = createShuffledOrder(state.data.questions.length);
+          state.currentIndex = 0;
+          state.selectedOption = null;
+          state.answered = false;
+          state.results = [];
+          state.showResults = false;
+          state.matchingState = null;
+
+          const qIdx = state.questionOrder[0];
+          const firstQ = state.data.questions[qIdx];
+          if (firstQ.type === "matching") {
+            state.matchingState = initMatchingState(firstQ as MatchingQuestion);
+          }
+
+          renderQuiz(uid, state);
+          announce(uid, "Quiz reset. Starting over with reshuffled questions.");
+
+          requestAnimationFrame(() => {
+            const firstOption = root.querySelector<HTMLButtonElement>(
+              "[data-quiz-mc-option], [data-quiz-tf-option], [data-quiz-match-term]"
+            );
+            if (firstOption) firstOption.focus();
+          });
+          return;
+        }
+      });
+
+    });
+  }
+
+  function getCurrentQuestion(state: QuizState): QuizQuestion {
+    const qIdx = state.questionOrder[state.currentIndex];
+    return state.data.questions[qIdx];
+  }
+
+  // ─── Run ─────────────────────────────────────────────────────────────────
+
+  initQuiz();
+  document.addEventListener("astro:page-load", initQuiz);
+</script>
