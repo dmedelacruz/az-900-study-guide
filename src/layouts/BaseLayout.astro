@@ -57,5 +57,9 @@ const {
       <PrevNextNav currentPath={Astro.url.pathname} />
     </main>
     <XpToast />
+    <script>
+      import { initStreakListener } from '../lib/streakStore';
+      initStreakListener();
+    </script>
   </body>
 </html>
