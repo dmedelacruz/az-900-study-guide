@@ -1,0 +1,143 @@
+---
+// src/components/XpToast.astro — XP earned toast notification
+---
+
+{/* Fixed container for stacking toasts — toasts are created dynamically by JS */}
+<div
+  id="xp-toast-container"
+  role="status"
+  aria-live="polite"
+  aria-atomic="false"
+  aria-label="XP notifications"
+  class="fixed top-14 right-6 z-50 flex flex-col gap-2 pointer-events-none"
+></div>
+
+<style>
+  @keyframes xp-slide-in {
+    from {
+      opacity: 0;
+      transform: translateX(calc(100% + 1.5rem));
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes xp-fade-out {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(calc(100% + 1.5rem));
+    }
+  }
+
+  .xp-toast-enter {
+    animation: xp-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .xp-toast-exit {
+    animation: xp-fade-out 0.25s ease-in forwards;
+  }
+</style>
+
+<script>
+  interface XpEarnedDetail {
+    points: number;
+    type: 'reading' | 'quiz' | 'quiz-perfect';
+    sectionId: string;
+    total: number;
+  }
+
+  function getMessage(detail: XpEarnedDetail): string {
+    switch (detail.type) {
+      case 'reading':
+        return '+10 XP \u2014 Section read!';
+      case 'quiz':
+        return '+25 XP \u2014 Quiz completed!';
+      case 'quiz-perfect':
+        return '+75 XP \u2014 Perfect score!';
+      default:
+        return `+${detail.points} XP`;
+    }
+  }
+
+  function showToast(detail: XpEarnedDetail): void {
+    const container = document.getElementById('xp-toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+
+    toast.className = [
+      // Layout
+      'flex', 'items-center', 'gap-2',
+      'px-4', 'py-2.5',
+      // Shape
+      'rounded-full',
+      // Light mode colors
+      'bg-indigo-50', 'border', 'border-indigo-200', 'text-indigo-800',
+      // Dark mode colors
+      'dark:bg-indigo-900/80', 'dark:border-indigo-700', 'dark:text-indigo-100',
+      // Shadow & elevation
+      'shadow-lg',
+      // Typography
+      'text-sm', 'font-medium', 'whitespace-nowrap',
+      // Pointer events — allow clicks to pass through container
+      'pointer-events-auto',
+      // Animation entry class
+      'xp-toast-enter',
+    ].join(' ');
+
+    // Sparkle icon
+    const icon = document.createElement('span');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.className = 'text-indigo-500 dark:text-indigo-300 flex-shrink-0 text-base leading-none';
+    icon.textContent = '\u2736'; // ✶ BLACK SIX POINTED STAR
+    toast.appendChild(icon);
+
+    // Message text
+    const text = document.createElement('span');
+    text.textContent = getMessage(detail);
+    toast.appendChild(text);
+
+    container.appendChild(toast);
+
+    // Auto-dismiss after 3 seconds
+    const DISPLAY_MS = 3000;
+    const EXIT_MS = 250;
+
+    const dismissTimer = setTimeout(() => {
+      // Swap to exit animation
+      toast.classList.remove('xp-toast-enter');
+      toast.classList.add('xp-toast-exit');
+
+      // Remove from DOM after animation completes
+      const removeTimer = setTimeout(() => {
+        if (toast.parentNode === container) {
+          container.removeChild(toast);
+        }
+      }, EXIT_MS);
+
+      // Clean up remove timer if toast is manually gone
+      toast.addEventListener('animationend', () => clearTimeout(removeTimer), { once: true });
+    }, DISPLAY_MS);
+
+    // If the page unloads before the timer fires, clean up
+    toast.dataset.dismissTimer = String(dismissTimer);
+  }
+
+  function initXpToast(): void {
+    document.addEventListener('xp:earned', (e: Event) => {
+      const detail = (e as CustomEvent<XpEarnedDetail>).detail;
+      if (!detail) return;
+      showToast(detail);
+    });
+  }
+
+  initXpToast();
+  // Re-register listener on Astro page transitions
+  document.addEventListener('astro:page-load', initXpToast);
+</script>
