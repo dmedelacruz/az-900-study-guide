@@ -1,0 +1,443 @@
+---
+title: "Cloud Models"
+domain: 1
+section: "1.3"
+order: 3
+description: "Understand the differences between public, private, and hybrid cloud deployment models — and know when each is the right fit for an organization's needs."
+tags: ["cloud-concepts", "public-cloud", "private-cloud", "hybrid-cloud", "cloud-models"]
+lastVerified: "2026-05-21"
+microsoftLearnUrl: "https://learn.microsoft.com/en-us/training/modules/describe-cloud-compute/"
+---
+
+import KeyTakeaways from '../../components/KeyTakeaways.astro';
+import KeyTerm from '../../components/KeyTerm.astro';
+import Callout from '../../components/Callout.astro';
+import DeepDive from '../../components/DeepDive.astro';
+import InteractiveDiagram from '../../components/InteractiveDiagram.astro';
+import DiagramHotspot from '../../components/DiagramHotspot.astro';
+import DragDropMatch from '../../components/DragDropMatch.astro';
+import ComparisonSlider from '../../components/ComparisonSlider.astro';
+import FillInBlank from '../../components/FillInBlank.astro';
+import ScenarioQuestion from '../../components/ScenarioQuestion.astro';
+import Quiz from '../../components/Quiz.astro';
+
+## How Organizations Deploy the Cloud
+
+Not every organization uses the cloud the same way. Some go all-in on a provider like Azure, running every workload on shared infrastructure. Others build their own private cloud environments for maximum control. Many take a blended approach, keeping sensitive systems on private infrastructure while using public cloud for everything else. These different approaches are called **cloud deployment models**, and understanding them is essential for the AZ-900 exam.
+
+Think of it like transportation. **Public transit** — buses, trains, subways — is shared by everyone, costs little per ride, and scales to serve millions of passengers. You don't maintain the vehicles or plan the routes, but you also can't customize the schedule. A **private car** gives you full control over where you go and when, but you pay for the vehicle, insurance, fuel, and maintenance yourself. A **hybrid approach** — driving your car to a park-and-ride station and taking the train downtown — combines the control of private transport with the efficiency of public transit. Cloud deployment models work the same way.
+
+## Public Cloud
+
+<KeyTerm term="Public cloud">A cloud deployment model where computing resources are owned and operated by a third-party cloud provider (such as Microsoft Azure, AWS, or Google Cloud) and delivered over the internet to multiple tenants on a pay-as-you-go basis.</KeyTerm>
+
+In a public cloud, the provider owns everything — the data centers, the servers, the networking equipment, the cooling systems, and the software that orchestrates it all. Multiple organizations (tenants) share this infrastructure, though their data and workloads are logically isolated from each other. You access resources over the internet and pay only for what you consume.
+
+Azure is a public cloud. When you spin up a virtual machine in Azure, you're using hardware that Microsoft owns, in a data center that Microsoft operates, alongside (but isolated from) workloads belonging to other Azure customers.
+
+**Key characteristics of public cloud:**
+
+- **No capital expenditure** — You don't buy servers. You rent computing capacity and pay by the hour, minute, or second.
+- **Near-unlimited scalability** — Need 1,000 servers for a product launch? Done. Need to scale back to 10 next week? Also done.
+- **Multi-tenant architecture** — Resources are shared across customers, which is how the provider achieves economies of scale and keeps per-unit costs low.
+- **Provider-managed infrastructure** — The cloud provider handles hardware maintenance, power, cooling, physical security, and infrastructure software updates.
+- **Broad network access** — Resources are accessible from anywhere with an internet connection.
+
+**When to choose public cloud:**
+
+- You want to avoid large upfront hardware investments
+- Your workloads have variable or unpredictable demand
+- You need to deploy quickly without procuring hardware
+- You're running applications that don't have strict data residency or regulatory constraints requiring on-premises hosting
+
+<Callout type="info">
+Public cloud doesn't mean your data is public. The word "public" refers to the delivery model — resources are publicly available for purchase — not to the visibility of your data. Your Azure resources are private to you, protected by identity controls, network isolation, and encryption. Other tenants on the same physical hardware cannot see or access your workloads.
+</Callout>
+
+## Private Cloud
+
+<KeyTerm term="Private cloud">A cloud deployment model where computing resources are used exclusively by a single organization, either hosted on-premises in the organization's own data center or hosted by a third-party provider in a dedicated environment.</KeyTerm>
+
+A private cloud delivers cloud-like capabilities — self-service provisioning, elasticity, resource pooling — but the infrastructure serves only one organization. This can mean running cloud software (like Azure Stack HCI) in your own data center, or it can mean contracting with a provider to run dedicated hardware exclusively for your organization.
+
+The defining characteristic is single-tenancy: no other organization shares the underlying infrastructure. This gives the organization complete control over the environment, including hardware selection, network configuration, security policies, and data location.
+
+**Key characteristics of private cloud:**
+
+- **Maximum control** — The organization controls hardware, software, network configuration, and security policies.
+- **Single-tenant** — No shared infrastructure with other organizations.
+- **Higher cost** — The organization bears all capital and operational expenses for the infrastructure.
+- **Limited scalability** — Scaling requires purchasing and installing additional hardware, which takes time.
+- **On-premises or dedicated hosted** — Can be located in the organization's own data center or in a third-party facility dedicated to that organization.
+
+**When to choose private cloud:**
+
+- Regulatory or compliance requirements mandate that data must stay on specific hardware or within specific physical boundaries
+- The organization needs full control over the infrastructure stack for security or governance reasons
+- Legacy applications require specific hardware configurations that can't be replicated in a public cloud
+- The organization operates in a highly regulated industry (government, defense, certain financial services) where multi-tenant environments are not permitted
+
+<Callout type="warning">
+Private cloud is not the same as traditional on-premises IT. Simply running servers in your own data center doesn't make it a private cloud. A true private cloud provides cloud-like features: self-service provisioning, automated scaling (within the hardware available), resource pooling, and metered usage. Without these capabilities, it's just a traditional data center.
+</Callout>
+
+## Hybrid Cloud
+
+<KeyTerm term="Hybrid cloud">A cloud deployment model that combines public cloud and private cloud (or on-premises infrastructure), allowing data and applications to move between the two environments. Organizations use hybrid cloud to balance control, compliance, and cost.</KeyTerm>
+
+Hybrid cloud is the "best of both worlds" approach. An organization maintains some infrastructure privately — either on-premises or in a dedicated hosted environment — while also using public cloud services. The two environments are connected and can share data, applications, and workloads.
+
+The key to hybrid cloud is orchestration: the two environments aren't just coexisting side by side — they're integrated. Workloads can move between them, data can flow between them, and management tools can operate across both. Azure Arc, for example, lets organizations manage on-premises servers, Kubernetes clusters, and data services using the same Azure portal and tools they use for public cloud resources.
+
+**Key characteristics of hybrid cloud:**
+
+- **Flexibility** — Run workloads wherever they make the most sense: sensitive data on private infrastructure, scalable web frontends on public cloud.
+- **Compliance bridge** — Keep regulated data on-premises while still using public cloud for non-regulated workloads.
+- **Gradual migration path** — Organizations can move to the cloud incrementally rather than all at once.
+- **Increased complexity** — Managing two environments requires integration, networking (VPNs, ExpressRoute), and consistent security policies across both.
+- **Cost optimization** — Use private infrastructure for steady baseline workloads and burst to public cloud for spikes.
+
+**When to choose hybrid cloud:**
+
+- Some workloads must remain on-premises due to compliance, latency, or data sovereignty requirements, but other workloads benefit from public cloud scalability
+- The organization is in the middle of a cloud migration and needs to run in both environments during the transition
+- Seasonal or unpredictable demand spikes need public cloud capacity while baseline operations run on private infrastructure
+- The organization wants to keep legacy systems on-premises while building new applications in the cloud
+
+<Callout type="tip">
+For the AZ-900 exam, hybrid cloud is a frequent topic. Remember that hybrid cloud isn't just "some on-premises, some cloud" — it requires integration between the two environments. Azure provides specific tools for hybrid scenarios: Azure Arc for unified management, Azure Stack HCI for running Azure services on-premises, and ExpressRoute for private, high-bandwidth connections between on-premises networks and Azure.
+</Callout>
+
+## Multi-Cloud
+
+<KeyTerm term="Multi-cloud">A strategy where an organization uses cloud services from two or more public cloud providers — for example, running some workloads on Azure and others on AWS or Google Cloud.</KeyTerm>
+
+Multi-cloud is distinct from hybrid cloud. Hybrid cloud combines public and private environments; multi-cloud combines multiple public cloud providers. Organizations adopt multi-cloud strategies for several reasons: avoiding vendor lock-in, leveraging best-of-breed services from different providers, or meeting requirements from clients or partners who mandate specific platforms.
+
+Azure Arc supports multi-cloud scenarios by letting organizations manage resources across Azure, AWS, and Google Cloud from a single control plane.
+
+<Callout type="info">
+Multi-cloud adds operational complexity — each provider has different APIs, pricing models, security tools, and networking architectures. On the AZ-900 exam, you should understand what multi-cloud means and why organizations use it, but detailed multi-cloud architecture is beyond the scope of the exam.
+</Callout>
+
+## Cloud Bursting
+
+<KeyTerm term="Cloud bursting">A hybrid cloud technique where an application normally runs on private infrastructure but automatically "bursts" into the public cloud when demand exceeds the private environment's capacity.</KeyTerm>
+
+Cloud bursting is a specific pattern within hybrid cloud deployments. An organization runs its application on private infrastructure under normal conditions but has configured the system to automatically provision additional resources in the public cloud during demand spikes. Once demand subsides, those public cloud resources are released. This lets organizations size their private infrastructure for average workloads rather than peak workloads, reducing waste.
+
+## Comparing Cloud Models
+
+| Dimension | Public Cloud | Private Cloud | Hybrid Cloud |
+|---|---|---|---|
+| **Ownership** | Cloud provider owns infrastructure | Organization owns or leases dedicated infrastructure | Mix of both |
+| **Capital expenditure** | None — pay-as-you-go | High — must purchase or lease hardware | Moderate — CapEx for private, OpEx for public |
+| **Scalability** | Near-unlimited, on-demand | Limited to available hardware | Flexible — burst to public cloud when needed |
+| **Control** | Limited to provider's configuration options | Full control over hardware, software, and policies | Full control on private side; provider controls on public side |
+| **Security responsibility** | Shared responsibility model | Organization controls all layers | Split across environments |
+| **Compliance** | Provider certifications (SOC 2, ISO, etc.) | Organization manages all compliance | Sensitive workloads stay on compliant private infrastructure |
+| **Maintenance** | Provider handles infrastructure maintenance | Organization handles all maintenance | Split responsibility |
+| **Speed of deployment** | Minutes | Weeks to months (hardware procurement) | Minutes for public, longer for private |
+| **Multi-tenancy** | Yes — shared infrastructure | No — single tenant | Private portion is single-tenant |
+
+<InteractiveDiagram title="Cloud Deployment Models" alt="Three cloud deployment models showing public, private, and hybrid cloud with their key characteristics">
+  <svg viewBox="0 0 620 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:system-ui,sans-serif">
+    {/* Title */}
+    <text x="310" y="25" textAnchor="middle" fill="#1e293b" fontSize="15" fontWeight="bold">Cloud Deployment Models</text>
+    {/* Public Cloud Box */}
+    <rect x="20" y="50" width="180" height="280" rx="12" fill="#1e3a5f" stroke="#2563eb" strokeWidth="2" />
+    <text x="110" y="78" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">Public Cloud</text>
+    <line x1="40" y1="90" x2="180" y2="90" stroke="#3b82f6" strokeWidth="1" />
+    <text x="110" y="112" textAnchor="middle" fill="#93c5fd" fontSize="11">Provider-owned</text>
+    <text x="110" y="132" textAnchor="middle" fill="#93c5fd" fontSize="11">Multi-tenant</text>
+    <text x="110" y="152" textAnchor="middle" fill="#93c5fd" fontSize="11">Pay-as-you-go</text>
+    <text x="110" y="172" textAnchor="middle" fill="#93c5fd" fontSize="11">Near-unlimited scale</text>
+    <text x="110" y="192" textAnchor="middle" fill="#93c5fd" fontSize="11">No CapEx</text>
+    {/* Cloud icon */}
+    <ellipse cx="110" cy="260" rx="45" ry="25" fill="#2563eb" opacity="0.4" />
+    <ellipse cx="90" cy="250" rx="25" ry="18" fill="#2563eb" opacity="0.5" />
+    <ellipse cx="130" cy="248" rx="22" ry="16" fill="#2563eb" opacity="0.5" />
+    <text x="110" y="300" textAnchor="middle" fill="#60a5fa" fontSize="10">Azure, AWS, GCP</text>
+    {/* Private Cloud Box */}
+    <rect x="220" y="50" width="180" height="280" rx="12" fill="#1e3a5f" stroke="#2563eb" strokeWidth="2" />
+    <text x="310" y="78" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">Private Cloud</text>
+    <line x1="240" y1="90" x2="380" y2="90" stroke="#3b82f6" strokeWidth="1" />
+    <text x="310" y="112" textAnchor="middle" fill="#93c5fd" fontSize="11">Org-owned/dedicated</text>
+    <text x="310" y="132" textAnchor="middle" fill="#93c5fd" fontSize="11">Single-tenant</text>
+    <text x="310" y="152" textAnchor="middle" fill="#93c5fd" fontSize="11">Full control</text>
+    <text x="310" y="172" textAnchor="middle" fill="#93c5fd" fontSize="11">Limited scale</text>
+    <text x="310" y="192" textAnchor="middle" fill="#93c5fd" fontSize="11">High CapEx</text>
+    {/* Building icon */}
+    <rect x="290" y="230" width="40" height="60" fill="#2563eb" opacity="0.4" rx="3" />
+    <rect x="296" y="238" width="10" height="10" fill="#93c5fd" opacity="0.5" rx="1" />
+    <rect x="314" y="238" width="10" height="10" fill="#93c5fd" opacity="0.5" rx="1" />
+    <rect x="296" y="256" width="10" height="10" fill="#93c5fd" opacity="0.5" rx="1" />
+    <rect x="314" y="256" width="10" height="10" fill="#93c5fd" opacity="0.5" rx="1" />
+    <rect x="304" y="274" width="12" height="16" fill="#93c5fd" opacity="0.4" rx="1" />
+    <text x="310" y="300" textAnchor="middle" fill="#60a5fa" fontSize="10">On-prem / Hosted</text>
+    {/* Hybrid Cloud Box */}
+    <rect x="420" y="50" width="180" height="280" rx="12" fill="#1e3a5f" stroke="#2563eb" strokeWidth="2" />
+    <text x="510" y="78" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">Hybrid Cloud</text>
+    <line x1="440" y1="90" x2="580" y2="90" stroke="#3b82f6" strokeWidth="1" />
+    <text x="510" y="112" textAnchor="middle" fill="#93c5fd" fontSize="11">Combined model</text>
+    <text x="510" y="132" textAnchor="middle" fill="#93c5fd" fontSize="11">Integrated environments</text>
+    <text x="510" y="152" textAnchor="middle" fill="#93c5fd" fontSize="11">Flexible placement</text>
+    <text x="510" y="172" textAnchor="middle" fill="#93c5fd" fontSize="11">Burst capability</text>
+    <text x="510" y="192" textAnchor="middle" fill="#93c5fd" fontSize="11">Balanced cost</text>
+    {/* Hybrid icon — cloud + building connected */}
+    <ellipse cx="490" cy="255" rx="22" ry="14" fill="#2563eb" opacity="0.4" />
+    <ellipse cx="480" cy="248" rx="14" ry="10" fill="#2563eb" opacity="0.5" />
+    <rect x="518" y="240" width="22" height="30" fill="#2563eb" opacity="0.4" rx="2" />
+    <rect x="522" y="246" width="6" height="6" fill="#93c5fd" opacity="0.5" rx="1" />
+    <rect x="532" y="246" width="6" height="6" fill="#93c5fd" opacity="0.5" rx="1" />
+    <line x1="505" y1="258" x2="518" y2="258" stroke="#60a5fa" strokeWidth="2" strokeDasharray="3,2" />
+    <text x="510" y="300" textAnchor="middle" fill="#60a5fa" fontSize="10">Public + Private</text>
+    {/* Footer comparison bar */}
+    <rect x="20" y="350" width="580" height="55" rx="8" fill="#0f172a" stroke="#1e3a5f" strokeWidth="1.5" />
+    <text x="110" y="372" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold">Most scalable</text>
+    <text x="110" y="390" textAnchor="middle" fill="#94a3b8" fontSize="10">Least control</text>
+    <text x="310" y="372" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold">Most control</text>
+    <text x="310" y="390" textAnchor="middle" fill="#94a3b8" fontSize="10">Least scalable</text>
+    <text x="510" y="372" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold">Most flexible</text>
+    <text x="510" y="390" textAnchor="middle" fill="#94a3b8" fontSize="10">Most complex</text>
+  </svg>
+  <DiagramHotspot x="18%" y="43%" width="29%" height="53%" variant="layer" label="Public Cloud">
+    In the public cloud model, all infrastructure is owned and managed by the cloud provider. Multiple organizations share the same physical hardware, but their data and workloads are logically isolated. You pay only for what you use, and you can scale to nearly unlimited capacity on demand. Azure, AWS, and Google Cloud are all public cloud providers. This model offers the lowest upfront cost and fastest deployment, but you have less control over the underlying infrastructure.
+  </DiagramHotspot>
+  <DiagramHotspot x="50%" y="43%" width="29%" height="53%" variant="layer" label="Private Cloud">
+    A private cloud is dedicated to a single organization. It can run in the organization's own data center or be hosted by a third party on dedicated hardware. This model gives the organization full control over the environment — hardware, networking, security, and compliance policies. The tradeoff is higher cost, more maintenance responsibility, and limited scalability compared to public cloud.
+  </DiagramHotspot>
+  <DiagramHotspot x="82%" y="43%" width="29%" height="53%" variant="layer" label="Hybrid Cloud">
+    Hybrid cloud combines public and private cloud environments with integration between them. Workloads and data can flow between the two, allowing organizations to keep sensitive operations on private infrastructure while leveraging public cloud for scalability and cost efficiency. Azure provides tools like Azure Arc and ExpressRoute to bridge these environments. This model is the most flexible but also the most complex to manage.
+  </DiagramHotspot>
+</InteractiveDiagram>
+
+<DeepDive title="Hybrid Cloud Use Cases in the Real World">
+Hybrid cloud isn't just a theoretical concept — it's how most large organizations actually operate today. Here are three common patterns:
+
+**Compliance-driven placement.** A healthcare organization runs its electronic health records system on private infrastructure to meet HIPAA data residency requirements, but uses Azure for its patient-facing appointment scheduling portal. The two systems exchange data through secure, encrypted connections, but the most sensitive data never leaves the private environment.
+
+**Cloud bursting for demand spikes.** An e-commerce retailer runs its core platform on private servers that handle normal daily traffic. During Black Friday and holiday sales, traffic surges to 20x normal levels. Rather than buying hardware that sits idle 50 weeks a year, the retailer bursts into Azure to handle the spike, then releases those resources when demand returns to baseline.
+
+**Gradual cloud migration.** A manufacturing company with 15 years of on-premises applications doesn't migrate everything to Azure overnight. They start by moving development and testing workloads to the public cloud, then gradually migrate production systems over 18 months. During the migration period, they operate in a hybrid model with some applications on-premises and others in Azure, connected through a VPN gateway.
+</DeepDive>
+
+<DeepDive title="Multi-Cloud vs. Hybrid Cloud: What's the Difference?">
+These two terms are frequently confused, but they describe different architectural choices:
+
+**Hybrid cloud** combines public cloud with private cloud or on-premises infrastructure. The defining feature is mixing cloud with non-cloud (or dedicated cloud) environments. Example: running a database on-premises and a web application in Azure.
+
+**Multi-cloud** combines multiple public cloud providers. The defining feature is using more than one provider. Example: running a machine learning workload on Google Cloud while hosting the web application on Azure.
+
+An organization can be both hybrid and multi-cloud simultaneously — for example, running some workloads on-premises, some in Azure, and some in AWS. This is increasingly common in large enterprises, though it adds significant management complexity.
+
+On the AZ-900 exam, you need to distinguish between these concepts. If a question describes an organization using Azure and on-premises servers together, that's hybrid. If it describes an organization using Azure and AWS together, that's multi-cloud.
+</DeepDive>
+
+---
+
+## Practice Activities
+
+<ComparisonSlider
+  title="Compare Cloud Models Across Key Dimensions"
+  models={["Public", "Private", "Hybrid"]}
+  layers={[
+    {
+      name: "Infrastructure Ownership",
+      managedBy: { "Public": "provider", "Private": "customer", "Hybrid": "shared" }
+    },
+    {
+      name: "Capital Expenditure",
+      managedBy: { "Public": "provider", "Private": "customer", "Hybrid": "shared" }
+    },
+    {
+      name: "Scalability Management",
+      managedBy: { "Public": "provider", "Private": "customer", "Hybrid": "shared" }
+    },
+    {
+      name: "Hardware Maintenance",
+      managedBy: { "Public": "provider", "Private": "customer", "Hybrid": "shared" }
+    },
+    {
+      name: "Security Policies",
+      managedBy: { "Public": "shared", "Private": "customer", "Hybrid": "shared" }
+    },
+    {
+      name: "Data Location Control",
+      managedBy: { "Public": "shared", "Private": "customer", "Hybrid": "customer" }
+    },
+    {
+      name: "Compliance Configuration",
+      managedBy: { "Public": "shared", "Private": "customer", "Hybrid": "shared" }
+    }
+  ]}
+  customerLabel="Organization manages"
+  providerLabel="Provider manages"
+/>
+
+<DragDropMatch
+  title="Match Each Scenario to the Right Cloud Model"
+  categories={["Public Cloud", "Private Cloud", "Hybrid Cloud"]}
+  items={[
+    { text: "A startup launches a web app with no upfront hardware investment", category: "Public Cloud" },
+    { text: "A government agency must keep all citizen data on hardware it fully controls", category: "Private Cloud" },
+    { text: "A hospital keeps patient records on-premises but uses Azure for its public website", category: "Hybrid Cloud" },
+    { text: "An e-commerce site bursts into Azure during holiday traffic spikes", category: "Hybrid Cloud" },
+    { text: "A small business uses Azure VMs for development and testing environments", category: "Public Cloud" },
+    { text: "A defense contractor operates a classified network with no external connectivity", category: "Private Cloud" },
+    { text: "A bank runs core banking on private servers but uses Azure for mobile app APIs", category: "Hybrid Cloud" },
+    { text: "A media company streams video globally using Azure CDN", category: "Public Cloud" },
+  ]}
+/>
+
+<FillInBlank
+  title="Cloud Models — Type Your Answer"
+  mode="type"
+  items={[
+    { text: "In a ___ cloud, computing resources are shared across multiple tenants and delivered over the internet on a pay-as-you-go basis.", answer: "public" },
+    { text: "A ___ cloud is dedicated to a single organization, providing maximum control over infrastructure and security.", answer: "private" },
+    { text: "A ___ cloud combines public and private environments, allowing workloads to move between them.", answer: "hybrid" },
+    { text: "The technique of running on private infrastructure normally but spilling into the public cloud during demand spikes is called cloud ___.", answer: "bursting" },
+  ]}
+/>
+
+<FillInBlank
+  title="Cloud Models — Select Your Answer"
+  mode="select"
+  items={[
+    { text: "Public cloud requires ___ capital expenditure compared to private cloud.", answer: "less" },
+    { text: "Private cloud offers ___ control over infrastructure than public cloud.", answer: "more" },
+    { text: "Using services from Azure and AWS simultaneously is an example of a ___ strategy.", answer: "multi-cloud" },
+  ]}
+/>
+
+<ScenarioQuestion
+  title="Which Cloud Model Fits?"
+  scenario="A financial services company processes millions of stock trades per day on proprietary trading algorithms. Regulatory requirements mandate that trade execution data must remain on infrastructure the company fully controls. However, the company also wants to build a new customer-facing analytics dashboard that needs to scale globally and handle unpredictable traffic patterns. Which cloud deployment model should this company adopt?"
+  options={[
+    { text: "Public cloud for everything — regulatory requirements can be met through Azure's compliance certifications", feedback: "Incorrect. While Azure has extensive compliance certifications, the scenario explicitly states that trade execution data must remain on infrastructure the company fully controls. Public cloud is multi-tenant by nature, meaning the company does not fully control the underlying infrastructure. Compliance certifications help, but they don't satisfy a requirement for full infrastructure control." },
+    { text: "Private cloud for everything — the company needs maximum control and should not use public cloud at all", feedback: "Incorrect. While private cloud would satisfy the regulatory requirement for trade data, the customer-facing dashboard needs global scalability and must handle unpredictable traffic. Building that kind of elastic, globally distributed infrastructure privately would be extremely expensive and time-consuming. The scenario calls for a blended approach." },
+    { text: "Hybrid cloud — keep trade execution on private infrastructure while building the analytics dashboard on public cloud", feedback: "Correct. Hybrid cloud is the ideal fit here. The regulated trading workload stays on private infrastructure where the company has full control, satisfying compliance requirements. The customer-facing dashboard runs on public cloud (like Azure) where it can scale globally on demand. The two environments connect securely, allowing the dashboard to access aggregated, non-sensitive analytics data without exposing raw trade execution data.", correct: true },
+  ]}
+/>
+
+---
+
+<Quiz
+  title="Section 1.3 Quiz — Cloud Models"
+  sectionId="1-3"
+  questions={[
+    {
+      type: "multiple-choice",
+      question: "Which cloud deployment model eliminates capital expenditure and provides near-unlimited scalability through shared, provider-owned infrastructure?",
+      options: [
+        "Private cloud",
+        "Hybrid cloud",
+        "Public cloud",
+        "Multi-cloud"
+      ],
+      correct: 2,
+      explanation: "Public cloud eliminates capital expenditure because the provider owns all the infrastructure. Customers pay only for what they use (operational expenditure). The provider achieves economies of scale through multi-tenancy, enabling near-unlimited scalability for individual customers."
+    },
+    {
+      type: "true-false",
+      question: "In a public cloud, 'public' means that any user on the internet can see your data and resources without authentication.",
+      correct: false,
+      explanation: "The word 'public' in public cloud refers to the delivery model — resources are publicly available for purchase — not to the visibility of customer data. Your Azure resources are private to your organization, protected by identity controls, network isolation, encryption, and access policies. Other tenants cannot see your data."
+    },
+    {
+      type: "multiple-choice",
+      question: "A government agency requires that all citizen data be stored on infrastructure that the agency fully owns and controls, with no shared tenancy. Which cloud model best meets this requirement?",
+      options: [
+        "Public cloud with encryption enabled",
+        "Hybrid cloud with data in the public portion",
+        "Private cloud",
+        "Multi-cloud across Azure and AWS"
+      ],
+      correct: 2,
+      explanation: "Private cloud is the only model that provides single-tenant, organization-controlled infrastructure. The agency owns (or exclusively leases) the hardware, giving them full control over where data resides and who can access it. Public cloud — even with encryption — is multi-tenant by nature, and multi-cloud still uses shared public infrastructure."
+    },
+    {
+      type: "matching",
+      question: "Match each cloud model to its defining characteristic.",
+      pairs: [
+        { term: "Public cloud", definition: "Multi-tenant, provider-owned infrastructure with pay-as-you-go pricing" },
+        { term: "Private cloud", definition: "Single-tenant infrastructure dedicated to one organization" },
+        { term: "Hybrid cloud", definition: "Combines public and private environments with workload integration" },
+        { term: "Multi-cloud", definition: "Uses services from two or more public cloud providers" }
+      ],
+      explanation: "Each cloud model is defined by its ownership structure and how infrastructure is shared. Public cloud is multi-tenant and provider-owned. Private cloud is single-tenant and organization-controlled. Hybrid cloud bridges public and private. Multi-cloud spans multiple public providers."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company runs its normal workloads on private infrastructure but automatically provisions additional public cloud resources during traffic spikes. What is this pattern called?",
+      options: [
+        "Multi-cloud",
+        "Cloud migration",
+        "Cloud bursting",
+        "Serverless computing"
+      ],
+      correct: 2,
+      explanation: "Cloud bursting is a hybrid cloud pattern where applications run on private infrastructure under normal conditions but 'burst' into the public cloud when demand exceeds private capacity. This lets organizations size their private infrastructure for average load rather than peak load, reducing waste and cost."
+    },
+    {
+      type: "true-false",
+      question: "Hybrid cloud simply means having some servers on-premises and some in the public cloud — no integration between the two environments is required.",
+      correct: false,
+      explanation: "Hybrid cloud requires integration between the environments, not just coexistence. Workloads, data, and management tools must be able to operate across both environments. Azure provides tools like Azure Arc, VPN Gateway, and ExpressRoute specifically to enable this integration. Without connectivity and orchestration between the environments, you just have two separate, disconnected systems."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following is a key advantage of private cloud over public cloud?",
+      options: [
+        "Lower capital expenditure",
+        "Near-unlimited scalability",
+        "Full control over hardware and security policies",
+        "Faster deployment of new resources"
+      ],
+      correct: 2,
+      explanation: "Private cloud's primary advantage is full control — over hardware selection, network configuration, security policies, and data location. Public cloud excels at lower CapEx, scalability, and speed of deployment. Private cloud trades those benefits for control and single-tenancy."
+    },
+    {
+      type: "multiple-choice",
+      question: "An organization uses Azure for its web applications and AWS for its machine learning workloads. Which term best describes this deployment strategy?",
+      options: [
+        "Hybrid cloud",
+        "Private cloud",
+        "Public cloud",
+        "Multi-cloud"
+      ],
+      correct: 3,
+      explanation: "Using multiple public cloud providers (Azure and AWS) is a multi-cloud strategy. This is different from hybrid cloud, which combines public cloud with private cloud or on-premises infrastructure. Multi-cloud is about using more than one public cloud provider, regardless of whether any private infrastructure is involved."
+    },
+    {
+      type: "true-false",
+      question: "A key benefit of hybrid cloud is that it allows organizations to migrate to the cloud gradually rather than all at once.",
+      correct: true,
+      explanation: "Gradual migration is one of the most common hybrid cloud use cases. Organizations can move workloads to the public cloud incrementally — starting with development and testing, then production workloads — while maintaining their existing on-premises systems during the transition period. This reduces risk compared to a complete, all-at-once migration."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which cloud model is likely the MOST complex to manage?",
+      options: [
+        "Public cloud only",
+        "Private cloud only",
+        "Hybrid cloud",
+        "All models are equally complex"
+      ],
+      correct: 2,
+      explanation: "Hybrid cloud is the most complex because it requires managing two different environments (public and private) plus the integration between them. Organizations must maintain consistent security policies, networking (VPNs, ExpressRoute), identity management, and monitoring across both environments. Public-only and private-only each involve managing just one environment."
+    }
+  ]}
+/>
+
+<KeyTakeaways>
+- **Public cloud** is owned by the provider, shared across tenants, and uses a pay-as-you-go model — offering maximum scalability with no capital expenditure but less control over the underlying infrastructure.
+- **Private cloud** is dedicated to a single organization, offering full control over hardware, security, and compliance — but at higher cost and with limited scalability.
+- **Hybrid cloud** combines public and private environments with integration between them, allowing organizations to place workloads where they make the most sense based on compliance, cost, and performance needs.
+- **Multi-cloud** means using multiple public cloud providers (e.g., Azure and AWS together) — distinct from hybrid cloud, which mixes public with private.
+- **Cloud bursting** is a hybrid pattern where applications normally run on private infrastructure but burst into the public cloud during demand spikes.
+- The word "public" in public cloud refers to the delivery model, not the visibility of your data — your Azure resources are private and protected.
+- Hybrid cloud requires actual integration between environments (via tools like Azure Arc, VPN Gateway, or ExpressRoute), not just separate systems running side by side.
+- Most large organizations today use hybrid or multi-cloud strategies, not a single model exclusively.
+</KeyTakeaways>
