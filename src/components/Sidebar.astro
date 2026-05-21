@@ -32,20 +32,53 @@ const currentPath = Astro.url.pathname;
   data-current-path={currentPath}
 >
   <!-- Header -->
-  <div class="flex items-center justify-between px-5 py-5 border-b border-gray-200 dark:border-gray-700">
-    <a href={import.meta.env.BASE_URL} class="text-lg font-semibold text-gray-900 dark:text-gray-100">AZ-900 Study Guide</a>
-    <div class="flex items-center gap-1">
-      <ThemeToggle />
-      <button
-        id="sidebar-close-btn"
-        type="button"
-        class="lg:hidden inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-        aria-label="Close navigation"
+  <div class="px-5 pt-5 pb-3 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center justify-between">
+      <a href={import.meta.env.BASE_URL} class="text-lg font-semibold text-gray-900 dark:text-gray-100">AZ-900 Study Guide</a>
+      <div class="flex items-center gap-1">
+        <span
+          id="sidebar-xp-counter"
+          class="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-1.5 py-0.5 rounded hidden"
+          aria-label="Total XP earned"
+        >0 XP</span>
+        <ThemeToggle />
+        <button
+          id="sidebar-close-btn"
+          type="button"
+          class="lg:hidden inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          aria-label="Close navigation"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <!-- Completion progress bar -->
+    <div class="mt-3" id="sidebar-progress-container">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-xs text-gray-500 dark:text-gray-400">Progress</span>
+        <span
+          id="sidebar-completion-pct"
+          class="text-xs font-medium text-gray-600 dark:text-gray-300"
+          aria-label="Overall completion percentage"
+        >0%</span>
+      </div>
+      <div
+        class="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+        role="progressbar"
+        aria-valuenow={0}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Study guide completion"
+        id="sidebar-progress-bar-wrapper"
       >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+        <div
+          id="sidebar-progress-bar"
+          class="h-full bg-blue-500 dark:bg-blue-400 rounded-full transition-all duration-300"
+          style="width: 0%"
+        ></div>
+      </div>
     </div>
   </div>
 
@@ -82,19 +115,23 @@ const currentPath = Astro.url.pathname;
         <ul id={`sidebar-group-${idx}`} class="sidebar-group-links mt-1 space-y-0.5 overflow-hidden transition-all duration-200">
           {group.sections.map((section) => {
             const isActive = currentPath === section.href || currentPath === section.href.replace(/\/$/, '');
+            // Extract sectionId from href: strip base + /sections/ prefix and trailing /
+            const sectionId = section.href.replace(/^.*\/sections\//, '').replace(/\/$/, '');
             return (
               <li>
                 <a
                   href={section.href}
+                  data-section-id={sectionId}
                   class:list={[
-                    'block px-3 py-1.5 text-sm rounded transition-colors',
+                    'flex items-center justify-between px-3 py-1.5 text-sm rounded transition-colors',
                     isActive
                       ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 font-medium border-l-2 border-blue-600 dark:border-blue-500 pl-2.5'
                       : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800',
                   ]}
                   aria-current={isActive ? 'page' : undefined}
                 >
-                  {section.title}
+                  <span class="section-link-title">{section.title}</span>
+                  <span class="section-link-indicators flex items-center gap-1 ml-1 flex-shrink-0"></span>
                 </a>
               </li>
             );
@@ -140,6 +177,140 @@ const currentPath = Astro.url.pathname;
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeSidebar();
     });
+
+    // -----------------------------------------------------------------------
+    // Progress / XP / Badge indicators
+    // -----------------------------------------------------------------------
+
+    const TOTAL_SECTIONS = 15;
+    const BADGE_COLORS: Record<string, string> = {
+      bronze: '#CD7F32',
+      silver: '#C0C0C0',
+      gold: '#FFD700',
+    };
+
+    function getSectionsRead(): Set<string> {
+      try {
+        const raw = localStorage.getItem('az900-sections-read');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return new Set(parsed as string[]);
+        }
+      } catch { /* ignore */ }
+      return new Set();
+    }
+
+    function getTotalXP(): number {
+      try {
+        const raw = localStorage.getItem('az900-xp-data');
+        if (raw) {
+          const parsed = JSON.parse(raw) as { entries?: { points: number }[] };
+          if (parsed && Array.isArray(parsed.entries)) {
+            return parsed.entries.reduce((acc: number, e: { points: number }) => acc + e.points, 0);
+          }
+        }
+      } catch { /* ignore */ }
+      return 0;
+    }
+
+    function getBadges(): Record<string, { tier: string }> {
+      try {
+        const raw = localStorage.getItem('az900-badge-data');
+        if (raw) {
+          const parsed = JSON.parse(raw) as { badges?: Record<string, { tier: string }> };
+          if (parsed && typeof parsed.badges === 'object' && parsed.badges !== null) {
+            return parsed.badges;
+          }
+        }
+      } catch { /* ignore */ }
+      return {};
+    }
+
+    function updateXPCounter(xp: number): void {
+      const xpEl = document.getElementById('sidebar-xp-counter');
+      if (!xpEl) return;
+      xpEl.textContent = `${xp} XP`;
+      if (xp > 0) {
+        xpEl.classList.remove('hidden');
+      } else {
+        xpEl.classList.add('hidden');
+      }
+    }
+
+    function updateCompletionBar(sectionsRead: Set<string>): void {
+      const pct = TOTAL_SECTIONS > 0 ? Math.round((sectionsRead.size / TOTAL_SECTIONS) * 100) : 0;
+      const pctEl = document.getElementById('sidebar-completion-pct');
+      const barEl = document.getElementById('sidebar-progress-bar');
+      const wrapperEl = document.getElementById('sidebar-progress-bar-wrapper');
+      if (pctEl) pctEl.textContent = `${pct}%`;
+      if (barEl) barEl.style.width = `${pct}%`;
+      if (wrapperEl) wrapperEl.setAttribute('aria-valuenow', String(pct));
+    }
+
+    function getOrCreateIndicatorSpan(linkEl: Element): HTMLSpanElement {
+      let span = linkEl.querySelector('.section-link-indicators') as HTMLSpanElement | null;
+      if (!span) {
+        span = document.createElement('span');
+        span.className = 'section-link-indicators flex items-center gap-1 ml-1 flex-shrink-0';
+        linkEl.appendChild(span);
+      }
+      return span;
+    }
+
+    function updateSectionIndicators(
+      sectionsRead: Set<string>,
+      badges: Record<string, { tier: string }>
+    ): void {
+      const links = document.querySelectorAll<HTMLAnchorElement>('a[data-section-id]');
+      links.forEach((link) => {
+        const sectionId = link.dataset.sectionId;
+        if (!sectionId) return;
+
+        const indicators = getOrCreateIndicatorSpan(link);
+
+        // Remove existing dynamic indicators (checkmark + badge dot)
+        indicators.querySelectorAll('.sidebar-checkmark, .sidebar-badge-dot').forEach((el) => el.remove());
+
+        // Checkmark for read sections
+        if (sectionsRead.has(sectionId)) {
+          const check = document.createElement('span');
+          check.className = 'sidebar-checkmark';
+          check.setAttribute('aria-label', 'Section read');
+          check.setAttribute('role', 'img');
+          check.innerHTML = `<svg class="w-3.5 h-3.5 text-green-500 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>`;
+          indicators.appendChild(check);
+        }
+
+        // Badge dot for earned badges
+        const badge = badges[sectionId];
+        if (badge) {
+          const dot = document.createElement('span');
+          dot.className = 'sidebar-badge-dot w-2 h-2 rounded-full flex-shrink-0 inline-block';
+          dot.style.backgroundColor = BADGE_COLORS[badge.tier] ?? '#C0C0C0';
+          dot.setAttribute('aria-label', `${badge.tier.charAt(0).toUpperCase() + badge.tier.slice(1)} badge earned`);
+          dot.setAttribute('role', 'img');
+          indicators.appendChild(dot);
+        }
+      });
+    }
+
+    function refreshSidebarIndicators(): void {
+      const sectionsRead = getSectionsRead();
+      const xp = getTotalXP();
+      const badges = getBadges();
+      updateXPCounter(xp);
+      updateCompletionBar(sectionsRead);
+      updateSectionIndicators(sectionsRead, badges);
+    }
+
+    // Initial render
+    refreshSidebarIndicators();
+
+    // Real-time updates via custom events
+    document.addEventListener('progress:section-read', () => refreshSidebarIndicators());
+    document.addEventListener('progress:section-unread', () => refreshSidebarIndicators());
+    document.addEventListener('xp:earned', () => refreshSidebarIndicators());
+    document.addEventListener('badge:earned', () => refreshSidebarIndicators());
 
     // Collapse/expand domain groups
     const groups = document.querySelectorAll('.sidebar-group');
