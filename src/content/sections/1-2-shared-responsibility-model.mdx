@@ -1,0 +1,422 @@
+---
+title: "Shared Responsibility Model"
+domain: 1
+section: "1.2"
+order: 2
+description: "Understand how security and operational responsibilities are divided between you and Microsoft Azure — and how those boundaries shift depending on whether you use IaaS, PaaS, or SaaS."
+tags: ["cloud-concepts", "shared-responsibility", "security", "IaaS", "PaaS", "SaaS"]
+lastVerified: "2026-05-21"
+microsoftLearnUrl: "https://learn.microsoft.com/en-us/training/modules/describe-cloud-service-types/"
+---
+
+import KeyTakeaways from '../../components/KeyTakeaways.astro';
+import KeyTerm from '../../components/KeyTerm.astro';
+import Callout from '../../components/Callout.astro';
+import DeepDive from '../../components/DeepDive.astro';
+import InteractiveDiagram from '../../components/InteractiveDiagram.astro';
+import DiagramHotspot from '../../components/DiagramHotspot.astro';
+import DragDropMatch from '../../components/DragDropMatch.astro';
+import ComparisonSlider from '../../components/ComparisonSlider.astro';
+import FillInBlank from '../../components/FillInBlank.astro';
+import ScenarioQuestion from '../../components/ScenarioQuestion.astro';
+import Quiz from '../../components/Quiz.astro';
+
+## What is the Shared Responsibility Model?
+
+When you move workloads to the cloud, you don't simply hand everything over to Microsoft and walk away. Security and operational duties are split between you and the cloud provider — and understanding exactly where that line falls is critical for both the AZ-900 exam and real-world cloud deployments.
+
+<KeyTerm term="Shared Responsibility Model">A framework that defines which security and operational tasks are managed by the cloud provider, which are managed by the customer, and which are shared — with the exact division depending on the type of cloud service in use.</KeyTerm>
+
+Think of it like renting an apartment. Your landlord is responsible for maintaining the building's structure, the plumbing, the electrical systems, the lobby security cameras, and the locks on the main entrance. But securing your own belongings, setting the deadbolt on your front door every night, and deciding who gets a spare key? That's entirely on you. The landlord cannot be held responsible if you lend your key to someone who steals your laptop.
+
+Cloud computing works the same way. Microsoft Azure owns and secures the physical infrastructure — the data centers, the servers, the networking cables, the power supply. But you own your data, your user accounts, and your access policies. Between those two extremes lies a middle zone where responsibility shifts depending on the type of service you choose.
+
+<Callout type="info">
+The shared responsibility model isn't just a conceptual framework — it has direct implications for compliance and security audits. When an organization undergoes a SOC 2 or ISO 27001 audit in the cloud, auditors expect clear documentation of which controls are Azure's responsibility and which are the customer's. Understanding this model is essential for compliance teams as much as it is for the exam.
+</Callout>
+
+## The Two Anchors: What Never Changes
+
+Before looking at where responsibility shifts, it helps to understand what is fixed regardless of which cloud service model you use.
+
+**Always Microsoft's responsibility — the physical layer:**
+
+- **Physical datacenter** — The building, fencing, guards, badge readers, and surveillance cameras that protect the facility.
+- **Physical network** — The fiber, switches, routers, and cables connecting Microsoft's global infrastructure.
+- **Physical hosts** — The actual servers, CPUs, and storage hardware inside the data center.
+
+Azure controls these layers completely. You have no ability to configure them, and no obligation to secure them. If a hard drive fails in a Microsoft data center, that's Microsoft's problem to fix.
+
+**Always your responsibility — the data and identity layer:**
+
+- **Information and data** — The content you store in the cloud, whether it's database records, files, or application state. Microsoft does not read or manage your data for you.
+- **Devices and endpoints** — The laptops, phones, and workstations your users connect from. If an employee's laptop is compromised, that's outside Azure's responsibility.
+- **Accounts and access management** — Who has permission to access your Azure resources and what they're allowed to do. Microsoft provides the tools (Azure Active Directory, role-based access control), but configuring them correctly is your job.
+
+<Callout type="warning">
+A common misconception: many organizations assume that because their data is stored in Azure, Microsoft is responsible for protecting it. This is incorrect. Microsoft secures the infrastructure that holds your data — but the data itself, including how it's encrypted, who can access it, and how it's backed up, remains your responsibility regardless of which service model you use.
+</Callout>
+
+## How Responsibility Shifts by Service Type
+
+The middle layers — operating system, network controls, applications, and middleware — are where the three cloud service models diverge. Each model represents a different point on the responsibility spectrum.
+
+### IaaS — Infrastructure as a Service
+
+<KeyTerm term="Infrastructure as a Service (IaaS)">A cloud model where the provider delivers virtualized computing infrastructure (servers, storage, networking) over the internet, while the customer is responsible for the operating system, middleware, applications, and data.</KeyTerm>
+
+IaaS is the "bare land lease" of cloud computing. Microsoft hands you a virtual machine — essentially a blank computer running in their data center — and you take it from there. You install the operating system, you patch it, you configure the firewall rules, you deploy your application, and you manage your data. The physical hardware underneath is Azure's concern, but everything above it is yours.
+
+A typical IaaS scenario: a company lifts an existing Windows Server application to Azure by creating a virtual machine. Azure manages the physical host that VM runs on, but the company's IT team is responsible for keeping Windows updated, hardening the OS configuration, and managing who can log in via Remote Desktop.
+
+### PaaS — Platform as a Service
+
+<KeyTerm term="Platform as a Service (PaaS)">A cloud model where the provider manages the underlying infrastructure and runtime environment, allowing customers to focus on building and deploying applications without worrying about OS patching, middleware, or server management.</KeyTerm>
+
+PaaS is the "furnished apartment." Microsoft provides not just the hardware but also the operating system, the runtime environment, and the middleware. You bring your application code and your data — Azure handles the platform beneath it.
+
+Azure App Service is a classic example. You deploy your web application's code; Azure handles OS patching, load balancing, and runtime updates. You don't even know (or need to know) which physical servers your code runs on. Network controls become shared — you configure virtual network integration, but Azure manages the underlying network infrastructure.
+
+### SaaS — Software as a Service
+
+<KeyTerm term="Software as a Service (SaaS)">A cloud model where the provider delivers a fully managed application over the internet. The customer simply uses the software; the provider handles everything from infrastructure to application updates.</KeyTerm>
+
+SaaS is the "hotel room." Almost everything is managed for you — the building, the furniture, the linens, the housekeeping. You're responsible for your personal belongings and for deciding who gets a key card. Microsoft 365 (formerly Office 365) is the defining SaaS example on the AZ-900 exam: Microsoft manages the application, the infrastructure, and the updates. You manage your users, your data, and your access policies.
+
+<DeepDive title="The Spectrum of Control vs. Convenience">
+There's a deliberate tradeoff baked into each service model:
+
+**IaaS** gives you maximum control and maximum flexibility — at the cost of maximum responsibility. You can customize the OS, install any software you want, and tune network configurations to your exact specifications. But you're also on the hook for patching that OS, managing that software, and maintaining those configurations. This model suits organizations with specialized requirements, compliance needs that demand control over the OS layer, or teams with strong infrastructure expertise.
+
+**PaaS** strikes a balance. You lose some control over the underlying stack, but you gain developer velocity. Your team can focus entirely on application logic rather than infrastructure management. The tradeoff is that you accept Azure's choices about the runtime environment — you can't necessarily install arbitrary OS packages or modify kernel settings.
+
+**SaaS** maximizes convenience at the cost of control. Microsoft 365 does exactly what Microsoft designed it to do; you cannot modify its underlying architecture. This is appropriate for commodity workloads like email and productivity tools, but it's not suitable for highly customized enterprise applications.
+
+Understanding this tradeoff helps you answer AZ-900 scenario questions: when a question describes a team that wants to focus on writing code without managing servers, that's PaaS. When a question describes a team that needs root-level OS access, that's IaaS.
+</DeepDive>
+
+<Callout type="tip">
+For the AZ-900 exam, remember this rule of thumb: the higher up the service model ladder you go (IaaS → PaaS → SaaS), the more responsibility shifts to the provider and the less the customer needs to manage — but also the less control the customer has.
+</Callout>
+
+## The Full Responsibility Map
+
+Here is a complete view of every layer in the cloud stack and who manages it across the three service models:
+
+| Layer | IaaS | PaaS | SaaS |
+|---|---|---|---|
+| Physical datacenter | Provider | Provider | Provider |
+| Physical network | Provider | Provider | Provider |
+| Physical hosts | Provider | Provider | Provider |
+| Operating system | **Customer** | Provider | Provider |
+| Network controls | **Customer** | Shared | Provider |
+| Applications | **Customer** | **Customer** | Provider |
+| Identity & directory infrastructure | Shared | Shared | Shared |
+| Information & data | **Customer** | **Customer** | **Customer** |
+| Devices & endpoints | **Customer** | **Customer** | **Customer** |
+| Accounts & access management | **Customer** | **Customer** | **Customer** |
+
+Notice that identity, data, devices, and access management remain the customer's responsibility across all three models. These are the layers where security incidents most commonly originate — phishing attacks that steal credentials, misconfigurations that expose data publicly, or compromised endpoints that provide attackers with a foothold.
+
+<InteractiveDiagram title="Shared Responsibility by Layer" alt="Stacked diagram showing cloud infrastructure layers color-coded by whether Microsoft or the customer is responsible">
+  <svg viewBox="0 0 620 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:system-ui,sans-serif">
+    {/* Legend */}
+    <rect x="30" y="10" width="16" height="16" rx="3" fill="#1e3a5f" />
+    <text x="52" y="23" fill="#1e293b" fontSize="12">Azure manages</text>
+    <rect x="170" y="10" width="16" height="16" rx="3" fill="#0ea5e9" />
+    <text x="192" y="23" fill="#1e293b" fontSize="12">Shared</text>
+    <rect x="270" y="10" width="16" height="16" rx="3" fill="#3b82f6" />
+    <text x="292" y="23" fill="#1e293b" fontSize="12">You manage</text>
+    {/* Layer 10 — Physical Datacenter (provider) */}
+    <rect x="30" y="45" width="560" height="42" rx="6" fill="#1e3a5f" stroke="#2563eb" strokeWidth="1.5" />
+    <text x="310" y="62" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">Physical Datacenter</text>
+    <text x="310" y="79" textAnchor="middle" fill="#93c5fd" fontSize="11">Always Azure</text>
+    {/* Layer 9 — Physical Network (provider) */}
+    <rect x="30" y="97" width="560" height="42" rx="6" fill="#1e3a5f" stroke="#2563eb" strokeWidth="1.5" />
+    <text x="310" y="114" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">Physical Network</text>
+    <text x="310" y="131" textAnchor="middle" fill="#93c5fd" fontSize="11">Always Azure</text>
+    {/* Layer 8 — Physical Hosts (provider) */}
+    <rect x="30" y="149" width="560" height="42" rx="6" fill="#1e3a5f" stroke="#2563eb" strokeWidth="1.5" />
+    <text x="310" y="166" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">Physical Hosts</text>
+    <text x="310" y="183" textAnchor="middle" fill="#93c5fd" fontSize="11">Always Azure</text>
+    {/* Layer 7 — Identity (shared) */}
+    <rect x="30" y="201" width="560" height="42" rx="6" fill="#0ea5e9" stroke="#38bdf8" strokeWidth="1.5" />
+    <text x="310" y="218" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">Identity &amp; Directory Infrastructure</text>
+    <text x="310" y="235" textAnchor="middle" fill="#e0f2fe" fontSize="11">Always Shared — Azure runs the platform, you manage your users</text>
+    {/* Layer 6 — Operating System (customer) */}
+    <rect x="30" y="253" width="560" height="42" rx="6" fill="#3b82f6" stroke="#60a5fa" strokeWidth="1.5" />
+    <text x="310" y="270" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">Operating System</text>
+    <text x="310" y="287" textAnchor="middle" fill="#bfdbfe" fontSize="11">IaaS: You | PaaS &amp; SaaS: Azure</text>
+    {/* Layer 5 — Network Controls (shifts) */}
+    <rect x="30" y="305" width="560" height="42" rx="6" fill="#3b82f6" stroke="#60a5fa" strokeWidth="1.5" />
+    <text x="310" y="322" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">Network Controls</text>
+    <text x="310" y="339" textAnchor="middle" fill="#bfdbfe" fontSize="11">IaaS: You | PaaS: Shared | SaaS: Azure</text>
+    {/* Layer 4 — Applications (shifts) */}
+    <rect x="30" y="357" width="560" height="42" rx="6" fill="#3b82f6" stroke="#60a5fa" strokeWidth="1.5" />
+    <text x="310" y="374" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">Applications</text>
+    <text x="310" y="391" textAnchor="middle" fill="#bfdbfe" fontSize="11">IaaS &amp; PaaS: You | SaaS: Azure</text>
+    {/* Layer 3 — Data, Devices, Accounts (always customer) */}
+    <rect x="30" y="409" width="560" height="54" rx="6" fill="#2563eb" stroke="#3b82f6" strokeWidth="1.5" />
+    <text x="310" y="430" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">Data · Devices &amp; Endpoints · Accounts &amp; Access</text>
+    <text x="310" y="449" textAnchor="middle" fill="#bfdbfe" fontSize="11">Always Your Responsibility — across IaaS, PaaS, and SaaS</text>
+    <text x="310" y="457" textAnchor="middle" fill="#bfdbfe" fontSize="9"> </text>
+  </svg>
+  <DiagramHotspot x="50%" y="11%" width="93.33%" height="8.75%" variant="layer" label="Physical Datacenter">
+    Microsoft owns and secures the physical facilities — the buildings, fencing, surveillance cameras, and badge-controlled access. No customer has physical access to Azure data centers. This layer is always 100% Microsoft's responsibility.
+  </DiagramHotspot>
+  <DiagramHotspot x="50%" y="22%" width="93.33%" height="8.75%" variant="layer" label="Physical Network">
+    The fiber optic cables, network switches, routers, and dedicated interconnects that form Azure's global backbone. Microsoft maintains this infrastructure, including redundant paths and DDoS protection at the network edge.
+  </DiagramHotspot>
+  <DiagramHotspot x="50%" y="33%" width="93.33%" height="8.75%" variant="layer" label="Physical Hosts">
+    The actual server hardware your virtual machines run on — the CPUs, RAM, and storage. Azure manages hardware failures, firmware updates, and hardware security (like Trusted Platform Module chips). You never interact with this layer directly.
+  </DiagramHotspot>
+  <DiagramHotspot x="50%" y="45%" width="93.33%" height="8.75%" variant="layer" label="Identity & Directory Infrastructure">
+    This layer is always shared. Microsoft runs the Azure Active Directory (Entra ID) platform and keeps it available and secure. But configuring user accounts, assigning roles, enabling multi-factor authentication, and setting conditional access policies — those are your responsibilities.
+  </DiagramHotspot>
+  <DiagramHotspot x="50%" y="57%" width="93.33%" height="8.75%" variant="layer" label="Operating System">
+    In IaaS, you manage the OS — patching, hardening, antivirus, and configuration. In PaaS and SaaS, the operating system is abstracted away and managed by Azure. This is one of the most significant shifts between service models.
+  </DiagramHotspot>
+  <DiagramHotspot x="50%" y="68%" width="93.33%" height="8.75%" variant="layer" label="Network Controls">
+    In IaaS, you configure network security groups, firewall rules, and routing tables. In PaaS, responsibility is shared — Azure manages the underlying network infrastructure, while you configure virtual network integration and access policies. In SaaS, Azure manages network controls entirely.
+  </DiagramHotspot>
+  <DiagramHotspot x="50%" y="79%" width="93.33%" height="8.75%" variant="layer" label="Applications">
+    In IaaS and PaaS, you build, deploy, and manage your own applications. In SaaS, the application itself is provided and managed by Microsoft — you simply use it. You still own the data inside it.
+  </DiagramHotspot>
+  <DiagramHotspot x="50%" y="91%" width="93.33%" height="11.25%" variant="layer" label="Data, Devices & Accounts">
+    These three layers are always your responsibility, no matter the service model. You own your data and must decide how it's encrypted and who can access it. You're responsible for the health of your users' endpoints. And you control account permissions and access policies through Azure RBAC and Entra ID.
+  </DiagramHotspot>
+</InteractiveDiagram>
+
+## Why the Shared Responsibility Model Matters
+
+Understanding this model has practical consequences well beyond passing the AZ-900 exam.
+
+**Security gaps happen at the boundary.** Most cloud security incidents don't result from Azure infrastructure failures — they result from customers misunderstanding their responsibilities. Leaving a storage container publicly accessible, using weak passwords, or failing to patch IaaS virtual machines are all customer-side failures in the shared responsibility model.
+
+**Compliance auditors will ask.** When your organization undergoes a compliance review (SOC 2, PCI-DSS, HIPAA, ISO 27001), auditors expect you to demonstrate control over your customer-managed layers. Azure provides compliance certifications for its own infrastructure, but you must show evidence of controls on your side of the line.
+
+**Service selection affects your security posture.** Choosing IaaS over PaaS doesn't just affect your operational workload — it expands your security surface. When you manage the OS, you're responsible for vulnerabilities in that OS. Choosing PaaS or SaaS shifts those vulnerabilities to Microsoft's side, reducing your attack surface at the cost of some control.
+
+<DeepDive title="Shared Responsibility in the Real World: The Capital One Breach">
+In 2019, Capital One suffered a data breach affecting over 100 million customers — despite hosting their workloads on a major cloud provider. The attacker exploited a misconfigured web application firewall to access AWS metadata credentials and then used those credentials to access S3 storage buckets containing customer data.
+
+The cloud provider's physical infrastructure was never compromised. The breach occurred entirely within Capital One's responsibility domain: a misconfigured network control (their WAF) and improperly scoped access permissions for a server role. The data — always the customer's responsibility — was exposed because the customer-managed security layers were configured incorrectly.
+
+This incident is a textbook illustration of why the shared responsibility model isn't just an exam concept. Misunderstanding where your responsibility begins is how breaches happen.
+</DeepDive>
+
+---
+
+## Practice Activities
+
+<ComparisonSlider
+  title="Who Manages What? Slide Between Service Models"
+  models={["IaaS", "PaaS", "SaaS"]}
+  layers={[
+    {
+      name: "Physical Datacenter",
+      managedBy: { "IaaS": "provider", "PaaS": "provider", "SaaS": "provider" }
+    },
+    {
+      name: "Physical Network",
+      managedBy: { "IaaS": "provider", "PaaS": "provider", "SaaS": "provider" }
+    },
+    {
+      name: "Physical Hosts",
+      managedBy: { "IaaS": "provider", "PaaS": "provider", "SaaS": "provider" }
+    },
+    {
+      name: "Operating System",
+      managedBy: { "IaaS": "customer", "PaaS": "provider", "SaaS": "provider" }
+    },
+    {
+      name: "Network Controls",
+      managedBy: { "IaaS": "customer", "PaaS": "shared", "SaaS": "provider" }
+    },
+    {
+      name: "Applications",
+      managedBy: { "IaaS": "customer", "PaaS": "customer", "SaaS": "provider" }
+    },
+    {
+      name: "Identity & Directory",
+      managedBy: { "IaaS": "shared", "PaaS": "shared", "SaaS": "shared" }
+    },
+    {
+      name: "Information & Data",
+      managedBy: { "IaaS": "customer", "PaaS": "customer", "SaaS": "customer" }
+    },
+    {
+      name: "Devices & Endpoints",
+      managedBy: { "IaaS": "customer", "PaaS": "customer", "SaaS": "customer" }
+    },
+    {
+      name: "Accounts & Access Management",
+      managedBy: { "IaaS": "customer", "PaaS": "customer", "SaaS": "customer" }
+    }
+  ]}
+  customerLabel="You manage"
+  providerLabel="Azure manages"
+/>
+
+<DragDropMatch
+  title="Sort These Responsibilities"
+  categories={["Always Azure", "Always Customer", "Depends on Service Model"]}
+  items={[
+    { text: "Physical datacenter security", category: "Always Azure" },
+    { text: "Physical network hardware", category: "Always Azure" },
+    { text: "Physical host servers", category: "Always Azure" },
+    { text: "Customer data and information", category: "Always Customer" },
+    { text: "User devices and endpoints", category: "Always Customer" },
+    { text: "Account and access management", category: "Always Customer" },
+    { text: "Operating system patching", category: "Depends on Service Model" },
+    { text: "Application deployment and maintenance", category: "Depends on Service Model" },
+    { text: "Network security group configuration", category: "Depends on Service Model" },
+  ]}
+/>
+
+<FillInBlank
+  title="Key Concepts — Type Your Answer"
+  mode="type"
+  items={[
+    { text: "In ___, the customer is responsible for OS patching, network controls, and applications.", answer: "IaaS" },
+    { text: "The customer is always responsible for their ___ regardless of which service model is used.", answer: "data" },
+    { text: "In ___, the provider manages the application itself — the customer only manages their data and users.", answer: "SaaS" },
+  ]}
+/>
+
+<FillInBlank
+  title="Key Concepts — Select Your Answer"
+  mode="select"
+  items={[
+    { text: "As you move from IaaS to SaaS, the customer's management responsibilities ___.", answer: "decrease" },
+    { text: "Identity and directory infrastructure responsibility is always ___ between Azure and the customer.", answer: "shared" },
+  ]}
+/>
+
+<ScenarioQuestion
+  title="Who Is Responsible?"
+  scenario="A company runs their e-commerce website on Azure Virtual Machines (IaaS). A security researcher discovers that the virtual machines are running an outdated version of their web server software with a known vulnerability. The company's security team argues that since they're paying for Azure, Microsoft should patch the software. Who is actually responsible, and why?"
+  options={[
+    { text: "Microsoft, because the vulnerability is in software running on Azure infrastructure", feedback: "Incorrect. While Azure manages the physical infrastructure that the VMs run on, with IaaS the customer is responsible for everything above the hypervisor — including the operating system, web server software, and applications. Microsoft has no knowledge of or access to the software you install on your IaaS virtual machines." },
+    { text: "The company, because operating system and application management is the customer's responsibility in IaaS", feedback: "Correct. In the IaaS model, the dividing line sits just above the physical host layer. Azure manages the physical infrastructure, but the customer owns the operating system, middleware, and applications running on the VM — including patching and vulnerability management. This is a core principle of the shared responsibility model.", correct: true },
+    { text: "Both equally, because IaaS uses a shared responsibility model for all layers", feedback: "Incorrect. While IaaS does use shared responsibility, not every layer is split 50/50. The operating system and applications running on an IaaS VM are unambiguously the customer's responsibility. The shared aspect of IaaS refers to the fact that Azure manages physical layers while the customer manages the software layers — they don't jointly manage either." },
+  ]}
+/>
+
+---
+
+<Quiz
+  title="Section 1.2 Quiz — Shared Responsibility Model"
+  sectionId="1-2"
+  questions={[
+    {
+      type: "multiple-choice",
+      question: "Which of the following is ALWAYS the customer's responsibility, regardless of whether they are using IaaS, PaaS, or SaaS?",
+      options: [
+        "Operating system patching",
+        "Physical host maintenance",
+        "Information and data",
+        "Application runtime updates"
+      ],
+      correct: 2,
+      explanation: "Information and data is always the customer's responsibility across all three service models. The customer decides how data is encrypted, who can access it, and how it's managed. Physical hosts are always Azure's responsibility, while OS patching and runtime updates vary by service model."
+    },
+    {
+      type: "true-false",
+      question: "When using Azure Blob Storage (a PaaS service), Microsoft is responsible for securing the physical servers and the storage infrastructure, while the customer is responsible for deciding who can access the data stored within it.",
+      correct: true,
+      explanation: "This accurately describes the shared responsibility model for a PaaS service. Azure manages the physical infrastructure, the storage platform, and its availability. The customer manages access control — configuring permissions, SAS tokens, private endpoints, and encryption keys — to protect the data itself."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company uses Microsoft 365 for email and productivity. Under the shared responsibility model, which of the following is the company responsible for?",
+      options: [
+        "Patching the Microsoft 365 application servers",
+        "Managing user accounts and access permissions",
+        "Maintaining the network infrastructure that delivers Microsoft 365",
+        "Updating the operating system that Microsoft 365 runs on"
+      ],
+      correct: 1,
+      explanation: "Microsoft 365 is a SaaS product. Microsoft manages the application, infrastructure, OS, and networking. The customer retains responsibility for their data, their users, and access management — including creating accounts, assigning licenses, and configuring multi-factor authentication."
+    },
+    {
+      type: "matching",
+      question: "Match each item to the correct responsibility category for an IaaS deployment.",
+      pairs: [
+        { term: "Physical data center building security", definition: "Always Azure's responsibility" },
+        { term: "Operating system vulnerability patching", definition: "Customer's responsibility in IaaS" },
+        { term: "Customer database records and files", definition: "Always the customer's responsibility" },
+        { term: "Azure Active Directory platform availability", definition: "Shared responsibility" }
+      ],
+      explanation: "In IaaS, Azure manages all physical infrastructure. The customer manages the OS, applications, and data above the hypervisor. Identity platform availability is shared — Azure runs the platform, while the customer configures and manages their users and roles."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which cloud service model gives customers the MOST operational responsibility?",
+      options: [
+        "SaaS",
+        "PaaS",
+        "IaaS",
+        "Responsibility is equal across all three models"
+      ],
+      correct: 2,
+      explanation: "IaaS gives customers the most control and the most responsibility. Customers manage the operating system, middleware, applications, and data — everything above the hypervisor. With PaaS, the provider takes over OS management. With SaaS, the provider manages nearly everything."
+    },
+    {
+      type: "true-false",
+      question: "Because Azure operates globally secure data centers, customers do not need to worry about securing access to their Azure resources — Microsoft handles all identity and access management.",
+      correct: false,
+      explanation: "This is a critical misconception. While Microsoft manages the Azure Active Directory (Entra ID) platform infrastructure, configuring access policies is always the customer's responsibility. Setting up multi-factor authentication, assigning role-based access control (RBAC) roles, and managing who can access what are all customer responsibilities across IaaS, PaaS, and SaaS."
+    },
+    {
+      type: "multiple-choice",
+      question: "A development team wants to deploy a web application without managing servers, operating systems, or patching. They want to focus only on writing code. Which service model best fits their needs, and what does that imply about responsibility?",
+      options: [
+        "IaaS — the team manages everything above the hypervisor, giving them maximum control",
+        "PaaS — the provider manages the OS and runtime, while the team focuses on their application and data",
+        "SaaS — the provider manages the entire application stack, and the team only consumes the software",
+        "There is no difference — all service models require the customer to manage the OS"
+      ],
+      correct: 1,
+      explanation: "PaaS is designed for exactly this scenario. The cloud provider manages the OS, runtime, and middleware — the team only needs to worry about their application code and their data. SaaS would mean using a pre-built application, not deploying custom code."
+    },
+    {
+      type: "multiple-choice",
+      question: "Under the shared responsibility model, which layer is described as 'shared' in a PaaS deployment?",
+      options: [
+        "Physical datacenter",
+        "Information and data",
+        "Network controls",
+        "Devices and endpoints"
+      ],
+      correct: 2,
+      explanation: "Network controls are shared in a PaaS deployment. Azure manages the underlying network infrastructure, while the customer is responsible for configuring virtual network integrations, access restrictions, and firewall rules at the application level. Physical datacenter is always Azure's, while data and endpoints are always the customer's."
+    },
+    {
+      type: "true-false",
+      question: "If a customer using an IaaS virtual machine fails to patch a critical operating system vulnerability and their VM is compromised, this is a failure in the customer's domain of the shared responsibility model.",
+      correct: true,
+      explanation: "Correct. Operating system management — including security patching — is explicitly the customer's responsibility in the IaaS model. Azure is responsible for the physical host the VM runs on, but the guest OS and everything running inside the VM falls to the customer. Failure to patch the OS is a customer-side security failure."
+    },
+    {
+      type: "matching",
+      question: "Match each cloud service model to the most accurate description of customer responsibility.",
+      pairs: [
+        { term: "IaaS", definition: "Customer manages OS, applications, network controls, and data" },
+        { term: "PaaS", definition: "Customer manages applications and data; provider manages OS and runtime" },
+        { term: "SaaS", definition: "Customer manages only data, users, and access; provider manages everything else" }
+      ],
+      explanation: "These three descriptions capture the core responsibility profile for each service model. As you move from IaaS to SaaS, the customer's management surface narrows while the provider's expands — but data, users, and access always remain with the customer."
+    }
+  ]}
+/>
+
+<KeyTakeaways>
+- The shared responsibility model defines which cloud security and operational tasks belong to Microsoft Azure and which belong to the customer — with some layers shared between both.
+- Microsoft is always responsible for the physical layers: datacenter security, physical network, and physical hosts.
+- Customers are always responsible for their data, their users' devices and endpoints, and their account and access management policies — regardless of service model.
+- The middle layers (OS, network controls, applications) shift based on service model: IaaS leaves the most to the customer; SaaS leaves the most to the provider.
+- In IaaS, customers manage the OS and everything above it. In PaaS, the provider takes over the OS and runtime. In SaaS, the provider manages the entire application stack.
+- Most cloud security incidents occur in the customer's domain — misconfigurations, weak access controls, and unpatched software are customer-side failures, not Azure failures.
+- Identity and directory infrastructure is always shared: Azure runs the Entra ID platform, but configuring users, roles, and policies is the customer's job.
+</KeyTakeaways>
