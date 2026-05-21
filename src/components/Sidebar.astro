@@ -5,6 +5,7 @@ import { navData } from '../data/navData';
 import ThemeToggle from './ThemeToggle.astro';
 
 const currentPath = Astro.url.pathname;
+const totalSections = navData.flatMap(g => g.sections).length;
 ---
 
 <!-- Mobile hamburger button -->
@@ -30,6 +31,7 @@ const currentPath = Astro.url.pathname;
   id="sidebar"
   class="sidebar-nav fixed top-0 left-0 z-40 h-screen w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-y-auto transition-transform duration-300 -translate-x-full lg:translate-x-0"
   data-current-path={currentPath}
+  data-total-sections={totalSections}
 >
   <!-- Header -->
   <div class="px-5 pt-5 pb-3 border-b border-gray-200 dark:border-gray-700">
@@ -182,7 +184,21 @@ const currentPath = Astro.url.pathname;
     // Progress / XP / Badge indicators
     // -----------------------------------------------------------------------
 
-    const TOTAL_SECTIONS = 15;
+    const TOTAL_SECTIONS = parseInt(sidebar.dataset.totalSections ?? '0', 10);
+    // Create a reusable checkmark SVG template (cloned per section to avoid innerHTML)
+    const checkSvgTemplate = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    checkSvgTemplate.setAttribute('class', 'w-3.5 h-3.5 text-green-500 dark:text-green-400 flex-shrink-0');
+    checkSvgTemplate.setAttribute('fill', 'none');
+    checkSvgTemplate.setAttribute('stroke', 'currentColor');
+    checkSvgTemplate.setAttribute('viewBox', '0 0 24 24');
+    checkSvgTemplate.setAttribute('aria-hidden', 'true');
+    const checkPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    checkPath.setAttribute('stroke-linecap', 'round');
+    checkPath.setAttribute('stroke-linejoin', 'round');
+    checkPath.setAttribute('stroke-width', '2.5');
+    checkPath.setAttribute('d', 'M5 13l4 4L19 7');
+    checkSvgTemplate.appendChild(checkPath);
+
     const BADGE_COLORS: Record<string, string> = {
       bronze: '#CD7F32',
       silver: '#C0C0C0',
@@ -277,7 +293,7 @@ const currentPath = Astro.url.pathname;
           check.className = 'sidebar-checkmark';
           check.setAttribute('aria-label', 'Section read');
           check.setAttribute('role', 'img');
-          check.innerHTML = `<svg class="w-3.5 h-3.5 text-green-500 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>`;
+          check.appendChild(checkSvgTemplate.cloneNode(true));
           indicators.appendChild(check);
         }
 
@@ -287,8 +303,10 @@ const currentPath = Astro.url.pathname;
           const dot = document.createElement('span');
           dot.className = 'sidebar-badge-dot w-2 h-2 rounded-full flex-shrink-0 inline-block';
           dot.style.backgroundColor = BADGE_COLORS[badge.tier] ?? '#C0C0C0';
-          dot.setAttribute('aria-label', `${badge.tier.charAt(0).toUpperCase() + badge.tier.slice(1)} badge earned`);
+          const tierLabel = badge.tier.charAt(0).toUpperCase() + badge.tier.slice(1);
+          dot.setAttribute('aria-label', `${tierLabel} badge earned`);
           dot.setAttribute('role', 'img');
+          dot.title = `${tierLabel} badge`;
           indicators.appendChild(dot);
         }
       });
@@ -307,10 +325,9 @@ const currentPath = Astro.url.pathname;
     refreshSidebarIndicators();
 
     // Real-time updates via custom events
-    document.addEventListener('progress:section-read', () => refreshSidebarIndicators());
-    document.addEventListener('progress:section-unread', () => refreshSidebarIndicators());
-    document.addEventListener('xp:earned', () => refreshSidebarIndicators());
-    document.addEventListener('badge:earned', () => refreshSidebarIndicators());
+    for (const evt of ['progress:section-read', 'progress:section-unread', 'xp:earned', 'badge:earned']) {
+      document.addEventListener(evt, refreshSidebarIndicators);
+    }
 
     // Collapse/expand domain groups
     const groups = document.querySelectorAll('.sidebar-group');
