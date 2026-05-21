@@ -52,16 +52,16 @@ import BuildIt from '../../components/BuildIt.astro';
     <text x="20" y="210" fill="#94a3b8" font-size="12" transform="rotate(-90, 20, 210)">Provider manages</text>
     <text x="580" y="210" fill="#94a3b8" font-size="12" transform="rotate(90, 580, 210)">Customer manages</text>
   </svg>
-  <DiagramHotspot x="85%" y="82%" label="Physical Infrastructure">
+  <DiagramHotspot x="50%" y="85%" width="83.33%" height="15%" variant="layer" label="Physical Infrastructure">
     Servers, storage, networking hardware, and data center facilities. In IaaS, PaaS, and SaaS models the cloud provider is always responsible for this layer.
   </DiagramHotspot>
-  <DiagramHotspot x="78%" y="62%" label="Virtualization & OS">
+  <DiagramHotspot x="50%" y="65%" width="73.33%" height="15%" variant="layer" label="Virtualization & OS">
     Hypervisors, virtual machines, and operating systems. In IaaS you manage the OS; in PaaS and SaaS the provider handles it.
   </DiagramHotspot>
-  <DiagramHotspot x="72%" y="42%" label="Platform Services">
+  <DiagramHotspot x="50%" y="45%" width="63.33%" height="15%" variant="layer" label="Platform Services">
     Runtimes, middleware, and development frameworks. PaaS providers manage this layer so developers can focus on code.
   </DiagramHotspot>
-  <DiagramHotspot x="65%" y="22%" label="Applications & Data">
+  <DiagramHotspot x="50%" y="25%" width="53.33%" height="15%" variant="layer" label="Applications & Data">
     Your applications and data. Customers are always responsible for securing their data and managing access, regardless of service model.
   </DiagramHotspot>
 </InteractiveDiagram>

@@ -7,9 +7,11 @@ interface Props {
   label: string;
   width?: string;  // e.g. "80px" or "auto"
   height?: string; // e.g. "40px" or "auto"
+  variant?: "dot" | "layer"; // "layer" makes the full area clickable
 }
 
-const { x, y, label, width = "auto", height = "auto" } = Astro.props;
+const { x, y, label, width = "auto", height = "auto", variant = "dot" } = Astro.props;
+const isLayer = variant === "layer";
 
 // Unique ID for aria linkage between button and popover
 const id = `hotspot-${Math.random().toString(36).slice(2, 9)}`;
@@ -17,30 +19,43 @@ const popoverId = `popover-${id}`;
 ---
 
 <div
-  class="diagram-hotspot-wrapper absolute"
-  style={`left: ${x}; top: ${y}; transform: translate(-50%, -50%);`}
+  class:list={["diagram-hotspot-wrapper absolute", isLayer && "z-10"]}
+  style={isLayer
+    ? `left: ${x}; top: ${y}; transform: translate(-50%, -50%); width: ${width}; height: ${height};`
+    : `left: ${x}; top: ${y}; transform: translate(-50%, -50%);`}
   data-hotspot-wrapper
 >
   <!-- Clickable hotspot button -->
   <button
     id={id}
-    class="diagram-hotspot relative flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-    style={`width: ${width}; height: ${height};`}
+    class:list={[
+      "diagram-hotspot relative flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2",
+      isLayer
+        ? "hotspot-layer rounded-lg cursor-pointer"
+        : "min-w-[44px] min-h-[44px] rounded-full",
+    ]}
+    style={isLayer ? "width: 100%; height: 100%;" : `width: ${width}; height: ${height};`}
     aria-expanded="false"
     aria-controls={popoverId}
     aria-label={`Learn more: ${label}`}
     data-hotspot-btn
   >
-    <!-- Outer pulse ring -->
-    <span
-      class="hotspot-pulse absolute inset-0 rounded-full bg-indigo-400 dark:bg-indigo-500 opacity-30"
-      aria-hidden="true"
-    ></span>
-    <!-- Inner dot -->
-    <span
-      class="relative z-10 w-4 h-4 rounded-full bg-indigo-500 dark:bg-indigo-400 shadow-md ring-2 ring-white dark:ring-gray-900"
-      aria-hidden="true"
-    ></span>
+    {isLayer ? (
+      <span class="absolute inset-0 rounded-lg bg-white/0 hover:bg-white/10 transition-colors" aria-hidden="true"></span>
+    ) : (
+      <>
+        {/* Outer pulse ring */}
+        <span
+          class="hotspot-pulse absolute inset-0 rounded-full bg-indigo-400 dark:bg-indigo-500 opacity-30"
+          aria-hidden="true"
+        ></span>
+        {/* Inner dot */}
+        <span
+          class="relative z-10 w-4 h-4 rounded-full bg-indigo-500 dark:bg-indigo-400 shadow-md ring-2 ring-white dark:ring-gray-900"
+          aria-hidden="true"
+        ></span>
+      </>
+    )}
   </button>
 
   <!-- Popover card — hidden by default, toggled by JS -->
@@ -197,6 +212,25 @@ const popoverId = `popover-${id}`;
       popover.classList.remove("hidden");
       // Force reflow so animation runs
       popover.getBoundingClientRect();
+
+      // Clamp horizontally so the popover stays within the container
+      popover.style.removeProperty("left");
+      popover.style.removeProperty("right");
+      if (container) {
+        const popoverRect = popover.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+
+        if (popoverRect.right > containerRect.right) {
+          // Overflowing right edge — align popover's right edge to container
+          const shiftLeft = popoverRect.right - containerRect.right;
+          popover.style.left = `calc(50% - ${shiftLeft}px)`;
+        } else if (popoverRect.left < containerRect.left) {
+          // Overflowing left edge — align popover's left edge to container
+          const shiftRight = containerRect.left - popoverRect.left;
+          popover.style.left = `calc(50% + ${shiftRight}px)`;
+        }
+      }
+
       popover.classList.add("is-open");
       popover.setAttribute("aria-hidden", "false");
       btn.setAttribute("aria-expanded", "true");
