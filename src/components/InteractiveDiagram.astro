@@ -52,8 +52,8 @@ const { title, alt } = Astro.props;
     min-height: 80px;
   }
 
-  /* Ensure SVG passed in as slot fills width */
-  .interactive-diagram-inner :global(svg) {
+  /* Ensure the main diagram SVG fills width (but not SVGs inside hotspot popovers) */
+  .interactive-diagram-inner > :global(svg) {
     display: block;
     width: 100%;
     height: auto;
