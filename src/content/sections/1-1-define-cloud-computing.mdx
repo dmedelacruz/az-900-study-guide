@@ -14,6 +14,10 @@ import KeyTerm from '../../components/KeyTerm.astro';
 import Callout from '../../components/Callout.astro';
 import DeepDive from '../../components/DeepDive.astro';
 import ComparisonSlider from '../../components/ComparisonSlider.astro';
+import ComparisonTable from '../../components/ComparisonTable.astro';
+import InteractiveDiagram from '../../components/InteractiveDiagram.astro';
+import DiagramHotspot from '../../components/DiagramHotspot.astro';
+import DragDropMatch from '../../components/DragDropMatch.astro';
 import FillInBlank from '../../components/FillInBlank.astro';
 import ScenarioQuestion from '../../components/ScenarioQuestion.astro';
 import BuildIt from '../../components/BuildIt.astro';
@@ -30,9 +34,43 @@ import BuildIt from '../../components/BuildIt.astro';
 - **Rapid elasticity**: Capabilities can be elastically provisioned and released to scale rapidly with demand.
 - **Measured service**: Resource usage can be monitored, controlled, and reported transparently.
 
+<InteractiveDiagram title="Cloud Computing Layers" alt="Diagram showing the layers of cloud computing from physical infrastructure to applications">
+  <svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:system-ui,sans-serif">
+    {/* Physical layer */}
+    <rect x="50" y="310" width="500" height="60" rx="8" fill="#1e3a5f" stroke="#2563eb" stroke-width="2" />
+    <text x="300" y="345" text-anchor="middle" fill="white" font-size="16" font-weight="bold">Physical Infrastructure</text>
+    {/* Virtualization layer */}
+    <rect x="80" y="230" width="440" height="60" rx="8" fill="#1e40af" stroke="#3b82f6" stroke-width="2" />
+    <text x="300" y="265" text-anchor="middle" fill="white" font-size="16" font-weight="bold">Virtualization & OS</text>
+    {/* Platform layer */}
+    <rect x="110" y="150" width="380" height="60" rx="8" fill="#2563eb" stroke="#60a5fa" stroke-width="2" />
+    <text x="300" y="185" text-anchor="middle" fill="white" font-size="16" font-weight="bold">Platform (Runtime & Middleware)</text>
+    {/* Application layer */}
+    <rect x="140" y="70" width="320" height="60" rx="8" fill="#3b82f6" stroke="#93c5fd" stroke-width="2" />
+    <text x="300" y="105" text-anchor="middle" fill="white" font-size="16" font-weight="bold">Applications & Data</text>
+    {/* Arrows */}
+    <text x="20" y="210" fill="#94a3b8" font-size="12" transform="rotate(-90, 20, 210)">Provider manages</text>
+    <text x="580" y="210" fill="#94a3b8" font-size="12" transform="rotate(90, 580, 210)">Customer manages</text>
+  </svg>
+  <DiagramHotspot x="85%" y="82%" label="Physical Infrastructure">
+    Servers, storage, networking hardware, and data center facilities. In IaaS, PaaS, and SaaS models the cloud provider is always responsible for this layer.
+  </DiagramHotspot>
+  <DiagramHotspot x="78%" y="62%" label="Virtualization & OS">
+    Hypervisors, virtual machines, and operating systems. In IaaS you manage the OS; in PaaS and SaaS the provider handles it.
+  </DiagramHotspot>
+  <DiagramHotspot x="72%" y="42%" label="Platform Services">
+    Runtimes, middleware, and development frameworks. PaaS providers manage this layer so developers can focus on code.
+  </DiagramHotspot>
+  <DiagramHotspot x="65%" y="22%" label="Applications & Data">
+    Your applications and data. Customers are always responsible for securing their data and managing access, regardless of service model.
+  </DiagramHotspot>
+</InteractiveDiagram>
+
 ## The Shared Responsibility Model
 
 In cloud computing, responsibilities are shared between the cloud provider and the customer. The division depends on the <KeyTerm term="service type">The category of cloud service being used — Infrastructure as a Service (IaaS), Platform as a Service (PaaS), or Software as a Service (SaaS) — each shifting a different amount of management responsibility to the provider.</KeyTerm> (IaaS, PaaS, or SaaS).
+
+<ComparisonTable title="Shared Responsibility by Service Type">
 
 | Responsibility | On-premises | IaaS | PaaS | SaaS |
 |---|---|---|---|---|
@@ -40,6 +78,8 @@ In cloud computing, responsibilities are shared between the cloud provider and t
 | Applications | Customer | Customer | Customer | Provider |
 | OS | Customer | Customer | Provider | Provider |
 | Infrastructure | Customer | Provider | Provider | Provider |
+
+</ComparisonTable>
 
 <ComparisonSlider
   title="Shared Responsibility by Service Model"
@@ -119,6 +159,21 @@ For the AZ-900 exam, remember the mnemonic **"On Broad Resource Rapid Measured"*
   ]}
 />
 
+<DragDropMatch
+  title="Shared Responsibility: Who Manages What?"
+  categories={["Customer Responsibility", "Provider Responsibility"]}
+  items={[
+    { text: "Data classification and encryption", category: "Customer Responsibility" },
+    { text: "Identity and access management", category: "Customer Responsibility" },
+    { text: "Physical data center security", category: "Provider Responsibility" },
+    { text: "Network infrastructure maintenance", category: "Provider Responsibility" },
+    { text: "Endpoint device management", category: "Customer Responsibility" },
+    { text: "Host-level patching (in PaaS)", category: "Provider Responsibility" },
+    { text: "User account permissions", category: "Customer Responsibility" },
+    { text: "Power and cooling systems", category: "Provider Responsibility" },
+  ]}
+/>
+
 import Quiz from '../../components/Quiz.astro';
 
 <Quiz
@@ -171,6 +226,54 @@ import Quiz from '../../components/Quiz.astro';
       question: "A multi-tenant model means each customer has their own dedicated physical hardware.",
       correct: false,
       explanation: "Multi-tenancy means a single instance of resources serves multiple customers (tenants), with each tenant's data isolated. Customers share physical hardware but their workloads are logically separated."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which service model gives the cloud provider the MOST management responsibility?",
+      options: [
+        "On-premises",
+        "Infrastructure as a Service (IaaS)",
+        "Platform as a Service (PaaS)",
+        "Software as a Service (SaaS)"
+      ],
+      correct: 3,
+      explanation: "In SaaS, the cloud provider manages nearly everything — infrastructure, platform, runtime, and the application itself. The customer is only responsible for their data and access configuration."
+    },
+    {
+      type: "true-false",
+      question: "Cloud computing uses a consumption-based pricing model, meaning you pay only for the resources you use.",
+      correct: true,
+      explanation: "One of the key financial benefits of cloud computing is the consumption-based (pay-as-you-go) model. Instead of large upfront capital expenditures, you pay for resources as you consume them."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which cloud characteristic ensures that resource usage can be monitored, controlled, and billed transparently?",
+      options: [
+        "On-demand self-service",
+        "Rapid elasticity",
+        "Measured service",
+        "Resource pooling"
+      ],
+      correct: 2,
+      explanation: "Measured service means cloud systems automatically control and optimize resource use by leveraging a metering capability. Resource usage can be monitored, controlled, reported, and billed transparently."
+    },
+    {
+      type: "multiple-choice",
+      question: "In the IaaS service model, who is responsible for managing the operating system?",
+      options: [
+        "The cloud provider",
+        "The customer",
+        "Both the provider and the customer equally",
+        "Neither — it is automated"
+      ],
+      correct: 1,
+      explanation: "In IaaS, the customer is responsible for the operating system, including patching and updates. The provider manages the underlying physical infrastructure and virtualization layer."
+    },
+    {
+      type: "true-false",
+      question: "Broad network access means cloud resources can only be accessed from within the provider's data center network.",
+      correct: false,
+      explanation: "Broad network access means resources are available over the network and accessed through standard mechanisms (such as HTTPS) from a variety of client platforms — including laptops, phones, and tablets — from anywhere with internet connectivity."
     }
   ]}
 />
