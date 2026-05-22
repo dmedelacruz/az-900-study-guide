@@ -1,0 +1,504 @@
+---
+title: "Cloud Service Types"
+domain: 1
+section: "1.5"
+order: 5
+description: "Compare Infrastructure as a Service (IaaS), Platform as a Service (PaaS), and Software as a Service (SaaS) — understand what each provides, who manages what, and when to use each."
+tags: ["cloud-concepts", "iaas", "paas", "saas", "cloud-service-types", "shared-responsibility"]
+lastVerified: "2026-05-21"
+microsoftLearnUrl: "https://learn.microsoft.com/en-us/training/modules/describe-cloud-service-types/"
+---
+
+import KeyTakeaways from '../../components/KeyTakeaways.astro';
+import KeyTerm from '../../components/KeyTerm.astro';
+import Callout from '../../components/Callout.astro';
+import DeepDive from '../../components/DeepDive.astro';
+import InteractiveDiagram from '../../components/InteractiveDiagram.astro';
+import DiagramHotspot from '../../components/DiagramHotspot.astro';
+import DragDropMatch from '../../components/DragDropMatch.astro';
+import ComparisonSlider from '../../components/ComparisonSlider.astro';
+import FillInBlank from '../../components/FillInBlank.astro';
+import ScenarioQuestion from '../../components/ScenarioQuestion.astro';
+import Quiz from '../../components/Quiz.astro';
+
+## Renting an Apartment, a Kitchen, or a Meal
+
+Think about three ways to eat dinner tonight. You could **rent an empty apartment** — you get the building and utilities, but you bring your own furniture, cookware, and ingredients, and you cook the meal yourself. You could **rent a fully equipped commercial kitchen** — the ovens, counters, and utensils are provided and maintained for you, and you just bring your recipe and ingredients. Or you could **order a meal at a restaurant** — someone else handles everything from sourcing ingredients to cooking to serving, and you simply sit down and eat.
+
+Cloud service types work the same way. <KeyTerm term="Infrastructure as a Service (IaaS)">A cloud service type that provides virtualized computing infrastructure — virtual machines, networking, and storage — on demand. The cloud provider manages the physical hardware, and you manage everything from the operating system up, including middleware, runtime, data, and applications.</KeyTerm> gives you the empty apartment. <KeyTerm term="Platform as a Service (PaaS)">A cloud service type that provides a managed platform for developing, running, and managing applications without dealing with underlying infrastructure. The cloud provider manages hardware, operating system, middleware, and runtime, and you manage your application code and data.</KeyTerm> gives you the equipped kitchen. <KeyTerm term="Software as a Service (SaaS)">A cloud service type that delivers fully complete software applications over the internet on a subscription basis. The cloud provider manages everything — infrastructure, platform, and application — and you simply use the software through a browser or app.</KeyTerm> gives you the restaurant meal. Each service type represents a different division of responsibility between you and the cloud provider, and understanding that division is a core AZ-900 topic.
+
+## Infrastructure as a Service (IaaS)
+
+IaaS is the most flexible cloud service type. The cloud provider gives you access to fundamental computing resources — virtual machines, virtual networks, and storage — and takes care of the physical infrastructure underneath. You are responsible for everything above the hardware layer: installing and patching the operating system, configuring middleware and runtime environments, deploying your applications, and managing your data.
+
+**What Azure provides (the provider manages):**
+
+- Physical servers, storage hardware, and networking equipment
+- The data center facility (power, cooling, physical security)
+- The virtualization layer (hypervisor)
+
+**What you manage:**
+
+- Operating system (installation, patching, updates)
+- Middleware and runtime environments
+- Application deployment and configuration
+- Data storage, backup, and security
+- Network configuration (firewalls, load balancers, DNS)
+
+**Common Azure IaaS services:**
+
+- **Azure Virtual Machines** — Run Windows or Linux VMs with full OS-level control
+- **Azure Virtual Network** — Create isolated networks, subnets, and VPN connections
+- **Azure Disk Storage** — Persistent block storage for VMs
+- **Azure Blob Storage** — Object storage for unstructured data
+
+**When to use IaaS:**
+
+- You need full control over the operating system and runtime environment
+- You're running custom or legacy applications that require specific OS configurations
+- You want to migrate on-premises workloads to the cloud with minimal changes (lift-and-shift)
+- You need to run software that can't be hosted on a managed platform
+
+<Callout type="info">
+IaaS is often the first step in a cloud migration because it most closely mirrors a traditional on-premises environment. Organizations can move existing VMs to Azure with minimal modification — a strategy called "lift-and-shift." Over time, they may refactor applications to take advantage of PaaS services for reduced management overhead.
+</Callout>
+
+## Platform as a Service (PaaS)
+
+PaaS provides a complete, managed environment for building and deploying applications. The cloud provider handles not just the physical infrastructure but also the operating system, middleware, runtime, and development tools. You focus entirely on writing your application code and managing your data — the platform takes care of everything underneath.
+
+**What Azure provides (the provider manages):**
+
+- Everything IaaS provides (physical infrastructure + virtualization)
+- Operating system (patching, updates, security)
+- Middleware and runtime environments
+- Development tools, database management, and business analytics
+
+**What you manage:**
+
+- Application code and logic
+- Data and data access
+- Application-level security settings (authentication, authorization)
+
+**Common Azure PaaS services:**
+
+- **Azure App Service** — Host web apps, REST APIs, and mobile backends without managing servers
+- **Azure SQL Database** — Fully managed relational database with built-in high availability
+- **Azure Functions** — Run event-driven code without provisioning or managing servers (serverless)
+- **Azure Cosmos DB** — Globally distributed NoSQL database
+
+<KeyTerm term="Serverless computing">A form of PaaS where the cloud provider dynamically allocates and manages all infrastructure. You write and deploy code (typically as functions), and the provider handles scaling, patching, and capacity planning automatically. You pay only for actual execution time, not for idle capacity.</KeyTerm>
+
+**When to use PaaS:**
+
+- You want to focus on application development without managing infrastructure
+- You need built-in scalability, patching, and high availability
+- You're building new cloud-native applications from scratch
+- You want to reduce the operational burden on your IT team
+
+<Callout type="tip">
+For the AZ-900 exam, remember that PaaS is ideal when your goal is to develop and deploy applications quickly. You trade some control over the underlying infrastructure for dramatically reduced management overhead. If a question describes a development team that wants to deploy a web app without worrying about OS patches or server management, PaaS is the answer.
+</Callout>
+
+## Software as a Service (SaaS)
+
+SaaS delivers fully functional software applications over the internet. You don't install, configure, or maintain anything — you simply access the application through a web browser or dedicated app. The cloud provider manages the entire stack, from physical infrastructure to application code, updates, and availability.
+
+**What Azure/Microsoft provides (the provider manages):**
+
+- Everything PaaS provides (infrastructure + platform)
+- Application code and updates
+- Application availability and performance
+- Feature development and release cycles
+
+**What you manage:**
+
+- Your data within the application (documents, emails, records)
+- User accounts and access permissions
+- Organization-specific configuration settings
+
+**Common Microsoft SaaS services:**
+
+- **Microsoft 365** — Email (Outlook), documents (Word, Excel, PowerPoint), collaboration (Teams)
+- **Microsoft Dynamics 365** — Customer relationship management (CRM) and enterprise resource planning (ERP)
+- **Microsoft Power BI** — Business intelligence and data visualization
+
+<KeyTerm term="Multi-tenant architecture">A software design where a single instance of the application serves multiple customers (tenants), with each tenant's data isolated from others. Most SaaS applications use multi-tenant architecture to achieve economies of scale — one codebase, one set of infrastructure, shared across thousands of organizations.</KeyTerm>
+
+**When to use SaaS:**
+
+- You need a standard application like email, collaboration, or CRM
+- You want to avoid all infrastructure and application management
+- You need to deploy a solution quickly with minimal setup
+- You prefer predictable, subscription-based pricing
+
+<Callout type="warning">
+SaaS offers the least customization of the three service types. You get the application as the provider built it, with configuration options limited to what the provider exposes. If you need highly customized software or full control over the application's behavior, SaaS may not be the right fit — consider PaaS (build your own) or IaaS (run your own) instead.
+</Callout>
+
+## Comparing Cloud Service Types
+
+| Dimension | IaaS | PaaS | SaaS |
+|---|---|---|---|
+| **You manage** | OS, middleware, runtime, apps, data | Apps and data | Data and configuration |
+| **Provider manages** | Hardware, networking, virtualization | Hardware through runtime | Everything |
+| **Flexibility** | Highest — full OS control | Moderate — app-level control | Lowest — use as provided |
+| **Management overhead** | Highest — you manage most layers | Moderate — provider handles platform | Lowest — just use the software |
+| **Use case** | VM migrations, custom environments | App development, databases | Email, CRM, collaboration |
+| **Azure examples** | Virtual Machines, Virtual Networks | App Service, SQL Database, Functions | Microsoft 365, Dynamics 365 |
+| **Scaling** | You configure scaling rules | Platform handles most scaling | Provider handles all scaling |
+
+## The Responsibility Spectrum
+
+Cloud service types exist on a spectrum of control and responsibility. As you move from IaaS to PaaS to SaaS, two things happen simultaneously: the cloud provider takes on more management responsibility, and you give up more control over the underlying layers.
+
+- **IaaS** sits at the "most control, most responsibility" end. You control the OS, middleware, runtime, and applications — but you're also responsible for patching, securing, and maintaining all of those layers. If the OS has a vulnerability, it's your job to patch it.
+- **PaaS** occupies the middle ground. The provider manages the OS, middleware, and runtime, so you don't worry about patches or infrastructure scaling. You focus on your application code and data. You have less control over the platform's behavior but far less operational burden.
+- **SaaS** sits at the "least control, least responsibility" end. The provider manages everything, including the application itself. You simply use the software. You can't customize the underlying code, but you also never need to deploy, patch, or scale anything.
+
+This spectrum directly maps to the <KeyTerm term="Shared responsibility model">A framework that defines which security and management tasks are handled by the cloud provider and which are handled by the customer. The division of responsibility shifts depending on the cloud service type — IaaS places more responsibility on the customer, while SaaS places more on the provider.</KeyTerm> covered in Section 1.2. The more the provider manages, the fewer layers you need to secure and maintain — but the less flexibility you have to customize those layers.
+
+<InteractiveDiagram title="IaaS vs PaaS vs SaaS: The Responsibility Stack" alt="Diagram showing the technology stack layers and who manages each layer across IaaS, PaaS, and SaaS service types">
+  <svg viewBox="0 0 620 400" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:system-ui,sans-serif">
+    {/* Title */}
+    <text x="310" y="22" textAnchor="middle" fill="#1e293b" fontSize="14" fontWeight="bold">Who Manages What? The Responsibility Stack</text>
+    {/* Column headers */}
+    <text x="150" y="50" textAnchor="middle" fill="#60a5fa" fontSize="13" fontWeight="bold">IaaS</text>
+    <text x="310" y="50" textAnchor="middle" fill="#a78bfa" fontSize="13" fontWeight="bold">PaaS</text>
+    <text x="470" y="50" textAnchor="middle" fill="#34d399" fontSize="13" fontWeight="bold">SaaS</text>
+    {/* Row labels on left */}
+    <text x="12" y="82" fill="#94a3b8" fontSize="9">Applications</text>
+    <text x="12" y="117" fill="#94a3b8" fontSize="9">Data</text>
+    <text x="12" y="152" fill="#94a3b8" fontSize="9">Runtime</text>
+    <text x="12" y="187" fill="#94a3b8" fontSize="9">Middleware</text>
+    <text x="12" y="222" fill="#94a3b8" fontSize="9">OS</text>
+    <text x="12" y="257" fill="#94a3b8" fontSize="9">Virtualization</text>
+    <text x="12" y="292" fill="#94a3b8" fontSize="9">Servers</text>
+    <text x="12" y="327" fill="#94a3b8" fontSize="9">Storage</text>
+    <text x="12" y="362" fill="#94a3b8" fontSize="9">Networking</text>
+    {/* IaaS Column */}
+    <rect x="80" y="66" width="140" height="30" rx="4" fill="#f59e0b" opacity="0.7" />
+    <text x="150" y="85" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">You manage</text>
+    <rect x="80" y="101" width="140" height="30" rx="4" fill="#f59e0b" opacity="0.7" />
+    <text x="150" y="120" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">You manage</text>
+    <rect x="80" y="136" width="140" height="30" rx="4" fill="#f59e0b" opacity="0.7" />
+    <text x="150" y="155" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">You manage</text>
+    <rect x="80" y="171" width="140" height="30" rx="4" fill="#f59e0b" opacity="0.7" />
+    <text x="150" y="190" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">You manage</text>
+    <rect x="80" y="206" width="140" height="30" rx="4" fill="#f59e0b" opacity="0.7" />
+    <text x="150" y="225" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">You manage</text>
+    <rect x="80" y="241" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="150" y="260" textAnchor="middle" fill="#60a5fa" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="80" y="276" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="150" y="295" textAnchor="middle" fill="#60a5fa" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="80" y="311" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="150" y="330" textAnchor="middle" fill="#60a5fa" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="80" y="346" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="150" y="365" textAnchor="middle" fill="#60a5fa" fontSize="10" fontWeight="bold">Provider</text>
+    {/* PaaS Column */}
+    <rect x="240" y="66" width="140" height="30" rx="4" fill="#f59e0b" opacity="0.7" />
+    <text x="310" y="85" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">You manage</text>
+    <rect x="240" y="101" width="140" height="30" rx="4" fill="#f59e0b" opacity="0.7" />
+    <text x="310" y="120" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">You manage</text>
+    <rect x="240" y="136" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="310" y="155" textAnchor="middle" fill="#a78bfa" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="240" y="171" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="310" y="190" textAnchor="middle" fill="#a78bfa" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="240" y="206" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="310" y="225" textAnchor="middle" fill="#a78bfa" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="240" y="241" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="310" y="260" textAnchor="middle" fill="#a78bfa" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="240" y="276" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="310" y="295" textAnchor="middle" fill="#a78bfa" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="240" y="311" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="310" y="330" textAnchor="middle" fill="#a78bfa" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="240" y="346" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="310" y="365" textAnchor="middle" fill="#a78bfa" fontSize="10" fontWeight="bold">Provider</text>
+    {/* SaaS Column */}
+    <rect x="400" y="66" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="470" y="85" textAnchor="middle" fill="#34d399" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="400" y="101" width="140" height="30" rx="4" fill="#f59e0b" opacity="0.7" />
+    <text x="470" y="120" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">You manage</text>
+    <rect x="400" y="136" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="470" y="155" textAnchor="middle" fill="#34d399" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="400" y="171" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="470" y="190" textAnchor="middle" fill="#34d399" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="400" y="206" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="470" y="225" textAnchor="middle" fill="#34d399" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="400" y="241" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="470" y="260" textAnchor="middle" fill="#34d399" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="400" y="276" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="470" y="295" textAnchor="middle" fill="#34d399" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="400" y="311" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="470" y="330" textAnchor="middle" fill="#34d399" fontSize="10" fontWeight="bold">Provider</text>
+    <rect x="400" y="346" width="140" height="30" rx="4" fill="#1e3a5f" opacity="0.8" />
+    <text x="470" y="365" textAnchor="middle" fill="#34d399" fontSize="10" fontWeight="bold">Provider</text>
+    {/* Legend */}
+    <rect x="545" y="66" width="12" height="12" rx="2" fill="#f59e0b" opacity="0.7" />
+    <text x="562" y="76" fill="#94a3b8" fontSize="9">Customer</text>
+    <rect x="545" y="86" width="12" height="12" rx="2" fill="#1e3a5f" opacity="0.8" />
+    <text x="562" y="96" fill="#94a3b8" fontSize="9">Provider</text>
+  </svg>
+  <DiagramHotspot x="12%" y="16%" width="24%" height="55%" variant="layer" label="IaaS — Customer manages OS and above">
+    With IaaS, you manage applications, data, runtime, middleware, and the operating system. The provider handles the physical infrastructure — virtualization, servers, storage, and networking. This gives you maximum control but also maximum responsibility. You must patch the OS, configure firewalls, manage runtime updates, and handle application deployment yourself.
+  </DiagramHotspot>
+  <DiagramHotspot x="38%" y="16%" width="24%" height="55%" variant="layer" label="PaaS — Customer manages apps and data only">
+    With PaaS, the provider manages everything from the operating system down, including middleware and runtime. You only manage your application code and data. This dramatically reduces operational overhead — no OS patches, no middleware configuration, no runtime updates. The trade-off is less control over the platform's behavior and configuration.
+  </DiagramHotspot>
+  <DiagramHotspot x="64%" y="16%" width="24%" height="55%" variant="layer" label="SaaS — Provider manages nearly everything">
+    With SaaS, the provider manages the entire stack including the application itself. You manage only your data within the application and user-level configuration. This is the lowest management overhead but also the least flexibility. You use the software as designed, with customization limited to the options the provider exposes.
+  </DiagramHotspot>
+</InteractiveDiagram>
+
+<DeepDive title="Real-World Example: Building a Web Application — Three Approaches">
+Imagine your team needs to deploy a customer-facing web application with a database backend. Here's how each service type approaches the same goal:
+
+**IaaS approach (Azure Virtual Machines):** You create a VM, install your preferred Linux distribution, configure Nginx as a web server, install Node.js, deploy your application code, set up a separate VM for your database, configure networking between the two, set up backup scripts, and create monitoring alerts. You control every detail — but you're also responsible for OS patches, security updates, database backups, SSL certificate renewal, and scaling. If traffic doubles, you need to provision and configure additional VMs manually (or set up auto-scaling rules).
+
+**PaaS approach (Azure App Service + Azure SQL Database):** You push your application code to Azure App Service. Azure handles the web server, OS patching, SSL, and load balancing. Your database runs on Azure SQL Database, which handles backups, high availability, and performance tuning automatically. If traffic doubles, you adjust a scaling slider or configure auto-scale rules — no new VMs to provision or configure. You shipped the same application in a fraction of the time and with far less ongoing maintenance.
+
+**SaaS approach (not applicable here):** SaaS wouldn't work for a custom web application because SaaS provides pre-built software, not a platform for building your own. However, if the need were "we need a CRM to track customer interactions" rather than "we need a custom web app," then a SaaS solution like Dynamics 365 would deliver that capability instantly — no development required at all.
+
+The right choice depends on what you need: maximum control (IaaS), rapid development with managed infrastructure (PaaS), or an off-the-shelf solution (SaaS).
+</DeepDive>
+
+<DeepDive title="The Shared Responsibility Model by Service Type">
+The shared responsibility model (covered in detail in Section 1.2) divides security and management tasks between you and the cloud provider. The division shifts significantly depending on which service type you use:
+
+**Responsibilities that are always the provider's** (regardless of service type):
+- Physical data center security (fences, guards, biometrics)
+- Physical hardware maintenance and replacement
+- Network infrastructure and power/cooling
+- Hypervisor security and patching
+
+**Responsibilities that are always yours** (regardless of service type):
+- Your data and information — even in SaaS, your documents, emails, and records are your responsibility to classify and protect
+- Your accounts and identities — user access management, passwords, multi-factor authentication
+- Your devices — the laptops and phones your employees use to access cloud services
+
+**Responsibilities that shift based on service type:**
+- **Operating system patching:** Your job in IaaS, provider's job in PaaS and SaaS
+- **Network controls and firewalls:** Your job in IaaS, shared in PaaS, provider's job in SaaS
+- **Application security:** Your job in IaaS and PaaS, provider's job in SaaS
+- **Identity and directory infrastructure:** Shared across all types, but you have more direct control in IaaS
+
+Understanding this shift is critical for the exam. A common question pattern presents a scenario and asks who is responsible for a specific task — and the answer depends on which service type is being used.
+</DeepDive>
+
+---
+
+## Practice Activities
+
+<ComparisonSlider
+  title="Who Manages Each Layer? Compare IaaS, PaaS, and SaaS"
+  models={["IaaS", "PaaS", "SaaS"]}
+  layers={[
+    {
+      name: "Networking",
+      managedBy: { "IaaS": "provider", "PaaS": "provider", "SaaS": "provider" }
+    },
+    {
+      name: "Storage",
+      managedBy: { "IaaS": "provider", "PaaS": "provider", "SaaS": "provider" }
+    },
+    {
+      name: "Servers",
+      managedBy: { "IaaS": "provider", "PaaS": "provider", "SaaS": "provider" }
+    },
+    {
+      name: "Virtualization",
+      managedBy: { "IaaS": "provider", "PaaS": "provider", "SaaS": "provider" }
+    },
+    {
+      name: "OS",
+      managedBy: { "IaaS": "customer", "PaaS": "provider", "SaaS": "provider" }
+    },
+    {
+      name: "Middleware",
+      managedBy: { "IaaS": "customer", "PaaS": "provider", "SaaS": "provider" }
+    },
+    {
+      name: "Runtime",
+      managedBy: { "IaaS": "customer", "PaaS": "provider", "SaaS": "provider" }
+    },
+    {
+      name: "Data",
+      managedBy: { "IaaS": "customer", "PaaS": "customer", "SaaS": "customer" }
+    },
+    {
+      name: "Applications",
+      managedBy: { "IaaS": "customer", "PaaS": "customer", "SaaS": "provider" }
+    }
+  ]}
+  customerLabel="Customer manages"
+  providerLabel="Provider manages"
+/>
+
+<DragDropMatch
+  title="Match Each Service or Scenario to Its Cloud Service Type"
+  categories={["IaaS", "PaaS", "SaaS"]}
+  items={[
+    { text: "Azure Virtual Machines for running a custom legacy application", category: "IaaS" },
+    { text: "Azure App Service for hosting a web API", category: "PaaS" },
+    { text: "Microsoft 365 for company email and document collaboration", category: "SaaS" },
+    { text: "Azure SQL Database for a managed relational database", category: "PaaS" },
+    { text: "Dynamics 365 for customer relationship management", category: "SaaS" },
+    { text: "Azure Virtual Network for creating isolated network environments", category: "IaaS" },
+    { text: "Azure Functions for running event-driven serverless code", category: "PaaS" },
+    { text: "Power BI for business intelligence dashboards", category: "SaaS" },
+    { text: "A VM running a custom-configured Linux web server", category: "IaaS" },
+    { text: "Azure Cosmos DB for a globally distributed NoSQL database", category: "PaaS" }
+  ]}
+/>
+
+<FillInBlank
+  title="Cloud Service Types — Type Your Answer"
+  mode="type"
+  items={[
+    { text: "The cloud service type that gives you the most control over the operating system and infrastructure is ___.", answer: "iaas" },
+    { text: "Azure App Service and Azure SQL Database are examples of ___.", answer: "paas" },
+    { text: "Microsoft 365 and Dynamics 365 are examples of ___ applications.", answer: "saas" },
+    { text: "A form of PaaS where the provider dynamically manages all infrastructure and you pay only for execution time is called ___ computing.", answer: "serverless" }
+  ]}
+/>
+
+<FillInBlank
+  title="Cloud Service Types — Select Your Answer"
+  mode="select"
+  items={[
+    { text: "With ___, the cloud provider manages everything including the application itself.", answer: "SaaS" },
+    { text: "In PaaS, the customer manages applications and ___, while the provider handles the rest.", answer: "data" },
+    { text: "Moving an on-premises VM to Azure Virtual Machines with minimal changes is called a ___ migration.", answer: "lift-and-shift" }
+  ]}
+/>
+
+<ScenarioQuestion
+  title="Which Cloud Service Type Should You Choose?"
+  scenario="A mid-sized retail company wants to launch an online store. Their development team has strong web development skills but limited experience managing servers and operating systems. They want to focus their time on building the storefront features — product catalog, shopping cart, and checkout — rather than dealing with infrastructure. The application needs to scale automatically during seasonal sales events. They also need a managed database to store product and order data. Which cloud service type best fits their needs?"
+  options={[
+    { text: "IaaS — Deploy virtual machines and install a web server, database, and application manually", feedback: "Incorrect. While IaaS would work, it contradicts the team's goals. They explicitly want to avoid managing servers and operating systems, and their team lacks server management experience. IaaS would require them to handle OS patching, web server configuration, database installation, scaling setup, and security hardening — all the infrastructure work they want to avoid. This approach would slow down feature development significantly." },
+    { text: "PaaS — Use Azure App Service for the web app and Azure SQL Database for product/order data", feedback: "Correct. PaaS is the ideal fit. Azure App Service lets the team deploy their web application without managing any servers or operating systems — they push code, and Azure handles the rest. Azure SQL Database provides a fully managed database with automatic backups and high availability. Auto-scaling is built into App Service, so the store handles seasonal traffic spikes automatically. The team can focus entirely on building the storefront features they care about.", correct: true },
+    { text: "SaaS — Use an off-the-shelf e-commerce platform like Shopify or Dynamics 365 Commerce", feedback: "Partially reasonable, but not the best fit. While SaaS e-commerce platforms exist, the scenario describes a development team that wants to build custom storefront features. SaaS provides pre-built software with limited customization. If the company wanted a standard online store with minimal custom development, SaaS could work. But since they have skilled developers and want to build custom features (catalog, cart, checkout), PaaS gives them the development platform they need while still eliminating infrastructure management." }
+  ]}
+/>
+
+---
+
+<Quiz
+  title="Section 1.5 Quiz — Cloud Service Types"
+  sectionId="1-5"
+  questions={[
+    {
+      type: "multiple-choice",
+      question: "Which cloud service type requires the customer to manage the operating system, middleware, and runtime?",
+      options: [
+        "Software as a Service (SaaS)",
+        "Platform as a Service (PaaS)",
+        "Infrastructure as a Service (IaaS)",
+        "Function as a Service (FaaS)"
+      ],
+      correct: 2,
+      explanation: "IaaS requires the customer to manage the OS, middleware, runtime, applications, and data. The provider manages only the physical infrastructure and virtualization layer. PaaS handles OS, middleware, and runtime for you. SaaS handles everything. FaaS (serverless) is a form of PaaS where even more is abstracted away."
+    },
+    {
+      type: "true-false",
+      question: "With Platform as a Service (PaaS), the customer is responsible for patching and updating the operating system.",
+      correct: false,
+      explanation: "In PaaS, the cloud provider manages the operating system, including all patching and updates. The customer only manages their application code and data. OS management is the provider's responsibility in both PaaS and SaaS — only in IaaS does the customer handle OS patching."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company wants to migrate its existing on-premises virtual machines to the cloud with minimal changes to the application. Which cloud service type best supports this lift-and-shift migration strategy?",
+      options: [
+        "SaaS — the application will run as a managed service",
+        "PaaS — the platform will automatically host the VM workloads",
+        "IaaS — virtual machines can be recreated in the cloud with the same OS and configuration",
+        "Serverless — the application code can run without any infrastructure"
+      ],
+      correct: 2,
+      explanation: "IaaS is the best fit for lift-and-shift migrations because it provides virtual machines that closely mirror on-premises environments. The company can recreate their existing VMs in Azure with the same operating system, middleware, and application configuration — minimal changes required. PaaS would require refactoring the application. SaaS provides pre-built software, not custom VM hosting. Serverless requires restructuring the application into event-driven functions."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following is an example of a SaaS application?",
+      options: [
+        "Azure Virtual Machines",
+        "Azure App Service",
+        "Microsoft 365",
+        "Azure Blob Storage"
+      ],
+      correct: 2,
+      explanation: "Microsoft 365 is a SaaS application — it delivers fully functional software (email, documents, collaboration) over the internet, and Microsoft manages everything from infrastructure to application updates. Azure Virtual Machines is IaaS. Azure App Service is PaaS. Azure Blob Storage is a managed storage service (PaaS-level), not a complete software application."
+    },
+    {
+      type: "matching",
+      question: "Match each cloud service type to its correct description.",
+      pairs: [
+        { term: "Infrastructure as a Service (IaaS)", definition: "Customer manages OS, middleware, runtime, apps, and data; provider manages physical hardware" },
+        { term: "Platform as a Service (PaaS)", definition: "Customer manages apps and data; provider manages infrastructure through runtime" },
+        { term: "Software as a Service (SaaS)", definition: "Provider manages everything; customer uses the application and manages their data" },
+        { term: "Serverless computing", definition: "A form of PaaS where the provider manages all infrastructure and scales dynamically" }
+      ],
+      explanation: "IaaS gives maximum control — you manage everything from the OS up. PaaS handles the platform so you focus on code and data. SaaS delivers complete software — you just use it. Serverless is a PaaS model where even scaling and capacity planning are fully managed by the provider."
+    },
+    {
+      type: "true-false",
+      question: "In the shared responsibility model, the customer is always responsible for their data regardless of whether they use IaaS, PaaS, or SaaS.",
+      correct: true,
+      explanation: "Regardless of the cloud service type, the customer is always responsible for their own data — including classification, protection, backup decisions, and access control. Even in SaaS, where the provider manages the entire application, your documents, emails, and records remain your responsibility. The provider stores and protects the infrastructure, but the data belongs to you."
+    },
+    {
+      type: "multiple-choice",
+      question: "A development team wants to deploy a web application without managing servers, operating systems, or middleware. Which Azure service should they use?",
+      options: [
+        "Azure Virtual Machines",
+        "Azure App Service",
+        "Microsoft 365",
+        "Azure Virtual Network"
+      ],
+      correct: 1,
+      explanation: "Azure App Service is a PaaS offering that lets developers deploy web applications without managing servers, OS, or middleware. Azure handles all platform-level concerns. Azure Virtual Machines (IaaS) would require managing servers and OS. Microsoft 365 (SaaS) is for productivity applications, not custom web app hosting. Azure Virtual Network (IaaS) provides networking, not application hosting."
+    },
+    {
+      type: "true-false",
+      question: "SaaS provides the most flexibility and customization of all cloud service types.",
+      correct: false,
+      explanation: "SaaS provides the least flexibility and customization. You use the application as the provider built it, with customization limited to configuration options the provider exposes. IaaS provides the most flexibility — you control the OS, middleware, runtime, and application. PaaS sits in the middle. The trade-off is that SaaS also requires the least management effort."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which layer of the technology stack is managed by the customer in PaaS but by the provider in SaaS?",
+      options: [
+        "Physical servers",
+        "Operating system",
+        "Applications",
+        "Virtualization"
+      ],
+      correct: 2,
+      explanation: "Applications are managed by the customer in PaaS (you write and deploy your own application code) but by the provider in SaaS (the provider builds and maintains the application). Physical servers and virtualization are managed by the provider in all three service types. The operating system is managed by the customer only in IaaS — the provider handles it in both PaaS and SaaS."
+    },
+    {
+      type: "multiple-choice",
+      question: "An organization needs a fully managed database that handles backups, patching, and high availability automatically. Which cloud service type does this describe?",
+      options: [
+        "IaaS — install and manage your own database on a virtual machine",
+        "PaaS — use a managed database service like Azure SQL Database",
+        "SaaS — use a pre-built application that includes a database",
+        "On-premises — run the database in your own data center"
+      ],
+      correct: 1,
+      explanation: "A fully managed database service like Azure SQL Database is PaaS. The provider handles the infrastructure, OS, patching, backups, and high availability — you manage only your data and queries. Installing a database on a VM (IaaS) would require you to handle all of those management tasks yourself. SaaS delivers complete applications, not individual database services. On-premises means you manage everything."
+    }
+  ]}
+/>
+
+<KeyTakeaways>
+- **IaaS** provides virtualized infrastructure (VMs, networking, storage). You manage the OS, middleware, runtime, apps, and data. The provider manages physical hardware and virtualization. Use IaaS for lift-and-shift migrations and workloads requiring full OS control.
+- **PaaS** provides a managed platform for building applications. The provider manages infrastructure through the runtime layer. You manage only your application code and data. Use PaaS for new app development and managed databases.
+- **SaaS** delivers complete, ready-to-use applications over the internet. The provider manages everything. You manage your data and user configuration. Use SaaS for standard applications like email, CRM, and collaboration.
+- Cloud service types exist on a **responsibility spectrum**: IaaS gives the most control and responsibility, SaaS gives the least. PaaS sits in the middle.
+- The **shared responsibility model** shifts depending on the service type — the more the provider manages, the fewer layers you need to secure and maintain.
+- Common Azure examples: IaaS = Virtual Machines, Virtual Networks; PaaS = App Service, SQL Database, Functions; SaaS = Microsoft 365, Dynamics 365.
+- **Serverless computing** (e.g., Azure Functions) is a form of PaaS where the provider manages all infrastructure and scales dynamically — you pay only for execution time.
+- Regardless of service type, the customer is **always responsible** for their own data, accounts, identities, and devices.
+</KeyTakeaways>
