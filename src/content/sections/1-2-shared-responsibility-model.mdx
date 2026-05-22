@@ -51,7 +51,7 @@ Azure controls these layers completely. You have no ability to configure them, a
 
 - **Information and data** — The content you store in the cloud, whether it's database records, files, or application state. Microsoft does not read or manage your data for you.
 - **Devices and endpoints** — The laptops, phones, and workstations your users connect from. If an employee's laptop is compromised, that's outside Azure's responsibility.
-- **Accounts and access management** — Who has permission to access your Azure resources and what they're allowed to do. Microsoft provides the tools (Azure Active Directory, role-based access control), but configuring them correctly is your job.
+- **Accounts and access management** — Who has permission to access your Azure resources and what they're allowed to do. Microsoft provides the tools (Microsoft Entra ID, role-based access control), but configuring them correctly is your job.
 
 <Callout type="warning">
 A common misconception: many organizations assume that because their data is stored in Azure, Microsoft is responsible for protecting it. This is incorrect. Microsoft secures the infrastructure that holds your data — but the data itself, including how it's encrypted, who can access it, and how it's backed up, remains your responsibility regardless of which service model you use.
@@ -346,7 +346,7 @@ This incident is a textbook illustration of why the shared responsibility model 
         { term: "Physical data center building security", definition: "Always Azure's responsibility" },
         { term: "Operating system vulnerability patching", definition: "Customer's responsibility in IaaS" },
         { term: "Customer database records and files", definition: "Always the customer's responsibility" },
-        { term: "Azure Active Directory platform availability", definition: "Shared responsibility" }
+        { term: "Microsoft Entra ID platform availability", definition: "Shared responsibility" }
       ],
       explanation: "In IaaS, Azure manages all physical infrastructure. The customer manages the OS, applications, and data above the hypervisor. Identity platform availability is shared — Azure runs the platform, while the customer configures and manages their users and roles."
     },
