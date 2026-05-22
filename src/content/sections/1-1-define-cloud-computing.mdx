@@ -295,6 +295,107 @@ Cloud computing has become the foundation of modern business technology. While w
       question: "Cloud resources can only be accessed from computers physically located within the cloud provider's data center.",
       correct: false,
       explanation: "Broad network access — one of the five NIST characteristics — means cloud resources are available over the network and accessible through standard mechanisms from any device with internet connectivity, regardless of location."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company stores its customer data on servers in a rented rack at a co-location facility. The company must call the facility and wait for staff to add more servers. Which cloud characteristic is this arrangement MISSING?",
+      options: [
+        "Broad network access",
+        "Measured service",
+        "On-demand self-service",
+        "Multi-tenancy"
+      ],
+      correct: 2,
+      explanation: "On-demand self-service means users can provision resources without requiring human interaction with the service provider. Because this company must call the facility and wait for staff, the arrangement lacks on-demand self-service — one reason co-location alone does not qualify as cloud computing."
+    },
+    {
+      type: "true-false",
+      question: "Rapid elasticity allows an organization to scale cloud resources both outward (up) and inward (down) based on demand.",
+      correct: true,
+      explanation: "Rapid elasticity works in both directions. Resources can be provisioned when demand rises (scale out) and released when demand falls (scale in). This bidirectional scaling is what allows organizations to pay only for peak capacity when they actually need it, avoiding both over-provisioning and under-provisioning."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which organization published the widely accepted formal definition of cloud computing that Microsoft Azure and other major providers reference?",
+      options: [
+        "IEEE (Institute of Electrical and Electronics Engineers)",
+        "NIST (National Institute of Standards and Technology)",
+        "ISO (International Organization for Standardization)",
+        "IETF (Internet Engineering Task Force)"
+      ],
+      correct: 1,
+      explanation: "NIST Special Publication 800-145, published in 2011, provides the formal definition of cloud computing that serves as the global standard. It is referenced by Azure, AWS, Google Cloud, and virtually every enterprise cloud adoption framework, including the AZ-900 exam curriculum."
+    },
+    {
+      type: "matching",
+      question: "Match each cloud computing concept to its traditional IT counterpart or contrast.",
+      pairs: [
+        { term: "Pay-as-you-go (OpEx)", definition: "Replaces large upfront hardware purchases (CapEx)" },
+        { term: "Provision in minutes", definition: "Replaces weeks-long server ordering and racking" },
+        { term: "Elastic scaling", definition: "Replaces fixed hardware capacity bought for peak load" },
+        { term: "Shared physical infrastructure", definition: "Replaces dedicated hardware for each organization" }
+      ],
+      explanation: "Cloud computing fundamentally changes every operational dimension of traditional IT — from how resources are purchased (CapEx to OpEx), to how long provisioning takes, to how capacity is managed and shared. These contrasts are frequently tested on the AZ-900 exam."
+    },
+    {
+      type: "multiple-choice",
+      question: "An e-commerce company's website receives 50× normal traffic every November for a holiday sale that lasts two weeks. Which cloud capability makes this the most cost-effective scenario compared to on-premises infrastructure?",
+      options: [
+        "Broad network access lets shoppers connect from any device",
+        "Rapid elasticity scales capacity up for the sale and back down after, so the company pays for extra servers only when needed",
+        "Measured service generates a detailed bill at the end of each month",
+        "On-demand self-service removes the need for an IT department"
+      ],
+      correct: 1,
+      explanation: "Rapid elasticity is the key capability here. On-premises, the company would have to buy enough hardware to handle peak holiday load but pay to maintain it year-round. With cloud elasticity, extra servers spin up for the two-week sale and are released afterward — the company pays for the surge only while it lasts."
+    },
+    {
+      type: "true-false",
+      question: "The measured service characteristic of cloud computing benefits only the cloud provider, not the customer.",
+      correct: false,
+      explanation: "Measured service is transparent to both the provider and the customer. Customers gain visibility into exactly how much of each resource they are consuming — storage, compute hours, bandwidth — which enables accurate budgeting, cost optimization, and accountability. This metering is the foundation of the pay-per-use model that benefits customers."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following scenarios is the BEST example of the 'resource pooling' characteristic of cloud computing?",
+      options: [
+        "A developer provisions a new database in the Azure Portal without opening a support ticket",
+        "A company's cloud bill shows exactly 240 GB of storage used last month",
+        "Three different companies' virtual machines run simultaneously on the same physical Azure server, each unaware of the others",
+        "A retail website automatically adds compute nodes when user traffic exceeds a threshold"
+      ],
+      correct: 2,
+      explanation: "Resource pooling means the cloud provider's computing resources are pooled to serve multiple customers using a multi-tenant model. Three companies sharing the same physical server — with their workloads logically isolated from one another — is the textbook example. Options A, B, and D illustrate on-demand self-service, measured service, and rapid elasticity respectively."
+    },
+    {
+      type: "true-false",
+      question: "A hypervisor is a software layer that allows a single physical server to run multiple isolated virtual machines simultaneously.",
+      correct: true,
+      explanation: "A hypervisor (also called a Virtual Machine Monitor) sits between the physical hardware and the virtual machines, allocating CPU, memory, and storage to each VM while keeping them isolated from one another. Hypervisors are the core technology that makes virtualization — and therefore cloud computing's resource pooling and multi-tenancy — possible."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following best distinguishes cloud computing from traditional co-location (renting rack space in a data center)?",
+      options: [
+        "Co-location uses the internet for delivery; cloud computing does not",
+        "Cloud computing provides self-service provisioning, elasticity, and metered billing; co-location provides none of these",
+        "Co-location is always cheaper than cloud computing",
+        "Cloud computing requires dedicated hardware, while co-location uses shared hardware"
+      ],
+      correct: 1,
+      explanation: "Co-location means renting physical space for your own servers — you still own, provision, and manage the hardware yourself. Cloud computing adds self-service provisioning, rapid elasticity, and consumption-based metering that co-location lacks. These are the exact criteria from the NIST definition that separate true cloud from simply 'renting space in someone else's building.'"
+    },
+    {
+      type: "multiple-choice",
+      question: "Microsoft Azure operates in more than 60 regions worldwide. From a cloud computing perspective, which NIST characteristic does this global footprint MOST directly support?",
+      options: [
+        "Measured service — billing is tracked per region",
+        "On-demand self-service — customers open support tickets per region",
+        "Broad network access — resources are accessible from any location over the network",
+        "Resource pooling — physical hardware is pooled within each region"
+      ],
+      correct: 2,
+      explanation: "Broad network access means cloud resources are available over the network from a wide variety of devices and locations. Azure's 60+ regions ensure that users around the world can access services with low latency, and the global infrastructure supports data residency requirements — both outcomes of the broad network access characteristic. Resource pooling (option D) does also occur within regions, but the global footprint most directly illustrates broad, worldwide accessibility."
     }
   ]}
 />

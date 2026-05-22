@@ -407,6 +407,106 @@ This incident is a textbook illustration of why the shared responsibility model 
         { term: "SaaS", definition: "Customer manages only data, users, and access; provider manages everything else" }
       ],
       explanation: "These three descriptions capture the core responsibility profile for each service model. As you move from IaaS to SaaS, the customer's management surface narrows while the provider's expands — but data, users, and access always remain with the customer."
+    },
+    {
+      type: "multiple-choice",
+      question: "A security breach at a company was traced to an employee's personal laptop that was infected with malware, which then harvested Azure login credentials. Under the shared responsibility model, which party failed in their responsibility?",
+      options: [
+        "Microsoft, because it should have detected the compromised credentials",
+        "The customer, because securing devices and endpoints is always the customer's responsibility",
+        "Both equally, because endpoint security is a shared responsibility",
+        "Neither — this type of breach falls outside the shared responsibility model"
+      ],
+      correct: 1,
+      explanation: "Devices and endpoints are always the customer's responsibility under the shared responsibility model, regardless of which Azure service is being used. While Microsoft provides tools like Microsoft Defender for Endpoint, the customer is responsible for enforcing device security policies and ensuring that users connect from managed, secure devices. This is a classic customer-side failure."
+    },
+    {
+      type: "true-false",
+      question: "Moving from IaaS to PaaS reduces the customer's security attack surface because the provider takes over management of the operating system layer.",
+      correct: true,
+      explanation: "This is accurate. When you use PaaS, Azure manages the operating system — including patching, hardening, and vulnerability remediation. Since OS-level vulnerabilities are no longer your concern, your attack surface shrinks. This is one of the key security advantages of choosing PaaS over IaaS for workloads that don't require OS-level customization."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following is NOT a customer responsibility in any of the three cloud service models (IaaS, PaaS, or SaaS)?",
+      options: [
+        "Managing user account permissions",
+        "Protecting information and data",
+        "Maintaining physical host servers",
+        "Securing devices and endpoints"
+      ],
+      correct: 2,
+      explanation: "Physical host servers are always Azure's responsibility across all three service models. Customers never manage the underlying hardware. In contrast, user account permissions, data protection, and endpoint security are always customer responsibilities regardless of which service model is in use."
+    },
+    {
+      type: "matching",
+      question: "Match each real-world Azure service to its service model and the layer that the customer is responsible for managing.",
+      pairs: [
+        { term: "Azure Virtual Machines", definition: "IaaS — customer manages OS, applications, and data" },
+        { term: "Azure App Service", definition: "PaaS — customer manages application code and data" },
+        { term: "Microsoft 365", definition: "SaaS — customer manages users, data, and access policies" },
+        { term: "Azure SQL Database", definition: "PaaS — customer manages data and access; Azure manages the database engine" }
+      ],
+      explanation: "These four services represent the three cloud service models. Azure Virtual Machines is IaaS. Azure App Service and Azure SQL Database are PaaS — though in SQL Database, the managed service takes over even more of the database engine responsibility. Microsoft 365 is the canonical SaaS example, where the customer's only responsibilities are their data, users, and access configuration."
+    },
+    {
+      type: "multiple-choice",
+      question: "An organization is evaluating whether to use IaaS or PaaS for a new application. Their compliance team requires evidence that the operating system is hardened to a specific security baseline. Which model should they choose, and why?",
+      options: [
+        "PaaS, because the provider handles OS hardening automatically",
+        "IaaS, because the customer controls and can document the OS configuration",
+        "SaaS, because it offers the highest level of provider-managed security",
+        "Either model — OS hardening requirements are irrelevant to the service model choice"
+      ],
+      correct: 1,
+      explanation: "When compliance requirements mandate control over OS configuration — such as applying a CIS benchmark or DISA STIG — the organization must choose IaaS, where they own the OS layer. In PaaS, the OS is managed by Azure and abstracted from the customer, making it impossible to document or attest to a specific OS hardening baseline. This is a common reason organizations with strict compliance needs retain IaaS despite its higher operational burden."
+    },
+    {
+      type: "true-false",
+      question: "Under the shared responsibility model, Microsoft is responsible for enabling multi-factor authentication (MFA) for customer user accounts in Azure Active Directory.",
+      correct: false,
+      explanation: "While Microsoft runs and maintains the Azure Active Directory (Entra ID) platform infrastructure, configuring security policies — including enabling and enforcing MFA — is always the customer's responsibility. Microsoft provides the tools, but the customer must activate and enforce them. Failing to require MFA is one of the most common customer-side security failures in cloud environments."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company suffers a data exposure incident after an Azure Blob Storage container was accidentally set to public access. Which party is responsible under the shared responsibility model?",
+      options: [
+        "Microsoft, because Azure should prevent public access by default",
+        "The customer, because access control configuration for data is always the customer's responsibility",
+        "Microsoft, because network controls in PaaS are a provider responsibility",
+        "Both equally, since storage access is a shared layer"
+      ],
+      correct: 1,
+      explanation: "Data and access management are always the customer's responsibility, even when using a PaaS service like Azure Blob Storage. Microsoft is responsible for the availability and security of the storage platform itself, but configuring who can access data — including disabling public access — is entirely the customer's job. Note that Azure now disables public blob access by default at the storage account level, but older accounts or manual overrides remain a customer concern."
+    },
+    {
+      type: "matching",
+      question: "Match each shared responsibility model concept to its correct description.",
+      pairs: [
+        { term: "Always Azure's responsibility", definition: "Physical datacenter, physical network, physical hosts" },
+        { term: "Always the customer's responsibility", definition: "Data, devices and endpoints, accounts and access management" },
+        { term: "Shifts based on service model", definition: "Operating system, network controls, applications" },
+        { term: "Always shared", definition: "Identity and directory infrastructure" }
+      ],
+      explanation: "These four categories organize every layer of the cloud stack. The physical layers are permanently Azure's. Data, devices, and access are permanently the customer's. Identity is always shared — Azure operates the Entra ID platform while the customer configures users and policies. The middle layers (OS, network, applications) are the ones that shift as you move between IaaS, PaaS, and SaaS."
+    },
+    {
+      type: "true-false",
+      question: "In a SaaS deployment, the customer retains NO responsibilities whatsoever — everything is managed by the cloud provider.",
+      correct: false,
+      explanation: "Even in SaaS, customers retain important responsibilities. They must manage their user accounts and access permissions, protect their data within the application, and secure the devices their employees use to access the service. The provider manages the application, infrastructure, and platform — but data governance and identity management remain with the customer across all service models."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following best explains why most cloud security incidents are considered failures in the customer's domain rather than the provider's?",
+      options: [
+        "Cloud providers do not invest sufficiently in physical security",
+        "Customers tend to use older, less secure service models like IaaS",
+        "Incidents most commonly exploit customer-managed layers such as access controls, data configuration, and endpoint security",
+        "Cloud providers are legally exempt from liability for security incidents"
+      ],
+      correct: 2,
+      explanation: "The vast majority of cloud breaches — including high-profile incidents like the Capital One breach — exploit weaknesses in customer-managed layers: misconfigured access permissions, weak or absent MFA, exposed data, and compromised endpoints. The provider's physical infrastructure is rarely the point of failure. This is why understanding your side of the shared responsibility boundary is essential for real-world cloud security, not just the exam."
     }
   ]}
 />

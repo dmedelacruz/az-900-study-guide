@@ -488,6 +488,106 @@ Understanding this shift is critical for the exam. A common question pattern pre
       ],
       correct: 1,
       explanation: "A fully managed database service like Azure SQL Database is PaaS. The provider handles the infrastructure, OS, patching, backups, and high availability — you manage only your data and queries. Installing a database on a VM (IaaS) would require you to handle all of those management tasks yourself. SaaS delivers complete applications, not individual database services. On-premises means you manage everything."
+    },
+    {
+      type: "multiple-choice",
+      question: "Azure Functions allows developers to run event-driven code without provisioning servers, paying only for actual execution time. Which cloud service type and model does this describe?",
+      options: [
+        "IaaS with pay-as-you-go pricing",
+        "SaaS with subscription pricing",
+        "PaaS / Serverless computing",
+        "IaaS with reserved instance pricing"
+      ],
+      correct: 2,
+      explanation: "Azure Functions is a serverless computing service, which is a form of PaaS. The provider manages all infrastructure, OS, runtime, and scaling — the developer only provides code. 'Serverless' doesn't mean there are no servers; it means the developer doesn't manage or even see them. The provider dynamically allocates resources and charges only for actual execution time, not idle capacity."
+    },
+    {
+      type: "true-false",
+      question: "In IaaS, the cloud provider is responsible for patching and updating the operating system on virtual machines.",
+      correct: false,
+      explanation: "In IaaS, the customer is responsible for the operating system — including installation, patching, updates, and security configuration. The provider only manages the physical infrastructure and virtualization layer. OS patching becomes the provider's responsibility in PaaS and SaaS, where the platform handles everything from the OS down."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company is migrating a legacy application that requires a specific version of Windows Server with custom registry settings and third-party drivers. Which cloud service type should they choose?",
+      options: [
+        "SaaS — deploy the application as a managed service",
+        "PaaS — host it on Azure App Service for simplicity",
+        "IaaS — run the application on an Azure VM with full OS control",
+        "Serverless — use Azure Functions for the application logic"
+      ],
+      correct: 2,
+      explanation: "IaaS is the correct choice for legacy applications with specific OS requirements. Azure Virtual Machines provide full control over the operating system, allowing custom Windows Server versions, registry settings, and third-party drivers. PaaS and serverless abstract away the OS, so you cannot configure OS-level settings. SaaS provides pre-built applications, not a platform for running custom legacy software."
+    },
+    {
+      type: "matching",
+      question: "Match each Azure service to its cloud service type.",
+      pairs: [
+        { term: "Azure Virtual Machines", definition: "IaaS — customer manages the OS, middleware, and applications" },
+        { term: "Azure App Service", definition: "PaaS — customer manages only application code and data" },
+        { term: "Microsoft 365", definition: "SaaS — provider manages everything; customer uses the software" },
+        { term: "Azure SQL Database", definition: "PaaS — fully managed database with automatic backups and patching" }
+      ],
+      explanation: "Azure VMs are IaaS — you get a virtual machine and manage everything from the OS up. Azure App Service and Azure SQL Database are PaaS — the platform handles infrastructure, OS, and runtime; you manage your app or data. Microsoft 365 is SaaS — a complete application delivered over the internet that Microsoft manages end-to-end."
+    },
+    {
+      type: "true-false",
+      question: "SaaS applications can be deeply customized at the code level to meet unique business requirements.",
+      correct: false,
+      explanation: "SaaS provides the least customization of all cloud service types. You use the application as the provider built it, with customization limited to configuration options the provider exposes (settings, themes, integrations). You cannot modify the underlying code. If deep code-level customization is needed, PaaS (build your own application) or IaaS (run your own fully controlled environment) would be more appropriate."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which cloud service type requires the LEAST management effort from the customer?",
+      options: [
+        "IaaS",
+        "PaaS",
+        "SaaS",
+        "On-premises"
+      ],
+      correct: 2,
+      explanation: "SaaS requires the least management effort. The provider manages everything — infrastructure, platform, and application. The customer simply uses the software and manages their data and user configuration. PaaS requires managing application code and data. IaaS requires managing the OS, middleware, runtime, applications, and data. On-premises requires managing everything including the physical hardware."
+    },
+    {
+      type: "multiple-choice",
+      question: "A team wants to build a cloud-native web application from scratch and deploy it quickly without worrying about server management, OS patching, or infrastructure scaling. Which approach is most appropriate?",
+      options: [
+        "IaaS — set up VMs and configure web servers manually for full control",
+        "PaaS — use Azure App Service to focus on code while Azure handles the platform",
+        "SaaS — use an existing off-the-shelf web application",
+        "On-premises — build and deploy on company-owned servers for maximum control"
+      ],
+      correct: 1,
+      explanation: "PaaS is ideal for building new cloud-native applications. Azure App Service lets the team deploy their code directly — Azure handles the web server, OS patches, SSL certificates, load balancing, and scaling. IaaS would require manual server setup and management, slowing development. SaaS provides pre-built software, not a development platform. On-premises would require purchasing and managing all infrastructure."
+    },
+    {
+      type: "true-false",
+      question: "Moving an on-premises VM to Azure Virtual Machines with minimal application changes is called a lift-and-shift migration.",
+      correct: true,
+      explanation: "Lift-and-shift is a migration strategy where existing on-premises workloads are moved to IaaS (typically Azure VMs) with minimal or no changes to the application. The VM is essentially 'lifted' from the on-premises environment and 'shifted' to the cloud. This is often the first step in cloud migration because IaaS most closely mirrors a traditional environment, allowing rapid migration without refactoring."
+    },
+    {
+      type: "matching",
+      question: "Match each responsibility to the service type where the CUSTOMER manages it.",
+      pairs: [
+        { term: "Operating system patching", definition: "IaaS only — in PaaS and SaaS, the provider handles OS patching" },
+        { term: "Application code deployment", definition: "IaaS and PaaS — in SaaS, the provider manages the application" },
+        { term: "Data and access control", definition: "All three — IaaS, PaaS, and SaaS (always the customer's job)" },
+        { term: "Middleware configuration", definition: "IaaS only — in PaaS and SaaS, the provider manages middleware" }
+      ],
+      explanation: "Responsibilities shift as you move from IaaS to PaaS to SaaS. OS patching and middleware are customer responsibilities only in IaaS. Application code is the customer's responsibility in IaaS and PaaS, but provider-managed in SaaS. Data and access control are always the customer's responsibility regardless of service type."
+    },
+    {
+      type: "multiple-choice",
+      question: "Dynamics 365 provides CRM and ERP capabilities that organizations subscribe to and access through a web browser. Which cloud service type is this?",
+      options: [
+        "IaaS — because it runs on Azure infrastructure",
+        "PaaS — because it is a managed platform",
+        "SaaS — because it is a complete application delivered over the internet",
+        "Hybrid — because it combines cloud and on-premises"
+      ],
+      correct: 2,
+      explanation: "Dynamics 365 is a SaaS application. It delivers fully functional CRM and ERP software over the internet on a subscription basis. Microsoft manages everything — the infrastructure, platform, application code, updates, and availability. The customer simply uses the software through a browser, managing their data and user configuration. While it runs on Azure infrastructure, the service type is determined by what the customer manages, not where it's hosted."
     }
   ]}
 />

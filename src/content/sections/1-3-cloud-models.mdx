@@ -427,6 +427,106 @@ On the AZ-900 exam, you need to distinguish between these concepts. If a questio
       ],
       correct: 2,
       explanation: "Hybrid cloud is the most complex because it requires managing two different environments (public and private) plus the integration between them. Organizations must maintain consistent security policies, networking (VPNs, ExpressRoute), identity management, and monitoring across both environments. Public-only and private-only each involve managing just one environment."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Azure service allows organizations to manage on-premises servers, AWS resources, and Azure resources from a single control plane?",
+      options: [
+        "Azure VPN Gateway",
+        "Azure ExpressRoute",
+        "Azure Arc",
+        "Azure Stack HCI"
+      ],
+      correct: 2,
+      explanation: "Azure Arc extends Azure management capabilities to resources running anywhere — on-premises, in other clouds (AWS, Google Cloud), or at the edge — enabling unified governance, policy enforcement, and monitoring from the Azure portal. Azure Stack HCI is a hyperconverged infrastructure solution for running Azure services on-premises, while VPN Gateway and ExpressRoute are connectivity solutions."
+    },
+    {
+      type: "true-false",
+      question: "Simply running servers in your own data center qualifies as a private cloud.",
+      correct: false,
+      explanation: "Traditional on-premises IT is not the same as private cloud. A true private cloud must provide cloud-like capabilities: self-service provisioning, automated scaling within available hardware, resource pooling, and metered usage. Without these capabilities, an on-premises data center is just traditional IT infrastructure, not a private cloud."
+    },
+    {
+      type: "multiple-choice",
+      question: "A retail company wants to size its private infrastructure for average daily workloads and use Azure automatically during peak shopping seasons. Which cloud pattern does this describe?",
+      options: [
+        "Multi-cloud",
+        "Cloud bursting",
+        "Full cloud migration",
+        "Private cloud scaling"
+      ],
+      correct: 1,
+      explanation: "Cloud bursting is the pattern where an application runs on private infrastructure under normal conditions and automatically overflows ('bursts') into the public cloud when demand exceeds private capacity. This approach lets the company avoid over-provisioning private hardware for peaks that only occur a few times a year, reducing capital expenditure."
+    },
+    {
+      type: "matching",
+      question: "Match each Azure tool or technology to its primary role in cloud deployment scenarios.",
+      pairs: [
+        { term: "Azure Arc", definition: "Unified management of resources across on-premises, Azure, and other clouds" },
+        { term: "Azure Stack HCI", definition: "Run Azure services on hyperconverged infrastructure in your own data center" },
+        { term: "ExpressRoute", definition: "Private, high-bandwidth connection between on-premises networks and Azure" },
+        { term: "VPN Gateway", definition: "Encrypted tunnel over the public internet connecting on-premises networks to Azure" }
+      ],
+      explanation: "Azure provides a suite of tools specifically for hybrid scenarios. Azure Arc and Azure Stack HCI address management and workload placement, while ExpressRoute and VPN Gateway address network connectivity. ExpressRoute offers a private, dedicated connection with higher bandwidth and lower latency than a VPN Gateway, which routes traffic over the public internet."
+    },
+    {
+      type: "true-false",
+      question: "An organization can simultaneously be both hybrid cloud and multi-cloud.",
+      correct: true,
+      explanation: "Hybrid and multi-cloud are not mutually exclusive. An organization running some workloads on-premises (hybrid), some in Azure, and some in AWS (multi-cloud) is both hybrid and multi-cloud at the same time. This is increasingly common in large enterprises, though it significantly increases management complexity."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following scenarios best justifies choosing private cloud over public cloud?",
+      options: [
+        "A startup needs to deploy a new web application quickly with no hardware budget",
+        "A company has unpredictable traffic and needs to scale on demand",
+        "A defense contractor must run classified workloads on infrastructure with no external network connectivity",
+        "A business wants to avoid maintaining physical servers"
+      ],
+      correct: 2,
+      explanation: "A defense contractor with classified workloads requiring air-gapped (no external connectivity) infrastructure is a textbook private cloud use case. The other options all favor public cloud: no hardware budget points to pay-as-you-go, unpredictable traffic needs elastic scalability, and avoiding physical server maintenance is exactly what public cloud providers offer."
+    },
+    {
+      type: "multiple-choice",
+      question: "In terms of capital expenditure (CapEx), how does hybrid cloud compare to public cloud and private cloud?",
+      options: [
+        "Hybrid cloud has no CapEx, the same as public cloud",
+        "Hybrid cloud has higher CapEx than private cloud",
+        "Hybrid cloud has moderate CapEx — CapEx for the private portion, and OpEx for the public portion",
+        "Hybrid cloud eliminates both CapEx and OpEx"
+      ],
+      correct: 2,
+      explanation: "Hybrid cloud has a mixed cost structure: the private portion requires capital expenditure (purchasing or leasing dedicated hardware), while the public cloud portion uses operational expenditure (pay-as-you-go). This is more CapEx than pure public cloud (which has none) but less than pure private cloud (which bears all infrastructure costs)."
+    },
+    {
+      type: "matching",
+      question: "Match each organization scenario to the cloud model that best fits its requirements.",
+      pairs: [
+        { term: "Startup with no IT budget launching a mobile app", definition: "Public cloud" },
+        { term: "Bank keeping core transaction processing on owned hardware while running mobile banking on Azure", definition: "Hybrid cloud" },
+        { term: "Research firm using Azure for AI workloads and Google Cloud for data analytics", definition: "Multi-cloud" },
+        { term: "Government agency storing classified data on hardware it fully controls with no external sharing", definition: "Private cloud" }
+      ],
+      explanation: "Each scenario maps to a cloud model based on its key constraints: cost-sensitive startups benefit from public cloud's zero CapEx; regulated workloads with selective cloud adoption fit hybrid cloud; using multiple public providers is multi-cloud; and full infrastructure control with no sharing defines private cloud."
+    },
+    {
+      type: "true-false",
+      question: "Multi-cloud strategies are primarily used to reduce vendor lock-in and leverage best-of-breed services from different providers.",
+      correct: true,
+      explanation: "Vendor lock-in avoidance and access to best-of-breed services are two of the most common reasons organizations adopt multi-cloud strategies. By distributing workloads across providers like Azure and AWS, organizations avoid dependence on a single vendor's pricing, availability, and feature roadmap. However, this flexibility comes at the cost of increased operational complexity."
+    },
+    {
+      type: "multiple-choice",
+      question: "A healthcare organization must store electronic health records (EHRs) on infrastructure it fully controls to meet regulatory requirements, but wants to use Azure for its patient-facing appointment portal. Which cloud model does this represent?",
+      options: [
+        "Public cloud",
+        "Private cloud",
+        "Hybrid cloud",
+        "Multi-cloud"
+      ],
+      correct: 2,
+      explanation: "This is a classic hybrid cloud scenario: regulated workloads (EHRs) remain on private, organization-controlled infrastructure to meet compliance requirements, while non-regulated workloads (the public-facing appointment portal) run on public cloud for scalability and rapid deployment. The two environments are integrated so the portal can access appropriate data from the private side."
     }
   ]}
 />

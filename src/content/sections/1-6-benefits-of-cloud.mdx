@@ -559,6 +559,106 @@ No single benefit operates in isolation. A well-architected Azure solution combi
       question: "Security in the cloud means the cloud provider is fully responsible for all security concerns, and the customer has no security responsibilities.",
       correct: false,
       explanation: "Security in the cloud operates under the shared responsibility model. The cloud provider is responsible for security OF the cloud — the physical infrastructure, hardware, network, hypervisor, and data center security. The customer is responsible for security IN the cloud — identity and access management, data classification and encryption, network configuration (firewall rules, NSGs), and application-level security. The division of responsibility shifts based on the cloud service type (IaaS, PaaS, SaaS), but the customer always retains responsibility for their data, accounts, and devices."
+    },
+    {
+      type: "multiple-choice",
+      question: "What is the maximum downtime per month allowed under a 99.99% SLA?",
+      options: [
+        "Approximately 43 minutes",
+        "Approximately 22 minutes",
+        "Approximately 4.4 minutes",
+        "Approximately 26 seconds"
+      ],
+      correct: 2,
+      explanation: "A 99.99% SLA ('four nines') allows approximately 4.4 minutes of downtime per month. By comparison, 99.9% ('three nines') allows ~43 minutes, 99.95% allows ~22 minutes, and 99.999% ('five nines') allows only ~26 seconds. Higher SLA percentages require more redundant architecture — such as deploying across multiple Availability Zones."
+    },
+    {
+      type: "true-false",
+      question: "Vertical scaling (scaling up) means adding more virtual machine instances to distribute workload across multiple machines.",
+      correct: false,
+      explanation: "Vertical scaling (scaling up/down) means increasing or decreasing the capacity of a single existing resource — for example, adding more CPUs or RAM to one VM. Adding more VM instances is horizontal scaling (scaling out/in). Memory trick: Up/Down = Vertical (a single tower getting taller), Out/In = Horizontal (many buildings spreading across a city block)."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Azure service provides automatic failover to a healthy region when a primary region becomes unavailable?",
+      options: [
+        "Azure Policy",
+        "Azure Traffic Manager",
+        "Azure Cost Management",
+        "Azure Advisor"
+      ],
+      correct: 1,
+      explanation: "Azure Traffic Manager (and Azure Front Door) route users to the nearest healthy endpoint and automatically fail over to backup regions when a primary region becomes unavailable. This supports both reliability (surviving regional failures) and high availability (minimizing downtime). Azure Policy enforces governance rules. Azure Cost Management tracks spending. Azure Advisor provides optimization recommendations."
+    },
+    {
+      type: "matching",
+      question: "Match each scaling term to its correct definition.",
+      pairs: [
+        { term: "Scale up", definition: "Increase CPU, RAM, or storage on an existing resource (vertical)" },
+        { term: "Scale out", definition: "Add more instances to distribute workload (horizontal)" },
+        { term: "Scale down", definition: "Reduce capacity of an existing resource to save costs (vertical)" },
+        { term: "Scale in", definition: "Remove instances when demand drops (horizontal)" }
+      ],
+      explanation: "Scaling has four directions: Up and Down are vertical scaling — changing the size of a single resource. Out and In are horizontal scaling — changing the number of instances. Scale up/out increases capacity; scale down/in reduces it. The AZ-900 exam may use any of these terms, so knowing all four is important."
+    },
+    {
+      type: "multiple-choice",
+      question: "An organization uses the Azure Pricing Calculator to estimate their monthly spending before deploying resources. Which dimension of predictability does this support?",
+      options: [
+        "Performance predictability",
+        "Cost predictability",
+        "Reliability predictability",
+        "Security predictability"
+      ],
+      correct: 1,
+      explanation: "The Azure Pricing Calculator supports cost predictability — the ability to accurately forecast cloud spending before deployment. Cost predictability tools also include Azure Cost Management + Billing (real-time tracking and budget alerts) and Reserved Instances (locked-in pricing). Performance predictability, by contrast, focuses on consistent application response times and is achieved through auto-scaling, load balancing, and CDN."
+    },
+    {
+      type: "true-false",
+      question: "Azure Availability Zones are multiple data centers within the same physical building that share power and cooling infrastructure.",
+      correct: false,
+      explanation: "Availability Zones are physically separate data centers within the same Azure region, each with independent power, cooling, and networking. They are not in the same building — that physical separation is what allows services to survive a complete data center failure. If zones shared power and cooling, a single infrastructure failure could take down all zones simultaneously, defeating the purpose."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which cloud benefit is demonstrated when Azure Virtual Machine Scale Sets automatically add VM instances because CPU utilization exceeded 80% for five minutes?",
+      options: [
+        "High availability",
+        "Governance",
+        "Elasticity",
+        "Manageability OF the cloud"
+      ],
+      correct: 2,
+      explanation: "This is elasticity — the automatic, real-time scaling of resources in response to demand. The system detected high CPU utilization and automatically provisioned additional instances without manual intervention. While this also involves management capabilities (OF the cloud), the primary benefit being demonstrated is elasticity. High availability is about uptime through redundancy. Governance is about policy enforcement."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following is an example of management OF the cloud rather than management IN the cloud?",
+      options: [
+        "Using the Azure Portal to view resource dashboards",
+        "Running Azure CLI commands from a terminal",
+        "Automatically replacing a failed VM with a healthy instance based on health probes",
+        "Managing resources from the Azure Mobile App"
+      ],
+      correct: 2,
+      explanation: "Automatically replacing a failed VM is a management capability — something you can do (management OF the cloud). The Azure Portal, Azure CLI, and Azure Mobile App are all management interfaces — how you interact with Azure (management IN the cloud). OF = capabilities (auto-scale, deploy from templates, monitor health, auto-replace). IN = tools and interfaces (Portal, CLI, PowerShell, APIs, Mobile App)."
+    },
+    {
+      type: "true-false",
+      question: "Azure Storage replicates data at least three times by default within a data center to protect against hardware failures.",
+      correct: true,
+      explanation: "By default, Azure Storage uses Locally Redundant Storage (LRS), which maintains three copies of your data within a single data center. This protects against individual hardware failures like disk or rack failures. For additional protection, options like Zone-Redundant Storage (ZRS) replicate across Availability Zones, and Geo-Redundant Storage (GRS) replicates to a secondary region hundreds of miles away."
+    },
+    {
+      type: "matching",
+      question: "Match each cloud benefit to the Azure tool or feature that primarily delivers it.",
+      pairs: [
+        { term: "Governance", definition: "Azure Policy — enforces compliance rules and audits resources" },
+        { term: "Cost predictability", definition: "Azure Cost Management — tracks spending and sets budget alerts" },
+        { term: "Reliability", definition: "Azure Site Recovery — enables disaster recovery across regions" },
+        { term: "Security", definition: "Microsoft Defender for Cloud — assesses security posture and surfaces threats" }
+      ],
+      explanation: "Each cloud benefit is supported by specific Azure tools. Azure Policy enforces governance rules across all resources. Azure Cost Management enables cost forecasting and budget control. Azure Site Recovery replicates workloads for disaster recovery, supporting reliability. Microsoft Defender for Cloud continuously assesses security posture and provides threat protection."
     }
   ]}
 />
