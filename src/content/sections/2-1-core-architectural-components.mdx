@@ -1,0 +1,696 @@
+---
+title: "Core Architectural Components"
+domain: 2
+section: "2.1"
+order: 7
+description: "Explore Azure's physical and logical infrastructure — from global regions and availability zones to subscriptions, resource groups, and Azure Resource Manager."
+tags: ["azure-architecture", "regions", "availability-zones", "subscriptions", "resource-groups", "arm"]
+lastVerified: "2026-05-23"
+microsoftLearnUrl: "https://learn.microsoft.com/en-us/training/modules/describe-core-architectural-components-of-azure/"
+---
+
+import KeyTakeaways from '../../components/KeyTakeaways.astro';
+import KeyTerm from '../../components/KeyTerm.astro';
+import Callout from '../../components/Callout.astro';
+import DeepDive from '../../components/DeepDive.astro';
+import InteractiveDiagram from '../../components/InteractiveDiagram.astro';
+import DiagramHotspot from '../../components/DiagramHotspot.astro';
+import DragDropMatch from '../../components/DragDropMatch.astro';
+import FillInBlank from '../../components/FillInBlank.astro';
+import ScenarioQuestion from '../../components/ScenarioQuestion.astro';
+import BuildIt from '../../components/BuildIt.astro';
+import Quiz from '../../components/Quiz.astro';
+
+## Azure's Infrastructure: From the Ground Up
+
+Every application you run in Azure — a virtual machine, a database, a container — lives somewhere physical. It sits on a real server, in a real data center, plugged into a real power grid, in a real geographic location. Understanding how Azure organizes this physical and logical infrastructure is foundational to everything else you'll learn about the platform.
+
+Think of it like the geography of a country. A **country** contains **states or provinces**, which contain **cities**, which contain **buildings** where people actually live and work. Azure's infrastructure follows a strikingly similar hierarchy: the global Azure cloud is divided into **regions**, each region can contain multiple **availability zones**, and each availability zone maps to one or more physical **data centers**. Then, layered on top of this physical structure, Azure provides a logical organization system — **management groups**, **subscriptions**, and **resource groups** — that helps you organize, govern, and pay for everything you build.
+
+Let's walk through both the physical and logical layers.
+
+---
+
+## Azure's Physical Infrastructure
+
+### Regions
+
+<KeyTerm term="Azure region">A geographic area containing one or more data centers that are networked together with a low-latency network. Azure has more than 60 regions across more than 140 countries, making it the most globally distributed cloud provider.</KeyTerm>
+
+When you deploy a resource in Azure — say, a virtual machine — you choose a region where that resource will physically reside. The region you pick matters for several reasons:
+
+- **Latency** — Users get faster response times when resources are deployed in a region close to them. A web application serving customers in Tokyo should run in the Japan East region, not in West US.
+- **Compliance and data residency** — Many countries and industries have laws requiring data to stay within specific geographic boundaries. Deploying to a region within that boundary helps satisfy those requirements.
+- **Service availability** — Not all Azure services are available in every region. Some newer or specialized services launch in a subset of regions first before expanding.
+- **Pricing** — The cost of the same resource can vary between regions due to differences in local infrastructure costs, energy prices, and market conditions.
+
+<Callout type="tip">
+For the AZ-900 exam, remember that a region is a *geographic area* — not a single data center. A region typically contains multiple data centers. When you deploy a resource to "East US," Azure places it in one of several data centers within that region.
+</Callout>
+
+### Availability Zones
+
+<KeyTerm term="Availability zone">A physically separate data center within an Azure region, equipped with independent power, cooling, and networking. Regions that support availability zones have a minimum of three zones, ensuring that a failure in one zone doesn't affect workloads running in another.</KeyTerm>
+
+Availability zones exist to solve a critical problem: what happens if a single data center goes down? A power outage, a cooling failure, a network disruption — any of these could take an entire data center offline. If all your resources sit in one data center, your application goes down with it.
+
+Availability zones protect against this by spreading data centers far enough apart within a region that a localized disaster (a fire, a flood, a power grid failure) is unlikely to affect more than one zone, yet close enough together that they can communicate with extremely low latency. Each zone has its own:
+
+- **Power supply** — independent electrical feeds
+- **Cooling systems** — separate HVAC infrastructure
+- **Network connections** — dedicated fiber links
+
+By deploying resources across multiple availability zones within the same region, you achieve high availability. If Zone 1 goes down, your resources in Zones 2 and 3 keep running.
+
+<Callout type="warning">
+Not all Azure regions support availability zones. Regions without availability zones still have multiple data centers, but Azure doesn't guarantee the same level of physical separation. For workloads requiring the highest availability guarantees, choose a region that supports availability zones.
+</Callout>
+
+Azure services use availability zones in two ways:
+
+- **Zonal services** — You pin the resource to a specific zone (e.g., a VM in Zone 2). You manage redundancy yourself by deploying additional instances in other zones.
+- **Zone-redundant services** — Azure automatically replicates across zones for you (e.g., zone-redundant storage automatically maintains copies in three zones).
+
+### Region Pairs
+
+<KeyTerm term="Region pair">Two Azure regions within the same geography that are paired together for disaster recovery purposes. Paired regions are at least 300 miles (480 km) apart, and Azure coordinates planned maintenance and recovery priorities between them.</KeyTerm>
+
+Availability zones protect against data center failures within a region, but what if an entire region goes down — a massive earthquake, a regional power grid failure, or a catastrophic network event? Region pairs address this scenario.
+
+Azure pairs most regions with another region in the same geography (e.g., East US is paired with West US, North Europe with West Europe). These pairs provide several benefits:
+
+- **Geographic separation** — At least 300 miles apart, reducing the likelihood that a natural disaster affects both regions simultaneously.
+- **Sequential updates** — Azure rolls out planned maintenance to one region in a pair at a time, never both simultaneously. This prevents a bad update from taking down both regions.
+- **Recovery priority** — In a widespread outage affecting multiple regions, Azure prioritizes restoring one region from each pair first, ensuring every pair has at least one functional region.
+- **Cross-region replication** — Some services (like geo-redundant storage) automatically replicate data to the paired region for disaster recovery.
+
+<Callout type="info">
+A few regions have asymmetric pairing — for example, Brazil South is paired with South Central US (not another Brazilian region), because there was only one region in Brazil when the pair was established. Additionally, some newer regions use availability zones as their primary resiliency strategy rather than traditional pairing.
+</Callout>
+
+### Sovereign Regions
+
+Azure operates special isolated regions designed for government and compliance scenarios where standard public Azure regions cannot meet regulatory requirements.
+
+<Callout type="info">
+**Azure Government** is a physically separate instance of Azure exclusively for US federal, state, tribal, and local government agencies and their partners. It runs in dedicated data centers within the United States, operated by screened US personnel, and meets the most stringent government compliance standards (FedRAMP High, DoD IL5, CJIS, IRS 1075, and others). Azure Government has its own portal (portal.azure.us) and its own set of service endpoints, completely isolated from commercial Azure.
+
+**Azure China** is operated by 21Vianet, a Chinese company, rather than by Microsoft directly. This arrangement complies with Chinese regulations that require cloud services operating within China to be managed by a domestic entity. Azure China has its own portal (portal.azure.cn) and is physically and logically separated from global Azure. Data in Azure China stays within China.
+
+These sovereign regions have their own identity systems, compliance certifications, and service catalogs, and you cannot transfer resources between sovereign and commercial Azure regions.
+</Callout>
+
+<InteractiveDiagram title="Azure's Physical Infrastructure Hierarchy" alt="Diagram showing Azure's global infrastructure from regions down to data centers, including availability zones and region pairs">
+  <svg viewBox="0 0 620 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:system-ui,sans-serif">
+    {/* Title */}
+    <text x="310" y="24" textAnchor="middle" fill="#1e293b" fontSize="15" fontWeight="bold">Azure Physical Infrastructure</text>
+    {/* Global Azure bar */}
+    <rect x="20" y="40" width="580" height="40" rx="8" fill="#0f172a" stroke="#2563eb" strokeWidth="2" />
+    <text x="310" y="65" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">Azure Global Infrastructure — 60+ Regions Worldwide</text>
+    {/* Region Pair bracket */}
+    <rect x="20" y="95" width="580" height="310" rx="12" fill="#162032" stroke="#1e3a5f" strokeWidth="1.5" strokeDasharray="6,3" />
+    <text x="310" y="118" textAnchor="middle" fill="#60a5fa" fontSize="12" fontWeight="bold">Region Pair (e.g., East US ↔ West US) — 300+ miles apart</text>
+    {/* Region A */}
+    <rect x="40" y="130" width="255" height="260" rx="10" fill="#1e3a5f" stroke="#2563eb" strokeWidth="2" />
+    <text x="167" y="155" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">Region A (East US)</text>
+    {/* AZ 1 */}
+    <rect x="55" y="170" width="70" height="120" rx="6" fill="#0f172a" stroke="#3b82f6" strokeWidth="1.5" />
+    <text x="90" y="190" textAnchor="middle" fill="#93c5fd" fontSize="10" fontWeight="bold">Zone 1</text>
+    <rect x="65" y="200" width="50" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="90" y="214" textAnchor="middle" fill="white" fontSize="8">DC</text>
+    <rect x="65" y="228" width="50" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="90" y="242" textAnchor="middle" fill="white" fontSize="8">DC</text>
+    <text x="90" y="280" textAnchor="middle" fill="#60a5fa" fontSize="7">Power | Cool | Net</text>
+    {/* AZ 2 */}
+    <rect x="135" y="170" width="70" height="120" rx="6" fill="#0f172a" stroke="#3b82f6" strokeWidth="1.5" />
+    <text x="170" y="190" textAnchor="middle" fill="#93c5fd" fontSize="10" fontWeight="bold">Zone 2</text>
+    <rect x="145" y="200" width="50" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="170" y="214" textAnchor="middle" fill="white" fontSize="8">DC</text>
+    <rect x="145" y="228" width="50" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="170" y="242" textAnchor="middle" fill="white" fontSize="8">DC</text>
+    <text x="170" y="280" textAnchor="middle" fill="#60a5fa" fontSize="7">Power | Cool | Net</text>
+    {/* AZ 3 */}
+    <rect x="215" y="170" width="70" height="120" rx="6" fill="#0f172a" stroke="#3b82f6" strokeWidth="1.5" />
+    <text x="250" y="190" textAnchor="middle" fill="#93c5fd" fontSize="10" fontWeight="bold">Zone 3</text>
+    <rect x="225" y="200" width="50" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="250" y="214" textAnchor="middle" fill="white" fontSize="8">DC</text>
+    <rect x="225" y="228" width="50" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="250" y="242" textAnchor="middle" fill="white" fontSize="8">DC</text>
+    <text x="250" y="280" textAnchor="middle" fill="#60a5fa" fontSize="7">Power | Cool | Net</text>
+    {/* High-speed network label */}
+    <line x1="60" y1="305" x2="280" y2="305" stroke="#3b82f6" strokeWidth="1" strokeDasharray="4,2" />
+    <text x="167" y="320" textAnchor="middle" fill="#93c5fd" fontSize="9">High-speed fiber interconnect</text>
+    {/* Zonal/Zone-redundant labels */}
+    <text x="167" y="370" textAnchor="middle" fill="#60a5fa" fontSize="9">Zonal services pin to one zone</text>
+    <text x="167" y="383" textAnchor="middle" fill="#60a5fa" fontSize="9">Zone-redundant services span all</text>
+    {/* Region B */}
+    <rect x="325" y="130" width="255" height="260" rx="10" fill="#1e3a5f" stroke="#2563eb" strokeWidth="2" />
+    <text x="452" y="155" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">Region B (West US)</text>
+    {/* AZ 1 */}
+    <rect x="340" y="170" width="70" height="120" rx="6" fill="#0f172a" stroke="#3b82f6" strokeWidth="1.5" />
+    <text x="375" y="190" textAnchor="middle" fill="#93c5fd" fontSize="10" fontWeight="bold">Zone 1</text>
+    <rect x="350" y="200" width="50" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="375" y="214" textAnchor="middle" fill="white" fontSize="8">DC</text>
+    <rect x="350" y="228" width="50" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="375" y="242" textAnchor="middle" fill="white" fontSize="8">DC</text>
+    <text x="375" y="280" textAnchor="middle" fill="#60a5fa" fontSize="7">Power | Cool | Net</text>
+    {/* AZ 2 */}
+    <rect x="420" y="170" width="70" height="120" rx="6" fill="#0f172a" stroke="#3b82f6" strokeWidth="1.5" />
+    <text x="455" y="190" textAnchor="middle" fill="#93c5fd" fontSize="10" fontWeight="bold">Zone 2</text>
+    <rect x="430" y="200" width="50" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="455" y="214" textAnchor="middle" fill="white" fontSize="8">DC</text>
+    <rect x="430" y="228" width="50" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="455" y="242" textAnchor="middle" fill="white" fontSize="8">DC</text>
+    <text x="455" y="280" textAnchor="middle" fill="#60a5fa" fontSize="7">Power | Cool | Net</text>
+    {/* AZ 3 */}
+    <rect x="500" y="170" width="70" height="120" rx="6" fill="#0f172a" stroke="#3b82f6" strokeWidth="1.5" />
+    <text x="535" y="190" textAnchor="middle" fill="#93c5fd" fontSize="10" fontWeight="bold">Zone 3</text>
+    <rect x="510" y="200" width="50" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="535" y="214" textAnchor="middle" fill="white" fontSize="8">DC</text>
+    <rect x="510" y="228" width="50" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="535" y="242" textAnchor="middle" fill="white" fontSize="8">DC</text>
+    <text x="535" y="280" textAnchor="middle" fill="#60a5fa" fontSize="7">Power | Cool | Net</text>
+    {/* Region B interconnect */}
+    <line x1="345" y1="305" x2="565" y2="305" stroke="#3b82f6" strokeWidth="1" strokeDasharray="4,2" />
+    <text x="452" y="320" textAnchor="middle" fill="#93c5fd" fontSize="9">High-speed fiber interconnect</text>
+    {/* Cross-region replication arrow */}
+    <text x="452" y="370" textAnchor="middle" fill="#60a5fa" fontSize="9">Geo-redundant storage replicates</text>
+    <text x="452" y="383" textAnchor="middle" fill="#60a5fa" fontSize="9">data to paired region</text>
+  </svg>
+  <DiagramHotspot x="3%" y="10%" width="96%" height="10%" variant="layer" label="Global Infrastructure">
+    Azure's global infrastructure spans more than 60 regions across more than 140 countries, making it the most geographically distributed cloud platform. This global footprint lets organizations deploy resources close to their users for lower latency, and choose regions that satisfy data residency and compliance requirements.
+  </DiagramHotspot>
+  <DiagramHotspot x="3%" y="23%" width="96%" height="8%" variant="layer" label="Region Pairs">
+    Region pairs consist of two regions in the same geography, separated by at least 300 miles. Azure coordinates maintenance between paired regions (never updating both at the same time) and prioritizes recovery of at least one region from each pair during widespread outages. Services like geo-redundant storage automatically replicate data to the paired region.
+  </DiagramHotspot>
+  <DiagramHotspot x="5%" y="33%" width="42%" height="62%" variant="layer" label="Region with Availability Zones">
+    Each region that supports availability zones contains at least three physically separate data center facilities. Each zone has independent power, cooling, and networking to ensure that a failure in one zone does not cascade to others. You can deploy resources to a specific zone (zonal services) or let Azure spread them across zones automatically (zone-redundant services).
+  </DiagramHotspot>
+  <DiagramHotspot x="53%" y="33%" width="42%" height="62%" variant="layer" label="Paired Region">
+    The paired region mirrors the availability zone structure. In a regional disaster, workloads can fail over to the paired region. Azure's sequential update policy ensures that planned maintenance never affects both paired regions at the same time, providing an extra layer of protection during rollouts.
+  </DiagramHotspot>
+</InteractiveDiagram>
+
+<DeepDive title="How Azure Achieves 99.99% Uptime">
+Azure's high-availability architecture is built on layered redundancy — each layer protects against a different scope of failure.
+
+**Layer 1: Hardware redundancy within a data center.** Individual servers have redundant power supplies, network interfaces, and (often) mirrored storage. If a single server fails, workloads are automatically moved to healthy hardware.
+
+**Layer 2: Availability zones within a region.** By spreading resources across three or more independent data center facilities — each with its own power, cooling, and network — Azure protects against facility-level failures. A zone-redundant deployment can survive the complete loss of one data center.
+
+**Layer 3: Region pairs across geographies.** For catastrophic regional events, geo-redundant replication ensures data survives in a paired region hundreds of miles away. Services like Azure Site Recovery can automate full application failover between paired regions.
+
+**The math of nines.** A single VM in one zone offers a 99.9% SLA (roughly 8.7 hours of downtime per year). Deploying the same VM across two or more availability zones raises the SLA to 99.99% (about 52 minutes per year). Adding geo-redundant failover pushes effective availability even higher, though the exact SLA depends on the services and configuration involved.
+
+For the AZ-900 exam, you don't need to memorize specific SLA percentages, but you should understand that each layer of redundancy (hardware → zone → region pair) protects against progressively larger failure scenarios.
+</DeepDive>
+
+---
+
+## Azure's Logical Organization
+
+While Azure's physical infrastructure determines *where* your resources run, the logical organization determines *how* you manage, govern, and pay for them. Azure provides a four-level hierarchy for organizing resources.
+
+### Management Groups
+
+<KeyTerm term="Management group">A container above subscriptions that lets you organize multiple Azure subscriptions into a hierarchy for unified governance. Policies and access controls applied to a management group are inherited by all subscriptions and resources within it.</KeyTerm>
+
+Management groups solve a governance problem: when an organization has dozens or hundreds of subscriptions, applying consistent policies subscription by subscription is tedious and error-prone. Management groups let you group subscriptions together and apply policies once at the group level.
+
+Key facts about management groups:
+
+- Every Azure tenant gets a **root management group** at the top of the hierarchy. All other management groups and subscriptions are descendants of this root.
+- Management groups can be **nested up to six levels deep** (not counting the root), allowing for granular organizational structures.
+- A management group can contain other management groups or subscriptions, but each subscription can belong to only **one management group**.
+- **Azure RBAC and Azure Policy** assignments on a management group cascade down to all child management groups, subscriptions, resource groups, and resources.
+
+For example, a large enterprise might create management groups for each business unit (Marketing, Engineering, Finance), then nest management groups for environments (Production, Development) within each. A security policy applied at the top-level business unit group automatically governs every subscription and resource underneath it.
+
+### Subscriptions
+
+<KeyTerm term="Azure subscription">A billing and access-control boundary in Azure. Every Azure resource belongs to a subscription, and each subscription generates a separate bill. Organizations use multiple subscriptions to separate environments, departments, or billing responsibilities.</KeyTerm>
+
+A subscription serves two critical purposes:
+
+- **Billing boundary** — All charges for resources within a subscription appear on a single bill. An organization might create separate subscriptions for development and production so each gets its own invoice, or assign different subscriptions to different departments for cost tracking.
+- **Access-control boundary** — You can apply different access policies to different subscriptions. Development teams might have broad permissions in a development subscription but restricted access in the production subscription.
+
+Organizations create multiple subscriptions for several reasons:
+
+- **Environment separation** — dev, test, staging, and production each in their own subscription
+- **Departmental billing** — each department gets its own subscription and its own bill
+- **Subscription limits** — Azure imposes per-subscription limits on certain resources (e.g., the number of virtual networks per subscription). When you approach a limit, you can create additional subscriptions.
+- **Compliance isolation** — regulated workloads in a separate subscription with stricter controls
+
+### Resource Groups
+
+<KeyTerm term="Resource group">A logical container that holds related Azure resources. Every Azure resource must belong to exactly one resource group. Resources in a group can be in different regions. Deleting a resource group deletes all resources within it.</KeyTerm>
+
+Resource groups are the fundamental organizational unit for Azure resources. Think of them as folders for your cloud resources — but with important rules:
+
+- **Every resource must be in exactly one resource group.** You can't have a resource that belongs to two groups, and you can't have a resource outside of any group.
+- **Resources can span regions.** A resource group might contain a VM in East US and a database in West Europe. The resource group itself has a location (for metadata storage), but the resources inside it can be anywhere.
+- **Lifecycle management.** Resources in a group often share the same lifecycle — they're created together, managed together, and deleted together. Deleting a resource group deletes everything in it, making cleanup straightforward.
+- **Access control scope.** You can assign RBAC roles at the resource group level, giving a team access to all resources in the group without granting access to resources in other groups.
+
+<Callout type="tip">
+A common exam question tests whether resources in a resource group must be in the same region. The answer is **no** — a resource group can contain resources from multiple regions. The resource group's own location only determines where its metadata (the list of what it contains) is stored.
+</Callout>
+
+### Azure Resource Manager (ARM)
+
+<KeyTerm term="Azure Resource Manager (ARM)">The deployment and management service for Azure. Every request to create, update, delete, or manage an Azure resource — whether it comes from the Azure portal, Azure CLI, PowerShell, REST APIs, or SDKs — goes through ARM, which provides a consistent management layer with authentication, authorization, and auditing.</KeyTerm>
+
+ARM is the gatekeeper for all Azure resource operations. No matter how you interact with Azure, your request passes through ARM:
+
+- **Azure portal** → sends REST API calls to ARM
+- **Azure CLI** → sends REST API calls to ARM
+- **Azure PowerShell** → sends REST API calls to ARM
+- **Client SDKs and REST APIs** → call ARM directly
+
+This single entry point provides several powerful capabilities:
+
+- **Consistent management layer** — The same operations work regardless of the tool you use. A VM created via the portal is identical to one created via the CLI.
+- **Authentication and authorization** — ARM integrates with Microsoft Entra ID to authenticate every request and checks Azure RBAC to ensure the caller has permission for the operation.
+- **Tagging** — ARM supports tags (key-value pairs) on resources, enabling flexible categorization for cost management, operations, and governance.
+- **ARM templates and Bicep** — ARM supports declarative templates (JSON-based ARM templates or the more concise Bicep language) that define your infrastructure as code, enabling repeatable, consistent deployments.
+- **Dependency management** — When deploying multiple resources that depend on each other, ARM understands the dependencies and deploys them in the correct order, parallelizing where possible.
+
+<InteractiveDiagram title="Azure's Management Hierarchy" alt="Diagram showing the logical hierarchy from management groups to subscriptions to resource groups to resources, with ARM as the management layer">
+  <svg viewBox="0 0 620 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:system-ui,sans-serif">
+    {/* Title */}
+    <text x="310" y="24" textAnchor="middle" fill="#1e293b" fontSize="15" fontWeight="bold">Azure Logical Organization Hierarchy</text>
+    {/* ARM layer across top */}
+    <rect x="20" y="40" width="580" height="45" rx="8" fill="#0f172a" stroke="#2563eb" strokeWidth="2" />
+    <text x="310" y="58" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">Azure Resource Manager (ARM)</text>
+    <text x="310" y="74" textAnchor="middle" fill="#93c5fd" fontSize="10">Portal | CLI | PowerShell | REST API | SDKs → All requests pass through ARM</text>
+    {/* Root Management Group */}
+    <rect x="210" y="100" width="200" height="35" rx="8" fill="#1e3a5f" stroke="#2563eb" strokeWidth="2" />
+    <text x="310" y="122" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">Root Management Group</text>
+    {/* Lines from root to child MGs */}
+    <line x1="250" y1="135" x2="150" y2="155" stroke="#3b82f6" strokeWidth="1.5" />
+    <line x1="370" y1="135" x2="470" y2="155" stroke="#3b82f6" strokeWidth="1.5" />
+    {/* Child Management Groups */}
+    <rect x="50" y="155" width="200" height="32" rx="6" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1.5" />
+    <text x="150" y="175" textAnchor="middle" fill="#93c5fd" fontSize="11" fontWeight="bold">MG: Engineering</text>
+    <rect x="370" y="155" width="200" height="32" rx="6" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="1.5" />
+    <text x="470" y="175" textAnchor="middle" fill="#93c5fd" fontSize="11" fontWeight="bold">MG: Finance</text>
+    {/* Lines from MGs to Subscriptions */}
+    <line x1="110" y1="187" x2="90" y2="210" stroke="#3b82f6" strokeWidth="1.5" />
+    <line x1="190" y1="187" x2="230" y2="210" stroke="#3b82f6" strokeWidth="1.5" />
+    <line x1="470" y1="187" x2="470" y2="210" stroke="#3b82f6" strokeWidth="1.5" />
+    {/* Subscriptions */}
+    <rect x="25" y="210" width="140" height="30" rx="6" fill="#1a2744" stroke="#60a5fa" strokeWidth="1.5" />
+    <text x="95" y="229" textAnchor="middle" fill="#60a5fa" fontSize="10" fontWeight="bold">Sub: Eng-Prod</text>
+    <rect x="180" y="210" width="140" height="30" rx="6" fill="#1a2744" stroke="#60a5fa" strokeWidth="1.5" />
+    <text x="250" y="229" textAnchor="middle" fill="#60a5fa" fontSize="10" fontWeight="bold">Sub: Eng-Dev</text>
+    <rect x="400" y="210" width="140" height="30" rx="6" fill="#1a2744" stroke="#60a5fa" strokeWidth="1.5" />
+    <text x="470" y="229" textAnchor="middle" fill="#60a5fa" fontSize="10" fontWeight="bold">Sub: Finance-Prod</text>
+    {/* Lines from Subs to Resource Groups */}
+    <line x1="65" y1="240" x2="65" y2="265" stroke="#60a5fa" strokeWidth="1" />
+    <line x1="125" y1="240" x2="125" y2="265" stroke="#60a5fa" strokeWidth="1" />
+    <line x1="220" y1="240" x2="220" y2="265" stroke="#60a5fa" strokeWidth="1" />
+    <line x1="280" y1="240" x2="280" y2="265" stroke="#60a5fa" strokeWidth="1" />
+    <line x1="440" y1="240" x2="440" y2="265" stroke="#60a5fa" strokeWidth="1" />
+    <line x1="500" y1="240" x2="500" y2="265" stroke="#60a5fa" strokeWidth="1" />
+    {/* Resource Groups */}
+    <rect x="30" y="265" width="70" height="26" rx="4" fill="#0f172a" stroke="#3b82f6" strokeWidth="1" />
+    <text x="65" y="282" textAnchor="middle" fill="#93c5fd" fontSize="8">RG: Web App</text>
+    <rect x="110" y="265" width="70" height="26" rx="4" fill="#0f172a" stroke="#3b82f6" strokeWidth="1" />
+    <text x="145" y="282" textAnchor="middle" fill="#93c5fd" fontSize="8">RG: Database</text>
+    <rect x="190" y="265" width="70" height="26" rx="4" fill="#0f172a" stroke="#3b82f6" strokeWidth="1" />
+    <text x="225" y="282" textAnchor="middle" fill="#93c5fd" fontSize="8">RG: Dev-Test</text>
+    <rect x="270" y="265" width="70" height="26" rx="4" fill="#0f172a" stroke="#3b82f6" strokeWidth="1" />
+    <text x="305" y="282" textAnchor="middle" fill="#93c5fd" fontSize="8">RG: Sandbox</text>
+    <rect x="405" y="265" width="70" height="26" rx="4" fill="#0f172a" stroke="#3b82f6" strokeWidth="1" />
+    <text x="440" y="282" textAnchor="middle" fill="#93c5fd" fontSize="8">RG: Reports</text>
+    <rect x="485" y="265" width="70" height="26" rx="4" fill="#0f172a" stroke="#3b82f6" strokeWidth="1" />
+    <text x="520" y="282" textAnchor="middle" fill="#93c5fd" fontSize="8">RG: Data</text>
+    {/* Lines from RGs to Resources */}
+    <line x1="65" y1="291" x2="50" y2="315" stroke="#3b82f6" strokeWidth="1" strokeDasharray="3,2" />
+    <line x1="65" y1="291" x2="80" y2="315" stroke="#3b82f6" strokeWidth="1" strokeDasharray="3,2" />
+    <line x1="145" y1="291" x2="145" y2="315" stroke="#3b82f6" strokeWidth="1" strokeDasharray="3,2" />
+    <line x1="440" y1="291" x2="440" y2="315" stroke="#3b82f6" strokeWidth="1" strokeDasharray="3,2" />
+    {/* Resources */}
+    <rect x="35" y="315" width="30" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="50" y="328" textAnchor="middle" fill="white" fontSize="7">VM</text>
+    <rect x="70" y="315" width="30" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="85" y="328" textAnchor="middle" fill="white" fontSize="7">LB</text>
+    <rect x="130" y="315" width="30" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="145" y="328" textAnchor="middle" fill="white" fontSize="7">SQL</text>
+    <rect x="425" y="315" width="30" height="20" rx="3" fill="#2563eb" opacity="0.5" />
+    <text x="440" y="328" textAnchor="middle" fill="white" fontSize="7">App</text>
+    {/* Legend at bottom */}
+    <rect x="20" y="355" width="580" height="55" rx="8" fill="#0f172a" stroke="#1e3a5f" strokeWidth="1.5" />
+    <text x="130" y="375" textAnchor="middle" fill="#60a5fa" fontSize="10" fontWeight="bold">Policies & RBAC</text>
+    <text x="130" y="395" textAnchor="middle" fill="#94a3b8" fontSize="9">Inherit downward through hierarchy</text>
+    <text x="310" y="375" textAnchor="middle" fill="#60a5fa" fontSize="10" fontWeight="bold">Billing Boundary</text>
+    <text x="310" y="395" textAnchor="middle" fill="#94a3b8" fontSize="9">Each subscription = separate bill</text>
+    <text x="490" y="375" textAnchor="middle" fill="#60a5fa" fontSize="10" fontWeight="bold">Lifecycle Container</text>
+    <text x="490" y="395" textAnchor="middle" fill="#94a3b8" fontSize="9">Delete RG = delete all resources in it</text>
+  </svg>
+  <DiagramHotspot x="3%" y="10%" width="96%" height="12%" variant="layer" label="Azure Resource Manager (ARM)">
+    ARM is the management layer that processes every Azure request — whether you use the portal, CLI, PowerShell, or REST APIs. It handles authentication via Microsoft Entra ID, checks RBAC permissions, and then routes the request to the appropriate resource provider. Because everything goes through ARM, you get consistent behavior, logging, and policy enforcement regardless of how you interact with Azure.
+  </DiagramHotspot>
+  <DiagramHotspot x="3%" y="23%" width="96%" height="15%" variant="layer" label="Management Groups">
+    Management groups sit above subscriptions in the hierarchy, allowing you to group subscriptions and apply governance at scale. Policies and RBAC assignments on a management group are inherited by all subscriptions and resources below it. You can nest management groups up to six levels deep (not counting the root). Every Azure tenant has a root management group that contains all other management groups and subscriptions.
+  </DiagramHotspot>
+  <DiagramHotspot x="3%" y="50%" width="96%" height="12%" variant="layer" label="Subscriptions">
+    Subscriptions serve as both a billing boundary and an access-control boundary. Each subscription produces a separate invoice, making it easy to track costs by department, project, or environment. Organizations commonly create separate subscriptions for production, development, and testing workloads.
+  </DiagramHotspot>
+  <DiagramHotspot x="3%" y="63%" width="96%" height="18%" variant="layer" label="Resource Groups & Resources">
+    Resource groups are logical containers that hold related Azure resources. Every resource belongs to exactly one resource group. Resources within a group can span different Azure regions — the group's location only determines where its metadata is stored. Deleting a resource group deletes all resources inside it, making resource groups a convenient lifecycle management tool.
+  </DiagramHotspot>
+</InteractiveDiagram>
+
+<DeepDive title="ARM Templates and Infrastructure as Code">
+One of ARM's most powerful features is its support for **Infrastructure as Code (IaC)** — the practice of defining your cloud infrastructure in declarative template files rather than manually clicking through a portal.
+
+**ARM templates** are JSON files that describe the resources you want to deploy, their configurations, and their dependencies. When you submit a template to ARM, it reads the desired state, compares it to the current state, and makes the necessary changes. Key benefits include:
+
+- **Repeatability** — Deploy the exact same environment every time. No more "it worked on my screen" problems caused by manual configuration differences.
+- **Version control** — Store templates in Git. Track changes over time. Review infrastructure changes with the same rigor as code changes.
+- **Idempotency** — You can deploy the same template multiple times without creating duplicate resources. ARM will create what's missing, update what's changed, and leave what's already correct.
+- **Parallel deployment** — ARM analyzes dependencies in your template and deploys independent resources simultaneously, speeding up complex deployments.
+
+**Bicep** is Microsoft's newer, more concise language for ARM templates. It compiles down to ARM template JSON but is much easier for humans to read and write. Think of Bicep as syntactic sugar for ARM templates — same engine, friendlier syntax.
+
+For the AZ-900 exam, you should know that ARM templates and Bicep enable declarative, repeatable deployments and that they work through the ARM management layer. You won't need to write templates on the exam.
+</DeepDive>
+
+---
+
+## Comparing Organizational Concepts
+
+| Concept | Scope | Primary Purpose | Key Rule |
+|---|---|---|---|
+| **Management Group** | Above subscriptions | Governance and policy at scale | Can nest up to 6 levels deep (excluding root) |
+| **Subscription** | Contains resource groups | Billing boundary + access control boundary | Each resource belongs to exactly one subscription |
+| **Resource Group** | Contains resources | Logical container for related resources | Every resource must be in exactly one resource group |
+| **Azure Resource Manager** | All of Azure | Consistent management layer for all operations | All requests (portal, CLI, API) go through ARM |
+
+---
+
+## Practice Activities
+
+<DragDropMatch
+  title="Match Each Characteristic to the Correct Azure Concept"
+  categories={["Region", "Availability Zone", "Subscription", "Resource Group", "Management Group"]}
+  items={[
+    { text: "A geographic area containing one or more data centers", category: "Region" },
+    { text: "Physically separate data center with independent power and cooling", category: "Availability Zone" },
+    { text: "Billing boundary that produces a separate invoice", category: "Subscription" },
+    { text: "Logical container where every resource must belong to exactly one", category: "Resource Group" },
+    { text: "Hierarchical container for applying governance across multiple subscriptions", category: "Management Group" },
+    { text: "Can be nested up to six levels deep (excluding root)", category: "Management Group" },
+    { text: "Resources inside it can span multiple regions", category: "Resource Group" },
+    { text: "There are at least three of these in a supported region", category: "Availability Zone" },
+    { text: "Choosing the right one helps reduce latency for your users", category: "Region" },
+    { text: "Acts as both a billing boundary and an access-control boundary", category: "Subscription" },
+  ]}
+/>
+
+<FillInBlank
+  title="Core Architectural Components — Type Your Answer"
+  mode="type"
+  items={[
+    { text: "Azure regions that support availability zones have a minimum of ___ zones.", answer: "three" },
+    { text: "Region pairs are at least ___ miles apart to protect against regional disasters.", answer: "300" },
+    { text: "Every Azure resource must belong to exactly one ___.", answer: "resource group" },
+    { text: "All requests to Azure — whether from the portal, CLI, or APIs — pass through Azure ___.", answer: "Resource Manager" },
+    { text: "Management groups can be nested up to ___ levels deep, not counting the root management group.", answer: "six" },
+  ]}
+/>
+
+<FillInBlank
+  title="Core Architectural Components — Select Your Answer"
+  mode="select"
+  items={[
+    { text: "An Azure ___ serves as both a billing boundary and an access-control boundary.", answer: "subscription" },
+    { text: "Azure Government and Azure China are examples of ___ regions.", answer: "sovereign" },
+    { text: "Deleting a resource group ___ all resources inside it.", answer: "deletes" },
+    { text: "ARM templates enable ___ deployments, meaning you can deploy the same template multiple times without creating duplicates.", answer: "idempotent" },
+  ]}
+/>
+
+<ScenarioQuestion
+  title="Designing the Right Azure Organization"
+  scenario="A multinational corporation has three divisions: Healthcare, Retail, and Financial Services. Each division has its own development and production environments. The company needs to enforce a security policy that prevents all resources in the Financial Services division from being created outside of European Azure regions (for GDPR compliance), while allowing Healthcare and Retail to deploy globally. Each division should receive separate invoices for their cloud spending. How should the company organize its Azure environment?"
+  options={[
+    { text: "Create one subscription for the entire company, using resource groups for each division and tags for environment separation", feedback: "Incorrect. A single subscription would mean a single invoice for the entire company, which doesn't meet the requirement for separate invoices per division. Also, Azure Policy at the resource group level can enforce region restrictions, but this approach misses the opportunity to use management groups for governance at scale and subscriptions for billing separation." },
+    { text: "Create a management group for each division, with separate subscriptions for dev and production environments under each. Apply an Azure Policy to the Financial Services management group restricting deployments to European regions", feedback: "Correct. This structure uses management groups for division-level governance (letting you apply the GDPR region restriction to Financial Services at the management group level, where it automatically applies to all subscriptions and resources underneath). Separate subscriptions for dev and production under each division provide billing separation and access-control boundaries. This is the most scalable and maintainable approach.", correct: true },
+    { text: "Create six subscriptions (one per division per environment) with no management groups, and apply Azure Policy individually to each Financial Services subscription", feedback: "Incorrect. While six subscriptions provide billing separation, applying policies individually to each subscription is repetitive and error-prone. If Financial Services adds a third subscription later, someone must remember to apply the region policy to it. Management groups solve this by applying the policy once at the group level, where it automatically covers all current and future subscriptions underneath." },
+  ]}
+/>
+
+<BuildIt
+  title="Build an Azure Resource Hierarchy"
+  instruction="Arrange these components in the correct order from top (broadest scope) to bottom (most specific) to form Azure's management hierarchy."
+  steps={[
+    { label: "Management Group", description: "Broadest governance scope — contains subscriptions and other management groups" },
+    { label: "Subscription", description: "Billing and access-control boundary — contains resource groups" },
+    { label: "Resource Group", description: "Logical container for related resources" },
+    { label: "Resource (e.g., VM, Database)", description: "Individual Azure service instance — the most specific level" },
+  ]}
+/>
+
+---
+
+<Quiz
+  title="Section 2.1 Quiz — Core Architectural Components"
+  sectionId="2-1"
+  questions={[
+    {
+      type: "multiple-choice",
+      question: "What is an Azure region?",
+      options: [
+        "A single data center that hosts Azure resources",
+        "A geographic area containing one or more data centers networked together with low latency",
+        "A group of subscriptions organized for billing purposes",
+        "A virtual network that spans multiple countries"
+      ],
+      correct: 1,
+      explanation: "An Azure region is a geographic area containing one or more data centers connected by a low-latency network. A region is not a single data center — it typically contains multiple data centers. Azure has more than 60 regions worldwide."
+    },
+    {
+      type: "multiple-choice",
+      question: "What is the minimum number of availability zones in an Azure region that supports them?",
+      options: [
+        "One",
+        "Two",
+        "Three",
+        "Five"
+      ],
+      correct: 2,
+      explanation: "Azure regions that support availability zones have a minimum of three physically separate data center facilities. Each zone has independent power, cooling, and networking to ensure that a failure in one zone doesn't affect the others."
+    },
+    {
+      type: "true-false",
+      question: "All Azure regions support availability zones.",
+      correct: false,
+      explanation: "Not all Azure regions support availability zones. Some smaller or older regions may not have the physical infrastructure to support three independent data center facilities. For workloads requiring the highest availability, you should choose a region that supports availability zones."
+    },
+    {
+      type: "multiple-choice",
+      question: "Why are Azure region pairs separated by at least 300 miles?",
+      options: [
+        "To comply with international trade regulations",
+        "To reduce the cost of network connectivity between regions",
+        "To reduce the likelihood that a natural disaster affects both regions simultaneously",
+        "To ensure that data transfers between regions are encrypted"
+      ],
+      correct: 2,
+      explanation: "The 300-mile minimum separation between region pairs ensures that a regional natural disaster (earthquake, hurricane, flooding) is unlikely to affect both regions in the pair at the same time. This geographic separation is a key component of Azure's disaster recovery strategy."
+    },
+    {
+      type: "multiple-choice",
+      question: "How does Azure handle planned maintenance for region pairs?",
+      options: [
+        "Both regions are updated simultaneously to minimize the maintenance window",
+        "Updates are rolled to one region at a time, never both simultaneously",
+        "Maintenance is performed only during global maintenance windows announced 90 days in advance",
+        "Customers must manually approve maintenance for each region"
+      ],
+      correct: 1,
+      explanation: "Azure rolls planned maintenance to one region in a pair at a time, never both simultaneously. This sequential update policy ensures that if an update causes problems, at least one region in the pair remains fully operational. This approach is a key benefit of region pairing."
+    },
+    {
+      type: "true-false",
+      question: "Azure Government regions are operated by Microsoft and are physically and logically separated from commercial Azure.",
+      correct: true,
+      explanation: "Azure Government is a physically separate instance of Azure, running in dedicated data centers in the United States. It is operated by screened US personnel and meets stringent government compliance standards. It has its own portal (portal.azure.us) and its own endpoints, completely isolated from commercial Azure."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which entity operates Azure China?",
+      options: [
+        "Microsoft directly",
+        "21Vianet, a Chinese company",
+        "The Chinese government",
+        "A joint venture between Microsoft and Alibaba"
+      ],
+      correct: 1,
+      explanation: "Azure China is operated by 21Vianet, a Chinese company, to comply with Chinese regulations requiring cloud services within China to be managed by a domestic entity. Azure China is physically and logically separated from global Azure, with its own portal (portal.azure.cn)."
+    },
+    {
+      type: "multiple-choice",
+      question: "An Azure subscription primarily serves as:",
+      options: [
+        "A container for management groups",
+        "A geographic deployment boundary",
+        "A billing boundary and access-control boundary",
+        "A network isolation boundary between virtual machines"
+      ],
+      correct: 2,
+      explanation: "An Azure subscription serves two primary purposes: it's a billing boundary (all charges within a subscription appear on a single invoice) and an access-control boundary (different access policies can be applied to different subscriptions). Resources belong to subscriptions, not the other way around with management groups."
+    },
+    {
+      type: "true-false",
+      question: "Resources within a resource group must all be in the same Azure region.",
+      correct: false,
+      explanation: "Resources within a resource group can be in different Azure regions. A resource group might contain a VM in East US and a database in West Europe. The resource group itself has a location, but that only determines where the group's metadata is stored — it doesn't restrict where resources inside the group can be deployed."
+    },
+    {
+      type: "multiple-choice",
+      question: "What happens when you delete an Azure resource group?",
+      options: [
+        "Only the resource group is deleted; the resources inside it are moved to a default group",
+        "The resource group and all resources inside it are deleted",
+        "The resource group is deleted but resources are preserved for 30 days",
+        "You must delete all resources individually before the group can be deleted"
+      ],
+      correct: 1,
+      explanation: "Deleting an Azure resource group deletes the group and all resources within it. This behavior makes resource groups useful for lifecycle management — when a project is complete, you can clean up all associated resources by deleting the single resource group."
+    },
+    {
+      type: "matching",
+      question: "Match each Azure organizational concept to its primary purpose.",
+      pairs: [
+        { term: "Management Group", definition: "Hierarchical governance container above subscriptions" },
+        { term: "Subscription", definition: "Billing boundary and access-control boundary" },
+        { term: "Resource Group", definition: "Logical container for related Azure resources" },
+        { term: "Azure Resource Manager", definition: "Management layer that processes all Azure requests" }
+      ],
+      explanation: "Each organizational concept has a distinct role: management groups provide governance at scale across subscriptions; subscriptions define billing and access boundaries; resource groups logically group related resources; and ARM is the unified management layer that all requests flow through."
+    },
+    {
+      type: "multiple-choice",
+      question: "How many resource groups can a single Azure resource belong to?",
+      options: [
+        "As many as needed for organizational flexibility",
+        "Up to five",
+        "Exactly one",
+        "One per Azure region"
+      ],
+      correct: 2,
+      explanation: "Every Azure resource must belong to exactly one resource group. A resource cannot belong to multiple groups, and it cannot exist outside of a resource group. You can move a resource to a different group, but it always belongs to exactly one group at any given time."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following is NOT a benefit of Azure Resource Manager (ARM)?",
+      options: [
+        "Consistent management layer across all Azure tools",
+        "Integration with Microsoft Entra ID for authentication",
+        "Support for declarative templates (ARM templates, Bicep)",
+        "Automatic scaling of virtual machines based on demand"
+      ],
+      correct: 3,
+      explanation: "Automatic scaling of VMs is handled by Azure services like Virtual Machine Scale Sets, not by ARM itself. ARM provides a consistent management layer, authentication through Microsoft Entra ID, RBAC authorization, tagging, and support for Infrastructure as Code through ARM templates and Bicep."
+    },
+    {
+      type: "multiple-choice",
+      question: "How many levels deep can management groups be nested, not counting the root management group?",
+      options: [
+        "Two levels",
+        "Four levels",
+        "Six levels",
+        "There is no limit"
+      ],
+      correct: 2,
+      explanation: "Azure allows management groups to be nested up to six levels deep, excluding the root management group. This allows organizations to create granular hierarchies that reflect their organizational structure — for example, business units, departments, environments, and teams."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company wants to ensure that a security policy applies to all current and future subscriptions across its entire Azure environment. Where should it apply the policy?",
+      options: [
+        "To each resource group individually",
+        "To each subscription individually",
+        "To the root management group",
+        "To the Azure Resource Manager configuration"
+      ],
+      correct: 2,
+      explanation: "Applying the policy to the root management group ensures it is inherited by all management groups, subscriptions, resource groups, and resources in the entire Azure tenant — including any subscriptions created in the future. Applying to individual subscriptions or resource groups would require manual replication and wouldn't automatically cover new subscriptions."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following correctly describes the relationship between availability zones and region pairs?",
+      options: [
+        "Availability zones and region pairs are the same thing",
+        "Availability zones protect against data center failures within a region; region pairs protect against entire regional failures",
+        "Region pairs contain availability zones from two different regions combined",
+        "Availability zones are used for billing; region pairs are used for networking"
+      ],
+      correct: 1,
+      explanation: "Availability zones and region pairs address different failure scopes. Availability zones protect against individual data center failures within a single region by providing physically separate facilities with independent infrastructure. Region pairs protect against entire regional failures by pairing two geographically separated regions for disaster recovery and sequential updates."
+    },
+    {
+      type: "matching",
+      question: "Match each Azure infrastructure concept to its key characteristic.",
+      pairs: [
+        { term: "Azure Region", definition: "Geographic area with one or more networked data centers" },
+        { term: "Availability Zone", definition: "Independent data center with own power, cooling, and networking" },
+        { term: "Region Pair", definition: "Two regions 300+ miles apart with coordinated updates and recovery" },
+        { term: "Sovereign Region", definition: "Isolated instance of Azure for government or regulatory compliance" }
+      ],
+      explanation: "Each infrastructure concept addresses a different aspect of Azure's global platform: regions define geographic presence, availability zones provide intra-region high availability, region pairs enable inter-region disaster recovery, and sovereign regions serve compliance-sensitive government workloads."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company deploys a virtual machine in Availability Zone 1 of East US. To achieve the highest availability SLA, what should the company do?",
+      options: [
+        "Deploy a second VM in the same availability zone",
+        "Deploy a second VM in a different availability zone within East US",
+        "Move the VM to a region pair",
+        "Add the VM to a management group"
+      ],
+      correct: 1,
+      explanation: "Deploying VMs across multiple availability zones within the same region provides the highest availability within that region (99.99% SLA). A second VM in the same zone doesn't protect against zone failure. Region pairs address regional disaster recovery but aren't used for intra-region high availability. Management groups are for governance, not availability."
+    },
+    {
+      type: "multiple-choice",
+      question: "What does it mean that ARM templates are idempotent?",
+      options: [
+        "They can only be deployed once per subscription",
+        "They automatically delete resources that are no longer in the template",
+        "Deploying the same template multiple times produces the same result without creating duplicates",
+        "They must be written in Bicep before being converted to JSON"
+      ],
+      correct: 2,
+      explanation: "Idempotent means that deploying the same template multiple times produces the same result. ARM compares the desired state in the template with the current state of the environment — it creates resources that don't exist, updates resources that have changed, and leaves resources already in the desired state unchanged. This makes repeated deployments safe and predictable."
+    },
+    {
+      type: "matching",
+      question: "Match each scenario to the most appropriate Azure organizational strategy.",
+      pairs: [
+        { term: "Separate invoices for each department", definition: "Create a separate subscription for each department" },
+        { term: "Apply a compliance policy to all subscriptions in a business unit", definition: "Create a management group for the business unit and apply the policy there" },
+        { term: "Group related resources for a single application for lifecycle management", definition: "Place all application resources in one resource group" },
+        { term: "Ensure consistent authentication and authorization for all Azure interactions", definition: "Azure Resource Manager handles this automatically for all requests" }
+      ],
+      explanation: "Each organizational tool serves a specific purpose: subscriptions separate billing, management groups enable governance at scale, resource groups organize related resources for lifecycle management, and ARM provides consistent authentication and authorization across all Azure interactions automatically."
+    }
+  ]}
+/>
+
+<KeyTakeaways>
+- **Azure regions** are geographic areas with one or more data centers. Choosing the right region affects latency, compliance, service availability, and cost.
+- **Availability zones** are physically separate data centers within a region, each with independent power, cooling, and networking. Regions that support them have at least three zones.
+- **Region pairs** are two regions in the same geography, at least 300 miles apart, with coordinated updates and disaster recovery priority.
+- **Sovereign regions** (Azure Government, Azure China) are isolated instances of Azure for government and regulatory compliance, with separate portals and identity systems.
+- **Management groups** provide hierarchical governance above subscriptions, supporting up to six levels of nesting. Policies and RBAC cascade downward.
+- **Subscriptions** serve as both a billing boundary (separate invoices) and an access-control boundary. Organizations use multiple subscriptions to separate environments, departments, or compliance scopes.
+- **Resource groups** are required containers — every resource must belong to exactly one. Resources in a group can span regions. Deleting the group deletes all resources inside it.
+- **Azure Resource Manager (ARM)** is the single management layer for all Azure operations. Every request — from portal, CLI, PowerShell, or API — passes through ARM for authentication, authorization, and consistent processing.
+- ARM templates and Bicep enable Infrastructure as Code — declarative, repeatable, idempotent deployments defined in version-controlled files.
+- Availability zones protect against data center failures; region pairs protect against regional failures. Together they form Azure's layered high-availability strategy.
+</KeyTakeaways>
