@@ -6,7 +6,7 @@ const sections = defineCollection({
   schema: z.object({
     title: z.string(),
     domain: z.number().int().min(1).max(3),
-    section: z.string().regex(/^\d+\.\d+$/, 'section must match pattern like "1.1" or "2.3"'),
+    section: z.string().regex(/^\d+\.\d+[a-z]?$/, 'section must match pattern like "1.1", "2.3", or "2.2a"'),
     order: z.number().int().positive(),
     description: z.string(),
     tags: z.array(z.string()).optional(),

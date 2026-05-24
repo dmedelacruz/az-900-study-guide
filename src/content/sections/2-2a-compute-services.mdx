@@ -1,0 +1,702 @@
+---
+title: "Compute Services"
+domain: 2
+section: "2.2a"
+order: 8
+description: "Explore Azure compute services — from Virtual Machines and scale sets to containers, serverless functions, and virtual desktops."
+tags: ["azure-compute", "virtual-machines", "app-service", "containers", "aks", "functions", "virtual-desktop"]
+lastVerified: "2026-05-24"
+microsoftLearnUrl: "https://learn.microsoft.com/en-us/training/modules/describe-azure-compute-networking-services/"
+---
+
+import KeyTakeaways from '../../components/KeyTakeaways.astro';
+import KeyTerm from '../../components/KeyTerm.astro';
+import Callout from '../../components/Callout.astro';
+import DeepDive from '../../components/DeepDive.astro';
+import InteractiveDiagram from '../../components/InteractiveDiagram.astro';
+import DiagramHotspot from '../../components/DiagramHotspot.astro';
+import DragDropMatch from '../../components/DragDropMatch.astro';
+import FillInBlank from '../../components/FillInBlank.astro';
+import ScenarioQuestion from '../../components/ScenarioQuestion.astro';
+import BuildIt from '../../components/BuildIt.astro';
+import Quiz from '../../components/Quiz.astro';
+
+## What Is Compute in the Cloud?
+
+Every useful application ultimately needs a processor to run code — something that executes instructions, responds to requests, and produces results. In traditional IT, that processor lives in a physical server that your organization buys, racks, and maintains. In the cloud, that processing power is delivered as a service: you request it, use it, and pay for what you consume, without ever touching a physical machine.
+
+Azure compute is the umbrella term for all the services that provide this processing capability. But "compute" is not a single product. Azure offers a whole spectrum of compute options, each optimized for different workload types, different management preferences, and different operational models. At one end of the spectrum, a **Virtual Machine** gives you complete control over an entire simulated server — you choose the OS, install the software, and manage every patch. At the other end, **Azure Functions** lets you run a small piece of code in response to an event without thinking about servers at all.
+
+Between those extremes, you'll find app hosting platforms, container runtimes, orchestration engines, and desktop virtualization services — each trading off control for convenience in different ways.
+
+Understanding the Azure compute portfolio is one of the most important skill sets for the AZ-900 exam. You'll be expected to distinguish between these services, recognize which type of workload each is best suited for, and understand the key characteristics that differentiate them. Let's walk through each service category.
+
+---
+
+## Virtual Machines
+
+<KeyTerm term="Azure Virtual Machine (VM)">An on-demand, scalable compute resource that emulates a physical computer. Azure VMs are an Infrastructure as a Service (IaaS) offering — you choose the operating system, install software, and manage the OS patches and updates, while Azure manages the physical hardware underneath.</KeyTerm>
+
+Think of a Virtual Machine as renting a fully functional computer that exists in Azure's data center. You get CPU, memory, disk, and network access — just like a physical server — but without owning the hardware. You connect to it over the network (via Remote Desktop for Windows or SSH for Linux), use it however you like, and stop paying when you're done.
+
+Because VMs are IaaS, you are responsible for:
+
+- **Operating system** — choosing Windows Server, Ubuntu, RHEL, or any supported OS
+- **Patches and updates** — keeping the OS and installed software current
+- **Installed software** — your runtime environments, applications, and agents
+- **Security configuration** — firewalls, antivirus, access controls
+
+Azure is responsible for:
+
+- **Physical hardware** — the actual server blades, power, cooling, and physical network
+- **Hypervisor** — the virtualization layer that runs multiple VMs on shared hardware
+- **Physical security** — data center access controls
+
+This division of responsibility makes VMs ideal when you need to **lift and shift** an existing on-premises workload to the cloud with minimal changes, or when your application requires a specific OS configuration, custom kernel settings, or legacy software that doesn't work on managed platforms.
+
+<Callout type="tip">
+A common AZ-900 exam question asks which compute service is IaaS. Virtual Machines are the primary IaaS compute option. Remember: IaaS = you manage the OS and above. App Service is PaaS (Azure manages the OS). Azure Functions is serverless (you only manage the code).
+</Callout>
+
+### VM Scale Sets
+
+<KeyTerm term="VM Scale Set">An Azure service that lets you deploy and manage a group of identical, load-balanced Virtual Machines. Scale Sets can automatically increase or decrease the number of VM instances in response to demand or on a schedule.</KeyTerm>
+
+Running a single VM is fine for development and testing, but production workloads usually need to handle variable traffic. If your e-commerce site gets 10x normal traffic during a holiday sale, a single VM will buckle under the load. VM Scale Sets solve this problem by treating your VMs as a fleet rather than individuals.
+
+With a Scale Set, you define:
+
+- The VM image (OS and pre-installed software)
+- The instance size (CPU, memory)
+- The minimum and maximum number of instances
+- Auto-scale rules (e.g., "add a VM when average CPU exceeds 75%")
+
+Scale Sets then automatically manage the fleet — spinning up new instances when load increases and terminating them when load drops — keeping your costs aligned with actual demand. All instances are identical and load-balanced, so any instance can handle any incoming request.
+
+<Callout type="info">
+Scale Sets support both **manual scaling** (you set the instance count) and **automatic scaling** (Azure adjusts the count based on metrics or schedules). They also integrate with Azure Load Balancer and Azure Application Gateway to distribute traffic evenly across instances.
+</Callout>
+
+### Availability Sets
+
+<KeyTerm term="Availability set">A logical grouping of Virtual Machines within a data center that protects against hardware failures and planned maintenance events. Machines in an availability set are spread across multiple fault domains and update domains.</KeyTerm>
+
+Even within a single Azure data center, hardware failures happen. A rack of servers might lose power, or a batch of servers might need a firmware update. Availability sets protect against these scenarios by ensuring your VMs aren't all sitting on the same physical hardware.
+
+Availability sets use two concepts:
+
+- **Fault domains** — A fault domain is a rack of servers that shares a common power supply and network switch. If that rack loses power, all servers in it go down. Placing your VMs across multiple fault domains means a single rack failure won't take all your VMs offline. Azure supports up to 3 fault domains in an availability set.
+
+- **Update domains** — When Azure performs planned maintenance (like applying hypervisor updates), it reboots servers in controlled batches rather than all at once. An update domain is one such batch. VMs in different update domains are never rebooted simultaneously. Azure supports up to 20 update domains in an availability set.
+
+By spreading VMs across fault domains and update domains, an availability set ensures that at least one VM remains available during both unplanned hardware failures and planned maintenance windows.
+
+<Callout type="warning">
+Availability sets protect against failures *within a single data center*. They do not protect against a full data center or regional outage. For that level of protection, you need **availability zones** (which spread resources across physically separate data centers within a region) or cross-region redundancy.
+</Callout>
+
+<DeepDive title="Choosing the Right Availability Strategy for VMs">
+Azure offers three main options for making VMs highly available, each addressing a different failure scope:
+
+**Availability Sets** (within a data center): Protect against rack-level hardware failures and planned maintenance events within a single data center. Use these when you need basic redundancy and your region doesn't support availability zones, or when cost is a primary concern (availability sets themselves are free — you only pay for the VMs).
+
+**Availability Zones** (within a region): Protect against entire data center failures. VMs are placed in physically separate data center facilities with independent power, cooling, and networking. Azure provides a 99.99% uptime SLA when you deploy two or more VMs across two or more zones. This is the recommended approach for most production workloads in supported regions.
+
+**VM Scale Sets with zones**: Combine automatic scaling with zone-level redundancy. Instances are distributed across availability zones, giving you both elasticity (scale up/down) and resilience (survive zone failures).
+
+**Cross-region redundancy**: For protection against full regional failures, you can deploy VMs in a secondary region and use services like Azure Site Recovery to automate failover. This is the most expensive option but provides the highest level of protection.
+
+For the AZ-900 exam, understand the difference between fault domains (protection within a data center) and availability zones (protection across data centers). Availability sets use fault domains; availability zones are separate facilities entirely.
+</DeepDive>
+
+---
+
+## Azure App Service
+
+<KeyTerm term="Azure App Service">A fully managed Platform as a Service (PaaS) for building, deploying, and scaling web applications, REST APIs, and mobile backends. Azure manages the underlying infrastructure — OS patching, hardware, load balancing — so you focus exclusively on your application code.</KeyTerm>
+
+If Virtual Machines are like renting a bare apartment (you furnish it yourself), Azure App Service is like renting a fully furnished, managed apartment — the infrastructure is set up and maintained for you, and you just move in with your belongings (your code).
+
+App Service supports a wide range of programming languages and frameworks:
+
+- .NET and .NET Framework
+- Java (Spring, Tomcat)
+- Node.js
+- Python (Django, Flask)
+- PHP
+- Ruby
+
+Because App Service is PaaS, Azure handles:
+
+- **Hardware and OS** — the underlying servers and their operating systems
+- **OS patching** — security updates are applied automatically
+- **Load balancing** — traffic is distributed across instances
+- **TLS/SSL certificates** — HTTPS configuration is simplified
+- **Auto-scaling** — you configure rules and Azure scales your app
+
+You are responsible for:
+
+- **Application code** — your business logic, APIs, and UI
+- **Application configuration** — environment variables, connection strings
+- **Deployment** — pushing new versions of your code
+
+App Service integrates natively with GitHub, Azure DevOps, and other CI/CD pipelines, so code pushed to a branch can automatically trigger a deployment. It also supports **deployment slots** — separate staging environments where you can test a new version before swapping it into production with zero downtime.
+
+<Callout type="tip">
+For the exam, App Service is the go-to answer for "hosting a web app without managing infrastructure." It sits squarely in the PaaS category. The key distinction from VMs: with App Service, you have no access to the underlying OS — you can only deploy and configure your application.
+</Callout>
+
+---
+
+## Container Services
+
+Before covering Azure's container services, it helps to understand what a container is.
+
+<KeyTerm term="Container">A lightweight, portable package that bundles an application's code together with all the libraries, configuration, and runtime dependencies it needs to run. Containers share the host operating system kernel but are isolated from each other, making them more efficient than VMs while maintaining good isolation.</KeyTerm>
+
+Think of a container like a standardized shipping container. Before shipping containers, freight was loaded in all sorts of different ways and had to be reorganized at each port. Shipping containers standardized the box — any ship, truck, or crane can handle them the same way, regardless of what's inside. Software containers do the same thing for code: package the app and everything it needs into a standard unit that runs the same way regardless of where it's deployed.
+
+Containers are smaller than VMs (no full OS copy per container, just the app and its dependencies), start faster (seconds vs. minutes for VMs), and run consistently across development laptops, test servers, and production cloud environments.
+
+Azure provides three tiers of container hosting, each appropriate for different use cases.
+
+### Azure Container Instances (ACI)
+
+<KeyTerm term="Azure Container Instances (ACI)">The simplest and fastest way to run a container in Azure, with no orchestration overhead. You submit a container image, specify CPU and memory, and ACI starts the container within seconds. Ideal for isolated tasks, batch jobs, and simple scenarios that don't require persistent load balancing or complex networking.</KeyTerm>
+
+ACI is Azure's "just run my container" option. There's no cluster to manage, no nodes to configure, and no scheduler to set up. You point ACI at a container image (from Azure Container Registry, Docker Hub, or another registry), specify how much CPU and memory to allocate, and within seconds your container is running.
+
+ACI is best for:
+
+- Short-lived or batch workloads (process a file, run a report)
+- Simple isolated tasks that don't need load balancing
+- Development and testing environments
+- Scenarios where you need a container fast without infrastructure overhead
+
+ACI is not designed for complex, multi-container applications that need service discovery, auto-scaling across many containers, or sophisticated networking between microservices. For those, you need Container Apps or AKS.
+
+### Azure Container Apps
+
+<KeyTerm term="Azure Container Apps">A serverless container platform built on Kubernetes that enables you to run microservices and containerized applications without managing the underlying infrastructure. Container Apps provides automatic scaling (including scale-to-zero), event-driven scaling, and service-to-service communication, while Azure handles all cluster operations.</KeyTerm>
+
+Container Apps sits between the simplicity of ACI and the full power of AKS. It runs on Kubernetes under the hood, but Azure manages all the cluster operations — you never interact with Kubernetes directly.
+
+Container Apps is particularly well-suited for:
+
+- **Microservices** — multiple containers that communicate with each other
+- **Event-driven workloads** — scale up when messages arrive in a queue, scale down when quiet
+- **APIs and web services** that need HTTP ingress, auto-scaling, and revision management
+- **Serverless containers** — scale to zero when idle (no traffic = no cost)
+
+The "scale to zero" capability is a key differentiator: when no traffic is arriving, Container Apps can reduce your running containers to zero, so you pay nothing. As soon as a request arrives, it scales back up automatically.
+
+### Azure Kubernetes Service (AKS)
+
+<KeyTerm term="Azure Kubernetes Service (AKS)">A managed Kubernetes service that simplifies the deployment and operation of production Kubernetes clusters in Azure. AKS handles cluster provisioning, health monitoring, and upgrades, while you retain full control over cluster configuration, networking, and workload deployment.</KeyTerm>
+
+<KeyTerm term="Kubernetes">An open-source container orchestration platform that automates the deployment, scaling, and management of containerized applications across a cluster of machines.</KeyTerm>
+
+Kubernetes is the industry-standard platform for running complex containerized applications at scale. It handles scheduling containers onto nodes, restarting failed containers, distributing traffic, managing secrets and configuration, rolling out updates, and much more.
+
+AKS provides a managed Kubernetes control plane — Microsoft runs and maintains the Kubernetes API server, scheduler, and etcd datastore. You manage the **worker nodes** (the VMs that actually run your containers) and all workload configuration. AKS is appropriate when:
+
+- Your application consists of many microservices with complex networking requirements
+- You need fine-grained control over Kubernetes configuration, networking policies, and resource allocation
+- Your team has Kubernetes expertise and can take on cluster configuration responsibilities
+- You're running large-scale, production container workloads
+
+<Callout type="info">
+A useful way to remember the three container options: **ACI** = run one container, quickly, no fuss. **Container Apps** = run microservices, managed Kubernetes, serverless scaling. **AKS** = full Kubernetes control, complex workloads, your team manages the cluster config.
+</Callout>
+
+<InteractiveDiagram title="Azure Compute Services Overview" alt="Diagram comparing Azure compute services from IaaS Virtual Machines through PaaS App Service and containers to serverless Functions, showing management responsibility tradeoffs">
+  <svg viewBox="0 0 620 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:system-ui,sans-serif">
+    {/* Background */}
+    <rect x="0" y="0" width="620" height="420" fill="#0f172a" rx="10" />
+    {/* Title */}
+    <text x="310" y="26" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">Azure Compute Services — Control vs. Convenience</text>
+    {/* Axis labels */}
+    <text x="30" y="55" fill="#94a3b8" fontSize="10">More Control</text>
+    <text x="490" y="55" fill="#94a3b8" fontSize="10">More Managed</text>
+    {/* Arrow */}
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#3b82f6" />
+      </marker>
+    </defs>
+    <line x1="110" y1="50" x2="490" y2="50" stroke="#3b82f6" strokeWidth="1.5" markerEnd="url(#arrow)" />
+    {/* Service model labels */}
+    <text x="95" y="75" textAnchor="middle" fill="#f87171" fontSize="9" fontWeight="bold">IaaS</text>
+    <text x="255" y="75" textAnchor="middle" fill="#fb923c" fontSize="9" fontWeight="bold">PaaS</text>
+    <text x="400" y="75" textAnchor="middle" fill="#a78bfa" fontSize="9" fontWeight="bold">Containers</text>
+    <text x="530" y="75" textAnchor="middle" fill="#34d399" fontSize="9" fontWeight="bold">Serverless</text>
+    {/* Virtual Machines block */}
+    <rect x="20" y="85" width="150" height="130" rx="8" fill="#1e3a5f" stroke="#ef4444" strokeWidth="2" />
+    <text x="95" y="108" textAnchor="middle" fill="#fca5a5" fontSize="12" fontWeight="bold">Virtual Machines</text>
+    <text x="95" y="126" textAnchor="middle" fill="#94a3b8" fontSize="9">IaaS</text>
+    <text x="95" y="148" textAnchor="middle" fill="white" fontSize="9">You manage:</text>
+    <text x="95" y="163" textAnchor="middle" fill="#cbd5e1" fontSize="8">• OS &amp; patches</text>
+    <text x="95" y="177" textAnchor="middle" fill="#cbd5e1" fontSize="8">• Installed software</text>
+    <text x="95" y="191" textAnchor="middle" fill="#cbd5e1" fontSize="8">• Security config</text>
+    <text x="95" y="205" textAnchor="middle" fill="#64748b" fontSize="8">Azure manages hardware</text>
+    {/* Scale Sets / Availability Sets */}
+    <rect x="20" y="225" width="150" height="55" rx="6" fill="#162032" stroke="#ef4444" strokeWidth="1" strokeDasharray="4,2" />
+    <text x="95" y="243" textAnchor="middle" fill="#fca5a5" fontSize="9" fontWeight="bold">Scale Sets</text>
+    <text x="95" y="258" textAnchor="middle" fill="#94a3b8" fontSize="8">Auto-scale identical VMs</text>
+    <text x="95" y="270" textAnchor="middle" fill="#94a3b8" fontSize="8">based on demand</text>
+    {/* App Service block */}
+    <rect x="180" y="85" width="150" height="130" rx="8" fill="#1e3a5f" stroke="#f97316" strokeWidth="2" />
+    <text x="255" y="108" textAnchor="middle" fill="#fdba74" fontSize="12" fontWeight="bold">App Service</text>
+    <text x="255" y="126" textAnchor="middle" fill="#94a3b8" fontSize="9">PaaS</text>
+    <text x="255" y="148" textAnchor="middle" fill="white" fontSize="9">You manage:</text>
+    <text x="255" y="163" textAnchor="middle" fill="#cbd5e1" fontSize="8">• Application code</text>
+    <text x="255" y="177" textAnchor="middle" fill="#cbd5e1" fontSize="8">• App configuration</text>
+    <text x="255" y="191" textAnchor="middle" fill="#cbd5e1" fontSize="8">• Deployments</text>
+    <text x="255" y="205" textAnchor="middle" fill="#64748b" fontSize="8">Azure manages OS + infra</text>
+    {/* Containers block */}
+    <rect x="340" y="85" width="150" height="195" rx="8" fill="#1e3a5f" stroke="#8b5cf6" strokeWidth="2" />
+    <text x="415" y="108" textAnchor="middle" fill="#c4b5fd" fontSize="12" fontWeight="bold">Containers</text>
+    <text x="415" y="126" textAnchor="middle" fill="#94a3b8" fontSize="9">IaaS → PaaS → Serverless</text>
+    <rect x="350" y="135" width="130" height="38" rx="4" fill="#0f172a" stroke="#7c3aed" strokeWidth="1" />
+    <text x="415" y="151" textAnchor="middle" fill="#a78bfa" fontSize="9" fontWeight="bold">ACI</text>
+    <text x="415" y="165" textAnchor="middle" fill="#94a3b8" fontSize="8">Simple, single container</text>
+    <rect x="350" y="180" width="130" height="38" rx="4" fill="#0f172a" stroke="#7c3aed" strokeWidth="1" />
+    <text x="415" y="196" textAnchor="middle" fill="#a78bfa" fontSize="9" fontWeight="bold">Container Apps</text>
+    <text x="415" y="210" textAnchor="middle" fill="#94a3b8" fontSize="8">Serverless, microservices</text>
+    <rect x="350" y="225" width="130" height="38" rx="4" fill="#0f172a" stroke="#7c3aed" strokeWidth="1" />
+    <text x="415" y="241" textAnchor="middle" fill="#a78bfa" fontSize="9" fontWeight="bold">AKS</text>
+    <text x="415" y="255" textAnchor="middle" fill="#94a3b8" fontSize="8">Full Kubernetes control</text>
+    {/* Azure Functions block */}
+    <rect x="500" y="85" width="100" height="130" rx="8" fill="#1e3a5f" stroke="#10b981" strokeWidth="2" />
+    <text x="550" y="108" textAnchor="middle" fill="#6ee7b7" fontSize="11" fontWeight="bold">Functions</text>
+    <text x="550" y="124" textAnchor="middle" fill="#94a3b8" fontSize="9">Serverless</text>
+    <text x="550" y="145" textAnchor="middle" fill="white" fontSize="9">You manage:</text>
+    <text x="550" y="160" textAnchor="middle" fill="#cbd5e1" fontSize="8">• Your code</text>
+    <text x="550" y="175" textAnchor="middle" fill="#64748b" fontSize="8">Azure manages</text>
+    <text x="550" y="188" textAnchor="middle" fill="#64748b" fontSize="8">everything else</text>
+    <text x="550" y="203" textAnchor="middle" fill="#34d399" fontSize="8">Pay per execution</text>
+    {/* AVD block */}
+    <rect x="180" y="225" width="150" height="55" rx="6" fill="#162032" stroke="#f97316" strokeWidth="1" strokeDasharray="4,2" />
+    <text x="255" y="243" textAnchor="middle" fill="#fdba74" fontSize="9" fontWeight="bold">Virtual Desktop (AVD)</text>
+    <text x="255" y="258" textAnchor="middle" fill="#94a3b8" fontSize="8">Cloud desktop &amp; app</text>
+    <text x="255" y="270" textAnchor="middle" fill="#94a3b8" fontSize="8">virtualization service</text>
+    {/* Bottom legend row */}
+    <rect x="20" y="295" width="580" height="115" rx="8" fill="#162032" stroke="#1e3a5f" strokeWidth="1.5" />
+    <text x="310" y="315" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold">Key Differentiators</text>
+    <text x="110" y="335" textAnchor="middle" fill="#fca5a5" fontSize="9" fontWeight="bold">VMs</text>
+    <text x="110" y="350" textAnchor="middle" fill="#94a3b8" fontSize="8">Full OS control</text>
+    <text x="110" y="363" textAnchor="middle" fill="#94a3b8" fontSize="8">Lift &amp; shift</text>
+    <text x="110" y="376" textAnchor="middle" fill="#94a3b8" fontSize="8">Custom software</text>
+    <text x="255" y="335" textAnchor="middle" fill="#fdba74" fontSize="9" fontWeight="bold">App Service</text>
+    <text x="255" y="350" textAnchor="middle" fill="#94a3b8" fontSize="8">Managed web hosting</text>
+    <text x="255" y="363" textAnchor="middle" fill="#94a3b8" fontSize="8">Multiple languages</text>
+    <text x="255" y="376" textAnchor="middle" fill="#94a3b8" fontSize="8">Built-in CI/CD</text>
+    <text x="415" y="335" textAnchor="middle" fill="#c4b5fd" fontSize="9" fontWeight="bold">Containers</text>
+    <text x="415" y="350" textAnchor="middle" fill="#94a3b8" fontSize="8">Portable workloads</text>
+    <text x="415" y="363" textAnchor="middle" fill="#94a3b8" fontSize="8">ACI → Apps → AKS</text>
+    <text x="415" y="376" textAnchor="middle" fill="#94a3b8" fontSize="8">Simple to complex</text>
+    <text x="550" y="335" textAnchor="middle" fill="#6ee7b7" fontSize="9" fontWeight="bold">Functions</text>
+    <text x="550" y="350" textAnchor="middle" fill="#94a3b8" fontSize="8">Event-driven code</text>
+    <text x="550" y="363" textAnchor="middle" fill="#94a3b8" fontSize="8">Pay per execution</text>
+    <text x="550" y="376" textAnchor="middle" fill="#94a3b8" fontSize="8">Stateless by default</text>
+    <text x="310" y="398" textAnchor="middle" fill="#475569" fontSize="8">All services share Azure's global infrastructure, security, and management through Azure Resource Manager</text>
+  </svg>
+  <DiagramHotspot x="3%" y="20%" width="25%" height="47%" variant="layer" label="Virtual Machines (IaaS)">
+    Virtual Machines are Azure's IaaS compute offering. You get full control over the operating system, installed software, and configuration. You are responsible for OS patching, security settings, and maintenance. Azure manages only the physical hardware and hypervisor. VMs are ideal for lift-and-shift migrations, custom software requirements, and workloads that need direct OS access. VM Scale Sets extend this with automatic scaling of identical VM fleets.
+  </DiagramHotspot>
+  <DiagramHotspot x="29%" y="20%" width="25%" height="47%" variant="layer" label="App Service (PaaS)">
+    App Service is Azure's PaaS web hosting platform. You deploy your application code and configuration; Azure manages the underlying OS, patching, load balancing, and infrastructure. App Service supports .NET, Java, Node.js, Python, PHP, and Ruby. It includes built-in CI/CD integration, deployment slots for zero-downtime releases, and auto-scaling. It's the right choice when you want to host a web app without managing any infrastructure.
+  </DiagramHotspot>
+  <DiagramHotspot x="55%" y="20%" width="25%" height="68%" variant="layer" label="Container Services">
+    Azure offers three tiers of container hosting. ACI (Azure Container Instances) is the simplest — run a single container in seconds with no infrastructure to manage. Container Apps is a serverless container platform built on Kubernetes, supporting microservices, event-driven scaling, and scale-to-zero. AKS (Azure Kubernetes Service) provides a fully managed Kubernetes cluster for complex, large-scale container workloads where your team needs fine-grained control over cluster configuration.
+  </DiagramHotspot>
+  <DiagramHotspot x="81%" y="20%" width="17%" height="33%" variant="layer" label="Azure Functions (Serverless)">
+    Azure Functions is a serverless, event-driven compute service. You write and deploy only your code — Azure handles all infrastructure, scaling, and patching. Functions run in response to triggers (HTTP requests, timer schedules, queue messages, blob uploads, and more). Under the consumption plan, you pay only when your code executes, with no charge when idle. Functions are stateless by default; Durable Functions extends them for stateful workflows.
+  </DiagramHotspot>
+</InteractiveDiagram>
+
+---
+
+## Azure Functions
+
+<KeyTerm term="Azure Functions">A serverless compute service that runs individual functions of code in response to events or triggers. Azure manages all infrastructure automatically — you only write and deploy your code. Under the consumption plan, you pay only when your function executes.</KeyTerm>
+
+Azure Functions takes the abstraction one step further than App Service. With App Service, you still deploy an entire application that runs continuously. With Functions, you deploy individual pieces of code — functions — that only run when triggered by an event.
+
+Imagine you run an e-commerce platform. When a customer uploads a product photo, you need to:
+
+1. Generate a thumbnail version
+2. Compress and optimize the image
+3. Scan it for inappropriate content
+4. Update a database record
+
+Each of these is a small, discrete task. You could build a continuous application that polls for new photos, but that would mean paying for a running server even when no photos are being uploaded. With Azure Functions, each task becomes a separate function triggered by the file upload event. The functions run, do their work, and stop — and you're charged only for the milliseconds they execute.
+
+### Key Characteristics of Azure Functions
+
+- **Event-driven** — Functions run in response to triggers: HTTP requests, timer schedules, messages in Azure Queue Storage or Service Bus, new blobs in Azure Storage, database changes, and many others.
+- **Stateless by default** — Each function invocation is independent. If you need to maintain state across invocations, you use **Durable Functions**, an extension that adds workflow orchestration with automatic state persistence.
+- **Multiple language support** — Functions can be written in C#, JavaScript/TypeScript, Python, Java, PowerShell, and others.
+- **Scale automatically** — Azure scales the number of function instances up and down automatically based on the rate of incoming triggers. During a traffic spike, Azure starts more instances; when traffic drops, instances are reclaimed.
+- **Consumption pricing model** — Under the consumption plan, you pay per execution and per the resources consumed during execution (measured in GB-seconds). There is a generous free tier each month.
+
+<Callout type="tip">
+For the exam, remember the key selling point of Azure Functions: **you pay only when your code runs**. This is the defining characteristic of the consumption-based serverless model — no idle costs. Compare this to a VM, which you pay for whether it's doing work or sitting idle.
+</Callout>
+
+<DeepDive title="Serverless vs. 'No Servers' — What Serverless Really Means">
+"Serverless" is one of the most misunderstood terms in cloud computing. It doesn't mean there are no servers — your code runs on a server somewhere in Azure's data center. What it means is that *you* don't manage those servers.
+
+In a traditional compute model, you provision a server (or VM), deploy your application, and keep that server running 24/7 — whether it's handling requests or sitting idle at 2 AM. You pay for the server continuously. You patch the OS. You worry about whether you have enough capacity for a traffic spike.
+
+In a serverless model, you hand Azure your code and say "run this when X happens." Azure figures out where and how to run it, allocates exactly the resources needed for the duration of the execution, and then releases those resources. You're billed only for actual execution time, often down to the millisecond.
+
+This model has two major implications:
+
+1. **Cost efficiency**: Workloads with sporadic, unpredictable, or low-volume traffic are dramatically cheaper in a serverless model than on a continuously-running VM. A function that runs 100,000 times per month for 200ms each costs a few cents. A VM running all month costs tens of dollars.
+
+2. **Operational simplicity**: No OS patches, no capacity planning, no server management. You focus entirely on business logic.
+
+The tradeoff: serverless functions have **cold start latency** — if a function hasn't run recently, the first invocation after idle time can be slightly slower while Azure spins up the execution environment. For latency-sensitive workloads requiring guaranteed response times, a continuously-running service (App Service or Container Apps) might be more appropriate.
+
+Durable Functions extend the serverless model with stateful workflows, letting you chain functions together, fan out to parallel executions, and aggregate results — all without managing a database or messaging infrastructure yourself.
+</DeepDive>
+
+---
+
+## Azure Virtual Desktop
+
+<KeyTerm term="Azure Virtual Desktop (AVD)">A cloud-based desktop and application virtualization service that delivers Windows desktops and applications to users on any device, from anywhere. AVD is the only cloud service offering multi-session Windows 11 and Windows 10, and integrates with existing Microsoft 365 licensing.</KeyTerm>
+
+Most cloud compute services run server workloads. Azure Virtual Desktop takes a different approach: it delivers full Windows *desktop* experiences to end users — not just server-side applications, but the complete Windows desktop environment that knowledge workers use every day.
+
+With AVD, users on any device (a laptop, a thin client, a tablet, even a smartphone) can connect to a full Windows 11 or Windows 10 desktop running in Azure. From the user's perspective, it feels like a local Windows PC. From the IT perspective, the actual compute runs in Azure's data center — all data stays in the cloud, desktops are centrally managed, and users can access their environment from anywhere with an internet connection.
+
+### Key Characteristics of Azure Virtual Desktop
+
+- **Multi-session Windows** — AVD is the only cloud service that supports Windows 11 and Windows 10 multi-session, where multiple users simultaneously share a single VM instance running a desktop OS (not a server OS like Windows Server). This is unique to Azure and significantly reduces licensing and infrastructure costs compared to traditional Virtual Desktop Infrastructure (VDI).
+- **Centralized management** — All desktops and applications are managed centrally in Azure. Administrators manage one fleet of VMs rather than thousands of individual endpoint devices.
+- **Bring your own device** — Users can connect from any device that supports the Microsoft Remote Desktop client, which is available for Windows, macOS, iOS, Android, and web browsers.
+- **Microsoft 365 integration** — AVD is included with many existing Microsoft 365 plans, meaning eligible customers may not need additional licensing.
+- **Security and compliance** — Data never leaves Azure's data centers. If a user's laptop is lost or stolen, no corporate data is at risk because it wasn't stored on the device.
+
+<Callout type="info">
+A useful scenario for AVD: a company wants to give remote workers access to line-of-business applications that run on Windows but doesn't want to manage physical PCs distributed across employees' homes. AVD lets everyone connect to a centrally managed Windows desktop in Azure, from whatever device they already own.
+</Callout>
+
+---
+
+## Comparing Azure Compute Services
+
+| Service | Type | You Manage | Best For |
+|---|---|---|---|
+| **Virtual Machines** | IaaS | OS, patches, software, security | Lift-and-shift, custom OS config, legacy apps |
+| **VM Scale Sets** | IaaS | Same as VMs | Auto-scaling identical VM fleets under variable load |
+| **Availability Sets** | IaaS feature | Same as VMs | HA within a data center; fault/update domain protection |
+| **App Service** | PaaS | App code, configuration, deployments | Web apps, REST APIs, mobile backends without managing OS |
+| **Azure Container Instances** | Containers (simple) | Container image and config | Single containers, quick isolated tasks, batch jobs |
+| **Azure Container Apps** | Containers (serverless) | Container images, scaling rules | Microservices, event-driven workloads, scale-to-zero |
+| **Azure Kubernetes Service** | Containers (full) | Cluster config + workloads | Complex multi-container apps requiring full Kubernetes control |
+| **Azure Functions** | Serverless | Your code only | Event-driven tasks, sporadic workloads, pay-per-execution |
+| **Azure Virtual Desktop** | Desktop virtualization | Desktop images, user access | Remote Windows desktops, BYOD environments, centralized VDI |
+
+---
+
+## Practice Activities
+
+<DragDropMatch
+  title="Match Each Azure Compute Service to Its Primary Characteristic"
+  categories={["Virtual Machines", "App Service", "Azure Functions", "Azure Container Instances", "Azure Virtual Desktop"]}
+  items={[
+    { text: "IaaS — you manage the OS, patches, and installed software", category: "Virtual Machines" },
+    { text: "PaaS web hosting — Azure manages OS and infrastructure; you deploy your code", category: "App Service" },
+    { text: "Serverless, event-driven — pay only when your code executes", category: "Azure Functions" },
+    { text: "Simplest way to run a container in Azure, no orchestration needed", category: "Azure Container Instances" },
+    { text: "Delivers full Windows desktop experiences to users on any device", category: "Azure Virtual Desktop" },
+    { text: "Best for lift-and-shift migrations of on-premises workloads", category: "Virtual Machines" },
+    { text: "Supports .NET, Java, Node.js, Python, PHP with built-in CI/CD", category: "App Service" },
+    { text: "The only Azure service offering multi-session Windows 10/11", category: "Azure Virtual Desktop" },
+    { text: "Triggered by HTTP requests, timer schedules, queue messages, and more", category: "Azure Functions" },
+    { text: "Good for short-lived batch jobs and isolated processing tasks", category: "Azure Container Instances" },
+  ]}
+/>
+
+<FillInBlank
+  title="Azure Compute Services — Type Your Answer"
+  mode="type"
+  items={[
+    { text: "A VM Scale Set automatically scales ___ VMs based on demand.", answer: "identical" },
+    { text: "In an availability set, a ___ domain is a group of servers that share the same power supply and network switch.", answer: "fault" },
+    { text: "Azure Container Apps can scale to ___ when there is no traffic, meaning you pay nothing during idle periods.", answer: "zero" },
+    { text: "Azure Functions is ___ by default, meaning each invocation is independent with no memory of previous runs.", answer: "stateless" },
+    { text: "Azure Virtual Desktop is the only cloud service offering multi-___ Windows 10 and Windows 11.", answer: "session" },
+  ]}
+/>
+
+<FillInBlank
+  title="Azure Compute Services — Select Your Answer"
+  mode="select"
+  items={[
+    { text: "App Service is a ___ offering, meaning Azure manages the underlying operating system and infrastructure.", answer: "PaaS" },
+    { text: "Azure Kubernetes Service (AKS) provides a managed ___ control plane, while you manage the worker nodes and workload configuration.", answer: "Kubernetes" },
+    { text: "Under the consumption plan for Azure Functions, you pay only when your code ___.", answer: "executes" },
+    { text: "VM Scale Sets support both ___ scaling (you set the count) and automatic scaling (Azure adjusts based on metrics).", answer: "manual" },
+  ]}
+/>
+
+<ScenarioQuestion
+  title="Choosing the Right Compute Service"
+  scenario="A retail company has a legacy inventory management system built on Windows Server 2016. It uses a custom driver for specialized barcode scanners and requires direct access to specific Windows registry keys. The company wants to move this system to Azure with minimal changes. They need the ability to apply their own security patches on their own schedule and install additional third-party monitoring agents. Which Azure compute service is the most appropriate choice?"
+  options={[
+    { text: "Azure App Service", feedback: "Incorrect. App Service is PaaS — you have no access to the underlying OS, cannot install custom drivers, and cannot modify the registry. App Service is designed for applications that don't need OS-level access." },
+    { text: "Azure Virtual Machines", feedback: "Correct. This is a classic lift-and-shift scenario. The application requires OS-level access (custom drivers, registry keys), needs to run on a specific Windows Server version, and requires control over the patching schedule. Virtual Machines (IaaS) provide all of these capabilities. The application can be migrated with minimal changes because the environment closely mirrors an on-premises Windows Server.", correct: true },
+    { text: "Azure Functions", feedback: "Incorrect. Azure Functions is a serverless, event-driven platform for running small pieces of code. It is not appropriate for a full legacy application that requires OS-level access, a specific Windows Server version, and custom driver installation." },
+    { text: "Azure Container Instances", feedback: "Incorrect. While containers can run Windows-based workloads, containerizing a legacy application that depends on specific OS-level registry keys and custom hardware drivers is typically complex and may not be compatible. Additionally, ACI does not provide the direct OS management access the scenario requires." },
+  ]}
+/>
+
+<BuildIt
+  title="Design a Scalable Web Application on Azure"
+  instruction="You are building a customer-facing e-commerce web application that needs to handle variable traffic (higher during sales events), process order confirmations automatically after each purchase, and host product images. Arrange the compute components you would use, from the user-facing layer to the back-end processing layer."
+  steps={[
+    { label: "Azure App Service", description: "Host the customer-facing web application. App Service handles OS management, load balancing, and auto-scaling, so the development team focuses on the shopping experience code." },
+    { label: "Azure Functions (HTTP Trigger)", description: "Handle real-time API calls from the web app — such as looking up product inventory or applying discount codes — using event-driven functions that scale automatically with traffic." },
+    { label: "Azure Functions (Queue Trigger)", description: "Process order confirmations asynchronously. When a purchase is completed, a message is placed in a queue; a queue-triggered function processes the order, charges the payment, and sends a confirmation email — without blocking the web app." },
+    { label: "Azure Container Instances", description: "Run periodic batch jobs, such as nightly inventory reconciliation or generating sales reports, in isolated containers that spin up, do their work, and terminate." },
+  ]}
+/>
+
+---
+
+<KeyTakeaways>
+- **Azure compute** is the spectrum of services that provide processing power in the cloud, ranging from full OS control (VMs) to managed platforms (App Service) to serverless (Functions).
+- **Virtual Machines** are IaaS — you manage the OS, patches, and software. Best for lift-and-shift migrations, legacy apps, and workloads requiring direct OS access.
+- **VM Scale Sets** automatically scale a fleet of identical VMs based on demand metrics or schedules. All instances are load-balanced and interchangeable.
+- **Availability sets** protect against hardware failures and planned maintenance within a data center using **fault domains** (separate power/networking racks) and **update domains** (batches for rolling updates).
+- **Azure App Service** is PaaS — you deploy code, Azure manages OS, patching, and infrastructure. Supports .NET, Java, Node.js, Python, PHP, and Ruby with built-in CI/CD and auto-scaling.
+- **Containers** bundle an app with its dependencies for consistent, portable deployment. Azure offers three tiers: ACI (simple, single container), Container Apps (serverless microservices, scale-to-zero), and AKS (full Kubernetes for complex workloads).
+- **Azure Functions** is serverless and event-driven — write code, define a trigger, pay only when it runs. Stateless by default; Durable Functions adds stateful workflow support.
+- **Azure Virtual Desktop** delivers full Windows desktop experiences to any device from anywhere. It is the only cloud service offering multi-session Windows 10/11, and integrates with existing Microsoft 365 licenses.
+- The core tradeoff across all compute services: more control (VMs) vs. more managed (Functions). Choose based on how much OS and infrastructure management responsibility your team wants to retain.
+</KeyTakeaways>
+
+<Callout type="info">
+**Learn more on Microsoft Learn:** The official AZ-900 learning path covers Azure compute and networking services in depth. Visit the [Describe Azure compute and networking services](https://learn.microsoft.com/en-us/training/modules/describe-azure-compute-networking-services/) module for hands-on exercises and additional context.
+</Callout>
+
+<Quiz
+  title="Section 2.2a Quiz — Azure Compute Services"
+  sectionId="2-2a"
+  questions={[
+    {
+      type: "multiple-choice",
+      question: "Which Azure compute service is classified as Infrastructure as a Service (IaaS)?",
+      options: [
+        "Azure App Service",
+        "Azure Functions",
+        "Azure Virtual Machines",
+        "Azure Container Apps"
+      ],
+      correct: 2,
+      explanation: "Azure Virtual Machines are IaaS — you are responsible for managing the operating system, applying patches, installing software, and configuring security. Azure manages only the underlying physical hardware and hypervisor. App Service is PaaS, Functions is serverless, and Container Apps is a managed container platform."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company runs a web application on Azure Virtual Machines and experiences variable traffic — much higher during business hours and very low overnight. Which service would help automatically adjust the number of running VMs to match demand?",
+      options: [
+        "Availability Sets",
+        "VM Scale Sets",
+        "Azure App Service",
+        "Azure Load Balancer"
+      ],
+      correct: 1,
+      explanation: "VM Scale Sets allow you to deploy and manage a group of identical, load-balanced VMs that automatically scale in and out based on demand metrics (such as CPU utilization) or schedules. Availability sets provide fault and update domain protection but do not scale the number of VMs. App Service is a separate PaaS offering. Azure Load Balancer distributes traffic but does not manage VM count."
+    },
+    {
+      type: "true-false",
+      question: "In an Azure availability set, a fault domain represents a group of VMs that share the same physical power supply and network switch.",
+      correct: true,
+      explanation: "A fault domain in an availability set is a rack of servers that shares a common power supply and network switch. By placing VMs across multiple fault domains, Azure ensures that a single rack-level hardware failure (such as a power outage for that rack) does not take all VMs offline simultaneously. Azure supports up to 3 fault domains per availability set."
+    },
+    {
+      type: "multiple-choice",
+      question: "What is the primary responsibility that Azure assumes when you use Azure App Service compared to Azure Virtual Machines?",
+      options: [
+        "Managing your application code and business logic",
+        "Managing the operating system, patches, and underlying infrastructure",
+        "Deciding which programming language your application uses",
+        "Handling user authentication for your application"
+      ],
+      correct: 1,
+      explanation: "With Azure App Service (PaaS), Azure manages the underlying operating system, security patches, hardware, load balancing, and infrastructure maintenance. You are responsible only for your application code, configuration, and deployments. With Virtual Machines (IaaS), you must manage all of those infrastructure concerns yourself."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Azure service is best described as the simplest way to run a container in Azure, requiring no cluster configuration or orchestration?",
+      options: [
+        "Azure Kubernetes Service (AKS)",
+        "Azure Container Apps",
+        "Azure Container Instances (ACI)",
+        "Azure App Service"
+      ],
+      correct: 2,
+      explanation: "Azure Container Instances (ACI) is the simplest and fastest way to run a container in Azure. You provide a container image and resource specifications, and ACI starts the container within seconds — no cluster to provision, no orchestration to configure. AKS provides full Kubernetes orchestration for complex workloads. Container Apps provides serverless container hosting with microservice capabilities."
+    },
+    {
+      type: "true-false",
+      question: "Azure Functions charges you for compute resources continuously, even when no events are triggering your function.",
+      correct: false,
+      explanation: "Under the Azure Functions consumption plan, you are charged only when your function code actually executes — you pay per execution and per resource consumption during that execution. There are no charges when the function is idle and waiting for triggers. This pay-per-execution model is one of the defining benefits of the serverless compute model."
+    },
+    {
+      type: "multiple-choice",
+      question: "A developer wants to automatically process image files uploaded to Azure Blob Storage — resizing and compressing each image as soon as it arrives. Which Azure service is the most appropriate choice?",
+      options: [
+        "Azure Virtual Machines",
+        "Azure App Service",
+        "Azure Functions with a Blob Storage trigger",
+        "Azure Container Instances"
+      ],
+      correct: 2,
+      explanation: "Azure Functions with a Blob Storage trigger is ideal here. The function runs automatically whenever a new blob is uploaded, processes the image, and then stops — with no infrastructure to manage and no cost when idle. This is a classic event-driven, serverless use case. VMs and App Service would require a continuously-running process that polls for new files. ACI would require manual invocation or orchestration."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Azure container service is built on Kubernetes but fully managed, supporting serverless scaling including scale-to-zero?",
+      options: [
+        "Azure Container Instances (ACI)",
+        "Azure Kubernetes Service (AKS)",
+        "Azure Container Apps",
+        "Azure App Service with container support"
+      ],
+      correct: 2,
+      explanation: "Azure Container Apps is built on Kubernetes under the hood but fully managed by Azure — you never interact with Kubernetes directly. It supports serverless scaling, including scale-to-zero (where running instances drop to zero when there is no traffic, eliminating costs during idle periods). ACI is simpler but lacks orchestration. AKS gives you full Kubernetes control but requires you to manage cluster configuration."
+    },
+    {
+      type: "true-false",
+      question: "Azure Virtual Desktop (AVD) is the only cloud service that offers multi-session Windows 10 and Windows 11.",
+      correct: true,
+      explanation: "Multi-session Windows 10 and Windows 11 — where multiple users simultaneously share a single VM running a desktop OS rather than a server OS — is unique to Azure Virtual Desktop. Other cloud providers offer Windows Server RDS but not the multi-session desktop OS. This capability significantly reduces the cost of delivering virtual desktop experiences compared to traditional VDI approaches."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company wants to migrate an existing on-premises application to Azure. The application requires a specific version of a third-party library installed at the OS level, and the operations team needs to control when security patches are applied. Which service should they use?",
+      options: [
+        "Azure App Service",
+        "Azure Functions",
+        "Azure Virtual Machines",
+        "Azure Container Apps"
+      ],
+      correct: 2,
+      explanation: "Azure Virtual Machines (IaaS) is the right choice for this lift-and-shift scenario. The requirements — OS-level library installation and control over patching schedules — require full OS access, which only VMs provide. App Service and Functions are managed platforms where you cannot access or control the underlying OS. Container Apps manages the container runtime but not host OS patching in the way described."
+    },
+    {
+      type: "multiple-choice",
+      question: "What is the purpose of update domains in an Azure availability set?",
+      options: [
+        "To ensure VMs are spread across different geographic regions",
+        "To group VMs that will be rebooted simultaneously during planned maintenance",
+        "To group VMs that will never be rebooted at the same time during planned maintenance",
+        "To automatically update the operating system on all VMs at once"
+      ],
+      correct: 2,
+      explanation: "Update domains in an availability set ensure that VMs in different update domains are never rebooted simultaneously during Azure planned maintenance. Azure reboots update domains sequentially, one at a time, so at least one VM in the availability set remains running throughout a maintenance event. Azure supports up to 20 update domains per availability set."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which programming languages are supported by Azure App Service? (Choose the best answer.)",
+      options: [
+        "Only .NET and Java",
+        "Only languages that compile to WebAssembly",
+        ".NET, Java, Node.js, Python, PHP, and Ruby",
+        "Any language that can run in a Linux container"
+      ],
+      correct: 2,
+      explanation: "Azure App Service natively supports .NET, .NET Framework, Java (including Spring and Tomcat), Node.js, Python (Django, Flask), PHP, and Ruby. This broad language support makes it suitable for a wide range of web application frameworks without needing to manage the underlying runtime environment."
+    },
+    {
+      type: "true-false",
+      question: "Azure Functions are stateful by default, maintaining memory of previous invocations.",
+      correct: false,
+      explanation: "Azure Functions are stateless by default — each function invocation is independent with no memory of previous runs. This stateless design enables the massive horizontal scaling that makes serverless compute practical. For stateful workflows, you can use Durable Functions, which is an extension that adds orchestration and state persistence on top of Azure Functions."
+    },
+    {
+      type: "multiple-choice",
+      question: "A startup is building a microservices application with 12 services that need to communicate with each other, auto-scale independently, and include some services that can scale to zero when idle. They want to avoid managing Kubernetes directly. Which Azure service is the best fit?",
+      options: [
+        "Azure Container Instances (ACI) — one per service",
+        "Azure Kubernetes Service (AKS)",
+        "Azure Container Apps",
+        "12 separate Azure App Service instances"
+      ],
+      correct: 2,
+      explanation: "Azure Container Apps is designed exactly for this scenario — managed, serverless container hosting for microservices. It supports inter-service communication, independent auto-scaling per service, scale-to-zero for idle services, and is built on Kubernetes without requiring you to manage Kubernetes directly. ACI lacks the orchestration needed for multi-service communication. AKS provides Kubernetes control but requires managing the cluster. App Service is not designed for container-to-container microservice communication at this scale."
+    },
+    {
+      type: "multiple-choice",
+      question: "What is the key security benefit of Azure Virtual Desktop for a remote workforce?",
+      options: [
+        "It encrypts all internet traffic from the user's device",
+        "Corporate data never leaves Azure — it stays in the data center, not on the user's device",
+        "It installs antivirus software automatically on all employee devices",
+        "It requires biometric authentication for all users"
+      ],
+      correct: 1,
+      explanation: "With Azure Virtual Desktop, all processing happens in Azure's data centers and data is stored there, not on the employee's local device. If a laptop is lost or stolen, no corporate data is at risk because none was stored on that device. This is a significant security advantage for remote and mobile workforces, especially in regulated industries where data loss can have serious consequences."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following best describes Azure Kubernetes Service (AKS)?",
+      options: [
+        "A serverless platform that runs containers without any cluster management",
+        "A managed Kubernetes service where Azure handles the control plane and you manage worker nodes and workloads",
+        "A simple container hosting service with no orchestration capabilities",
+        "A PaaS service for web applications that uses containers internally"
+      ],
+      correct: 1,
+      explanation: "AKS is a managed Kubernetes service: Microsoft manages and maintains the Kubernetes control plane (API server, scheduler, etcd), while you manage the worker nodes (the VMs that run your containers) and all workload configuration. This removes the operational burden of running Kubernetes control plane components while giving you full control over your cluster configuration and workloads."
+    },
+    {
+      type: "true-false",
+      question: "Availability sets protect against entire Azure region failures.",
+      correct: false,
+      explanation: "Availability sets protect against hardware failures and planned maintenance events within a single data center by spreading VMs across fault domains and update domains. They do not protect against an entire data center going offline, and they definitely do not protect against regional failures. For data center-level protection, use availability zones. For regional protection, use cross-region redundancy with services like Azure Site Recovery."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company wants to run a nightly batch job that processes log files and generates a summary report. The job takes about 10 minutes and only runs once per day. Which Azure compute service would minimize cost for this workload?",
+      options: [
+        "A continuously running Azure Virtual Machine",
+        "Azure App Service with the Basic tier",
+        "Azure Functions with a timer trigger",
+        "Azure Kubernetes Service with a dedicated node pool"
+      ],
+      correct: 2,
+      explanation: "Azure Functions with a timer trigger is the most cost-effective choice for this workload. The function runs once per day for 10 minutes and you pay only for that execution time — roughly 10 minutes of compute per day. A VM running 24/7 or an App Service plan running continuously would charge you for the full 24 hours, even though the workload only runs for 10 minutes. AKS is significantly over-engineered and over-priced for a simple daily batch job."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Azure compute service supports deploying to 'slots' for zero-downtime releases?",
+      options: [
+        "Azure Virtual Machines",
+        "Azure Functions",
+        "Azure App Service",
+        "Azure Container Instances"
+      ],
+      correct: 2,
+      explanation: "Azure App Service supports deployment slots — separate named environments (such as staging, QA, or canary) within the same App Service plan. You can deploy a new version to a staging slot, test it, and then swap it into production with zero downtime. The swap is near-instantaneous and can be reversed if problems are discovered. VMs, Functions, and ACI do not have a native deployment slot feature equivalent to App Service."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following scenarios is Azure Virtual Desktop (AVD) specifically designed to address?",
+      options: [
+        "Running containerized microservices at scale",
+        "Providing cloud-based Windows desktop experiences to users on any device",
+        "Hosting Linux web applications with auto-scaling",
+        "Running serverless event-driven functions for data processing"
+      ],
+      correct: 1,
+      explanation: "Azure Virtual Desktop is specifically designed to deliver full Windows desktop and application experiences to end users on any device from anywhere. Users connect to a virtual Windows environment running in Azure, with all data and processing in the data center. It is not related to container hosting, Linux web apps, or serverless compute — those are handled by AKS/Container Apps, App Service, and Azure Functions respectively."
+    }
+  ]}
+/>
