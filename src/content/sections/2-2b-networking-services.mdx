@@ -1,0 +1,653 @@
+---
+title: "Networking Services"
+domain: 2
+section: "2.2b"
+order: 9
+description: "Explore Azure networking services — from virtual networks and peering to VPN gateways, ExpressRoute, DNS, and load balancing."
+tags: ["azure-networking", "virtual-network", "vpn-gateway", "expressroute", "azure-dns", "load-balancer", "application-gateway"]
+lastVerified: "2026-05-25"
+microsoftLearnUrl: "https://learn.microsoft.com/en-us/training/modules/describe-azure-compute-networking-services/"
+---
+
+import KeyTakeaways from '../../components/KeyTakeaways.astro';
+import KeyTerm from '../../components/KeyTerm.astro';
+import Callout from '../../components/Callout.astro';
+import DeepDive from '../../components/DeepDive.astro';
+import InteractiveDiagram from '../../components/InteractiveDiagram.astro';
+import DiagramHotspot from '../../components/DiagramHotspot.astro';
+import DragDropMatch from '../../components/DragDropMatch.astro';
+import FillInBlank from '../../components/FillInBlank.astro';
+import ScenarioQuestion from '../../components/ScenarioQuestion.astro';
+import BuildIt from '../../components/BuildIt.astro';
+import Quiz from '../../components/Quiz.astro';
+
+## What Is Cloud Networking?
+
+Every application that serves users, connects to a database, or communicates with other services relies on a network. In a traditional data center, networking means physical cables, switches, routers, and firewalls — hardware that your team purchases, configures, and maintains. In the cloud, these same networking concepts exist, but they are delivered as software-defined services that you provision and configure through the Azure portal, CLI, or templates.
+
+Azure networking is the foundation that connects everything together: your virtual machines to each other, your cloud workloads to your on-premises data center, your applications to the internet, and your users to the services they need. Without networking, your compute and storage resources would be isolated islands with no way to communicate.
+
+Understanding Azure networking services is essential for the AZ-900 exam. You'll need to know how virtual networks provide isolation and segmentation, how VPN Gateway and ExpressRoute connect cloud and on-premises environments, how Azure DNS manages name resolution, and how load balancers distribute traffic across your infrastructure. Let's walk through each service.
+
+---
+
+## Virtual Networks
+
+<KeyTerm term="Azure Virtual Network (VNet)">A logically isolated network in Azure that enables Azure resources — such as VMs, databases, and app services — to securely communicate with each other, the internet, and on-premises networks. A VNet is scoped to a single Azure region and a single subscription.</KeyTerm>
+
+Think of a VNet as your own private network within Azure's data center. Just like a corporate office has an internal network where computers can talk to each other but are isolated from the outside world by default, a VNet gives your Azure resources a private, isolated communication space.
+
+When you create a VNet, you define an **address space** — a range of private IP addresses that the network can use. For example, you might define an address space of `10.0.0.0/16`, which provides 65,536 IP addresses for your resources. Azure resources deployed into the VNet receive private IP addresses from this range.
+
+### Subnets
+
+<KeyTerm term="Subnet">A subdivision of a VNet's address space that lets you segment your network into smaller, logical sections. Each subnet gets a portion of the VNet's IP range and can have its own security rules and routing configuration.</KeyTerm>
+
+VNets are divided into **subnets** to organize and secure resources. Subnets serve the same purpose as floors in an office building — they separate different groups of resources so that you can apply different access rules to each group.
+
+For example, a typical three-tier web application might use:
+
+- **Web subnet** (`10.0.1.0/24`) — for the front-end web servers that accept internet traffic
+- **Application subnet** (`10.0.2.0/24`) — for the middle-tier application logic, accessible only from the web subnet
+- **Database subnet** (`10.0.3.0/24`) — for the database servers, accessible only from the application subnet
+
+### Network Security Groups
+
+<KeyTerm term="Network Security Group (NSG)">A set of security rules that filter inbound and outbound network traffic to and from Azure resources within a VNet. NSG rules specify allowed or denied traffic based on source, destination, port, and protocol.</KeyTerm>
+
+NSGs act as a virtual firewall for your subnets and individual network interfaces. Each rule specifies:
+
+- **Direction** — inbound or outbound
+- **Priority** — lower numbers are evaluated first (100–4096)
+- **Source and destination** — IP addresses, ranges, service tags, or application security groups
+- **Protocol** — TCP, UDP, ICMP, or any
+- **Port range** — specific ports or ranges
+- **Action** — allow or deny
+
+Rules are evaluated in priority order. Once a matching rule is found, processing stops. This means a deny rule at priority 100 will block traffic even if an allow rule exists at priority 200.
+
+<Callout type="tip">
+For the AZ-900 exam, remember that NSGs are stateful — if you allow inbound traffic on a port, the return traffic is automatically allowed. Also remember that NSGs can be applied to both subnets and individual network interfaces, providing two layers of filtering.
+</Callout>
+
+---
+
+## VNet Peering
+
+<KeyTerm term="VNet Peering">A mechanism that connects two Azure VNets so that resources in either network can communicate with each other using private IP addresses. Traffic between peered VNets travels over the Microsoft backbone network, not the public internet.</KeyTerm>
+
+By default, resources in different VNets cannot communicate — each VNet is an isolated network boundary. VNet peering bridges that gap by linking two VNets together so that they behave as if they were one network from a connectivity perspective.
+
+There are two types of peering:
+
+- **Regional peering** — connects VNets within the same Azure region. Traffic stays on the local network infrastructure.
+- **Global peering** — connects VNets in different Azure regions. Traffic travels over Microsoft's private global backbone, never touching the public internet.
+
+Peered VNets have low-latency, high-bandwidth connectivity because traffic stays entirely within Microsoft's network infrastructure. This makes peering the preferred option for connecting Azure workloads that are spread across multiple VNets.
+
+<Callout type="warning">
+VNet peering is **non-transitive**. If VNet A is peered with VNet B, and VNet B is peered with VNet C, VNet A cannot communicate with VNet C through VNet B. You would need to create a separate peering between VNet A and VNet C, or use a hub-and-spoke topology with a network virtual appliance or Azure Virtual WAN.
+</Callout>
+
+---
+
+## VPN Gateway
+
+<KeyTerm term="Azure VPN Gateway">A specific type of virtual network gateway that sends encrypted traffic between an Azure VNet and another network — an on-premises data center, another VNet, or a remote user's device — over the public internet using IPsec/IKE tunnels.</KeyTerm>
+
+VPN Gateway is your encrypted bridge between Azure and everywhere else. While VNet peering connects Azure VNets to each other, VPN Gateway extends your network to locations outside Azure — most commonly your on-premises data center.
+
+Think of it as a secure tunnel dug under a public road. The road (the internet) is shared by everyone, but your tunnel is private and encrypted — no one else can see or intercept the traffic flowing through it.
+
+VPN Gateway supports three connection types:
+
+### Site-to-Site (S2S)
+
+Connects your entire on-premises network to an Azure VNet. This creates a permanent, always-on encrypted tunnel between your on-premises VPN device (a physical router or firewall) and the Azure VPN Gateway. All resources on both sides can communicate as if they were on the same network.
+
+**Use case:** A company wants its Azure VMs to access an on-premises file server, and its on-premises users to access applications running in Azure.
+
+### Point-to-Site (P2S)
+
+Connects an individual client device (a laptop, desktop, or mobile device) to an Azure VNet. Instead of linking an entire network, P2S creates a VPN tunnel from a single device. Each user installs a VPN client and establishes a connection on demand.
+
+**Use case:** Remote employees working from home need to access Azure-hosted resources securely without a corporate VPN concentrator at each location.
+
+### VNet-to-VNet
+
+Connects two Azure VNets through encrypted VPN tunnels. While VNet peering is generally preferred for Azure-to-Azure connectivity (it's faster and simpler), VNet-to-VNet VPN connections are useful when you need encryption between the VNets or when connecting VNets across different Microsoft Entra ID tenants.
+
+<DeepDive title="VPN Gateway SKUs and Performance">
+Azure VPN Gateway comes in several SKUs (pricing tiers) that determine the number of tunnels, aggregate throughput, and features available:
+
+**Basic** — Suitable for development and testing. Supports only route-based VPN with limited throughput (~100 Mbps). Does not support point-to-site with IKEv2 or RADIUS authentication. Not recommended for production.
+
+**VpnGw1–VpnGw5** — Production SKUs with increasing throughput (from 650 Mbps to 10 Gbps) and tunnel counts. Higher SKUs support more site-to-site tunnels and higher point-to-site connection counts.
+
+**VpnGw1AZ–VpnGw5AZ** — Availability-zone-aware versions of the production SKUs. These deploy the gateway across availability zones for higher resilience against data center-level failures.
+
+For the AZ-900 exam, you don't need to memorize specific SKU details. What matters is understanding that VPN Gateway provides encrypted connectivity over the public internet, and that throughput and features scale with the SKU tier you choose.
+</DeepDive>
+
+---
+
+## Azure ExpressRoute
+
+<KeyTerm term="Azure ExpressRoute">A service that creates a private, dedicated connection between your on-premises infrastructure and Azure, bypassing the public internet entirely. ExpressRoute connections are established through a connectivity provider at a colocation facility and offer higher bandwidth, lower latency, and greater reliability than VPN connections.</KeyTerm>
+
+If VPN Gateway is a secure tunnel under a public road, ExpressRoute is a private highway built exclusively for your traffic. Your data never travels over the public internet — it flows through a dedicated, private connection between your data center and Azure.
+
+ExpressRoute is designed for organizations that need:
+
+- **Higher bandwidth** — ExpressRoute supports connections from 50 Mbps to 100 Gbps, far exceeding what VPN Gateway can deliver.
+- **Lower and more predictable latency** — because traffic doesn't traverse the unpredictable public internet, latency is consistent and low.
+- **Higher reliability** — ExpressRoute connections include built-in redundancy with active-active connectivity through two independent circuits.
+- **Access to all Azure services** — ExpressRoute provides connectivity to Azure public services (Storage, SQL Database) and Microsoft 365 without routing through the internet.
+
+<Callout type="info">
+ExpressRoute does **not** encrypt traffic by default — it's a private connection, so encryption is not inherently needed in the same way as a VPN tunnel over the internet. However, you can layer VPN encryption on top of ExpressRoute if your compliance requirements demand it.
+</Callout>
+
+### How ExpressRoute Works
+
+You don't run a cable directly from your office to an Azure data center. Instead, you work with a **connectivity provider** (such as AT&T, Equinix, or Megaport) that has a physical presence in both your data center region and an Azure peering location. The provider establishes the private link, and you connect to the provider's network.
+
+There are three connectivity models:
+
+- **Colocation at a cloud exchange** — if your data center is colocated at a facility that also hosts Azure, you can request a cross-connect through the exchange.
+- **Point-to-point Ethernet** — a dedicated Ethernet link from your facility to Azure through the provider.
+- **Any-to-any (IPVPN)** — integrate Azure into your existing MPLS/WAN network through the provider.
+
+<DeepDive title="ExpressRoute vs. VPN Gateway — When to Use Which">
+Both services connect on-premises networks to Azure, but they serve different needs:
+
+| Factor | VPN Gateway | ExpressRoute |
+|---|---|---|
+| **Connection type** | Encrypted tunnel over public internet | Private, dedicated link bypassing internet |
+| **Bandwidth** | Up to ~10 Gbps (VpnGw5) | Up to 100 Gbps |
+| **Latency** | Variable (depends on internet conditions) | Predictable and low |
+| **Cost** | Lower — requires only a VPN device on-premises | Higher — requires a connectivity provider contract |
+| **Setup time** | Minutes to hours | Days to weeks (provider provisioning) |
+| **Encryption** | Built-in (IPsec) | Not encrypted by default (can add VPN on top) |
+| **Best for** | Small-to-medium workloads, dev/test, backup connectivity | Mission-critical production, large data transfers, low-latency requirements |
+
+**Choose VPN Gateway** when cost is a priority, workloads are moderate, or you need a quick connection. It's also commonly used as a backup path alongside ExpressRoute.
+
+**Choose ExpressRoute** when your organization needs guaranteed bandwidth, low latency for real-time workloads (like SAP or large database replication), or when regulatory requirements prohibit traffic flowing over the public internet.
+
+Many enterprises use both: ExpressRoute as the primary connection and VPN Gateway as a failover path.
+</DeepDive>
+
+---
+
+<InteractiveDiagram title="Azure Networking Architecture" alt="Diagram showing a hub-and-spoke VNet topology with VPN Gateway connecting to on-premises, ExpressRoute providing private connectivity, VNet peering between hub and spoke VNets, and load balancers distributing traffic">
+  <svg viewBox="0 0 620 440" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:system-ui,sans-serif">
+    {/* Background */}
+    <rect x="0" y="0" width="620" height="440" fill="#0f172a" rx="10" />
+    {/* Title */}
+    <text x="310" y="26" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">Azure Networking — Hybrid Connectivity</text>
+    {/* Defs for markers */}
+    <defs>
+      <marker id="netArrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="#3b82f6" />
+      </marker>
+    </defs>
+    {/* On-premises block */}
+    <rect x="20" y="50" width="140" height="120" rx="8" fill="#1e3a5f" stroke="#94a3b8" strokeWidth="2" strokeDasharray="6,3" />
+    <text x="90" y="75" textAnchor="middle" fill="#94a3b8" fontSize="11" fontWeight="bold">On-Premises</text>
+    <rect x="35" y="88" width="110" height="30" rx="4" fill="#0f172a" stroke="#64748b" strokeWidth="1" />
+    <text x="90" y="107" textAnchor="middle" fill="#cbd5e1" fontSize="9">Corporate Network</text>
+    <rect x="35" y="125" width="110" height="30" rx="4" fill="#0f172a" stroke="#64748b" strokeWidth="1" />
+    <text x="90" y="144" textAnchor="middle" fill="#cbd5e1" fontSize="9">VPN Device / Router</text>
+    {/* Connection lines */}
+    <line x1="160" y1="100" x2="230" y2="100" stroke="#f59e0b" strokeWidth="2" strokeDasharray="4,4" />
+    <text x="195" y="93" textAnchor="middle" fill="#f59e0b" fontSize="7">VPN (encrypted)</text>
+    <line x1="160" y1="145" x2="230" y2="200" stroke="#8b5cf6" strokeWidth="2.5" />
+    <text x="180" y="180" fill="#a78bfa" fontSize="7">ExpressRoute</text>
+    <text x="180" y="189" fill="#a78bfa" fontSize="7">(private link)</text>
+    {/* Hub VNet */}
+    <rect x="230" y="55" width="180" height="200" rx="8" fill="#162032" stroke="#3b82f6" strokeWidth="2" />
+    <text x="320" y="75" textAnchor="middle" fill="#60a5fa" fontSize="12" fontWeight="bold">Hub VNet</text>
+    {/* VPN Gateway */}
+    <rect x="245" y="85" width="150" height="35" rx="4" fill="#0f172a" stroke="#f59e0b" strokeWidth="1.5" />
+    <text x="320" y="107" textAnchor="middle" fill="#fbbf24" fontSize="9" fontWeight="bold">VPN Gateway</text>
+    {/* ExpressRoute Gateway */}
+    <rect x="245" y="130" width="150" height="35" rx="4" fill="#0f172a" stroke="#8b5cf6" strokeWidth="1.5" />
+    <text x="320" y="152" textAnchor="middle" fill="#a78bfa" fontSize="9" fontWeight="bold">ExpressRoute Gateway</text>
+    {/* Azure Firewall / NVA */}
+    <rect x="245" y="175" width="150" height="35" rx="4" fill="#0f172a" stroke="#ef4444" strokeWidth="1.5" />
+    <text x="320" y="197" textAnchor="middle" fill="#fca5a5" fontSize="9" fontWeight="bold">Azure Firewall / NVA</text>
+    {/* Load Balancer */}
+    <rect x="245" y="220" width="150" height="25" rx="4" fill="#0f172a" stroke="#10b981" strokeWidth="1.5" />
+    <text x="320" y="237" textAnchor="middle" fill="#6ee7b7" fontSize="9" fontWeight="bold">Load Balancer</text>
+    {/* Peering lines to spokes */}
+    <line x1="410" y1="130" x2="460" y2="90" stroke="#3b82f6" strokeWidth="1.5" markerEnd="url(#netArrow)" />
+    <line x1="410" y1="180" x2="460" y2="250" stroke="#3b82f6" strokeWidth="1.5" markerEnd="url(#netArrow)" />
+    <text x="440" y="125" fill="#60a5fa" fontSize="7">Peering</text>
+    <text x="440" y="225" fill="#60a5fa" fontSize="7">Peering</text>
+    {/* Spoke VNet 1 */}
+    <rect x="460" y="50" width="140" height="110" rx="8" fill="#162032" stroke="#34d399" strokeWidth="1.5" />
+    <text x="530" y="70" textAnchor="middle" fill="#6ee7b7" fontSize="10" fontWeight="bold">Spoke VNet 1</text>
+    <text x="530" y="83" textAnchor="middle" fill="#6ee7b7" fontSize="8">Web Tier</text>
+    <rect x="475" y="92" width="110" height="25" rx="4" fill="#0f172a" stroke="#34d399" strokeWidth="1" />
+    <text x="530" y="108" textAnchor="middle" fill="#cbd5e1" fontSize="8">Web Subnet (10.1.1.0/24)</text>
+    <rect x="475" y="122" width="110" height="25" rx="4" fill="#0f172a" stroke="#34d399" strokeWidth="1" />
+    <text x="530" y="138" textAnchor="middle" fill="#cbd5e1" fontSize="8">App Subnet (10.1.2.0/24)</text>
+    {/* Spoke VNet 2 */}
+    <rect x="460" y="210" width="140" height="110" rx="8" fill="#162032" stroke="#fb923c" strokeWidth="1.5" />
+    <text x="530" y="230" textAnchor="middle" fill="#fdba74" fontSize="10" fontWeight="bold">Spoke VNet 2</text>
+    <text x="530" y="243" textAnchor="middle" fill="#fdba74" fontSize="8">Data Tier</text>
+    <rect x="475" y="252" width="110" height="25" rx="4" fill="#0f172a" stroke="#fb923c" strokeWidth="1" />
+    <text x="530" y="268" textAnchor="middle" fill="#cbd5e1" fontSize="8">DB Subnet (10.2.1.0/24)</text>
+    <rect x="475" y="282" width="110" height="25" rx="4" fill="#0f172a" stroke="#fb923c" strokeWidth="1" />
+    <text x="530" y="298" textAnchor="middle" fill="#cbd5e1" fontSize="8">Storage Subnet (10.2.2.0/24)</text>
+    {/* Internet */}
+    <rect x="195" y="280" width="100" height="40" rx="20" fill="#0f172a" stroke="#94a3b8" strokeWidth="1.5" />
+    <text x="245" y="304" textAnchor="middle" fill="#94a3b8" fontSize="10">Internet</text>
+    <line x1="280" y1="255" x2="270" y2="280" stroke="#94a3b8" strokeWidth="1" strokeDasharray="3,3" />
+    {/* DNS block */}
+    <rect x="340" y="280" width="100" height="40" rx="6" fill="#0f172a" stroke="#38bdf8" strokeWidth="1.5" />
+    <text x="390" y="304" textAnchor="middle" fill="#38bdf8" fontSize="9" fontWeight="bold">Azure DNS</text>
+    {/* Bottom legend */}
+    <rect x="20" y="340" width="580" height="90" rx="8" fill="#162032" stroke="#1e3a5f" strokeWidth="1.5" />
+    <text x="310" y="360" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold">Connection Types</text>
+    <line x1="40" y1="378" x2="80" y2="378" stroke="#f59e0b" strokeWidth="2" strokeDasharray="4,4" />
+    <text x="90" y="382" fill="#fbbf24" fontSize="9">VPN — encrypted over internet</text>
+    <line x1="40" y1="398" x2="80" y2="398" stroke="#8b5cf6" strokeWidth="2.5" />
+    <text x="90" y="402" fill="#a78bfa" fontSize="9">ExpressRoute — private dedicated link</text>
+    <line x1="310" y1="378" x2="350" y2="378" stroke="#3b82f6" strokeWidth="1.5" />
+    <text x="360" y="382" fill="#60a5fa" fontSize="9">VNet Peering — Azure backbone</text>
+    <line x1="310" y1="398" x2="350" y2="398" stroke="#94a3b8" strokeWidth="1" strokeDasharray="3,3" />
+    <text x="360" y="402" fill="#94a3b8" fontSize="9">Internet — public traffic</text>
+    <text x="310" y="422" textAnchor="middle" fill="#475569" fontSize="8">Hub-and-spoke topology — all traffic routes through the hub for centralized security and management</text>
+  </svg>
+  <DiagramHotspot x="3%" y="11%" width="23%" height="27%" variant="layer" label="On-Premises Network">
+    The on-premises network represents your corporate data center or office. It connects to Azure through either a VPN Gateway (encrypted tunnel over the public internet) or ExpressRoute (private dedicated link). A VPN device or router at your site terminates the connection. Site-to-site VPN is simpler and cheaper; ExpressRoute provides higher bandwidth, lower latency, and bypasses the internet entirely.
+  </DiagramHotspot>
+  <DiagramHotspot x="37%" y="11%" width="29%" height="48%" variant="layer" label="Hub VNet — Central Connectivity">
+    The hub VNet is the central point of connectivity in a hub-and-spoke topology. It hosts shared networking services: the VPN Gateway for encrypted on-premises connections, the ExpressRoute Gateway for private dedicated links, an Azure Firewall or network virtual appliance (NVA) for centralized security inspection, and a Load Balancer for traffic distribution. All traffic between spokes and to/from on-premises flows through the hub.
+  </DiagramHotspot>
+  <DiagramHotspot x="74%" y="11%" width="24%" height="25%" variant="layer" label="Spoke VNet 1 — Web Tier">
+    Spoke VNet 1 hosts the web-facing tier of the application, segmented into subnets: a web subnet for front-end servers and an app subnet for middle-tier logic. It connects to the hub VNet via VNet peering — traffic flows over the Microsoft backbone network with low latency. Network Security Groups on each subnet control which traffic is allowed in and out.
+  </DiagramHotspot>
+  <DiagramHotspot x="74%" y="48%" width="24%" height="25%" variant="layer" label="Spoke VNet 2 — Data Tier">
+    Spoke VNet 2 hosts the data tier, with separate subnets for databases and storage. It peers with the hub VNet for connectivity but is isolated from Spoke VNet 1 — peering is non-transitive. To allow the web tier to reach the data tier, traffic routes through the hub's firewall, providing centralized security inspection and logging of all cross-spoke communication.
+  </DiagramHotspot>
+</InteractiveDiagram>
+
+---
+
+## Azure DNS
+
+<KeyTerm term="Azure DNS">A hosting service for DNS domains that provides name resolution using Microsoft Azure infrastructure. Azure DNS lets you manage DNS records for your domains using the same Azure tools, credentials, billing, and support contracts as your other Azure services.</KeyTerm>
+
+The Domain Name System (DNS) is often called the "phone book of the internet." When a user types `www.contoso.com` into their browser, DNS translates that human-readable name into an IP address like `40.76.4.15` that computers use to route traffic. Without DNS, users would have to memorize IP addresses to visit websites.
+
+Azure DNS lets you host your DNS zones in Azure, managing all your DNS records (A, AAAA, CNAME, MX, TXT, and others) alongside your other Azure resources. This provides several advantages:
+
+- **Reliability and performance** — Azure DNS runs on Microsoft's global network of name servers, providing high availability through Anycast networking. Queries are answered by the closest server, minimizing latency.
+- **Integrated management** — manage DNS records using the Azure portal, Azure CLI, PowerShell, REST API, or ARM templates — the same tools you use for everything else in Azure.
+- **RBAC and activity logs** — control who can modify DNS records using Azure role-based access control, and track every change through Azure activity logs.
+- **Private DNS zones** — Azure DNS also supports private DNS zones for name resolution within your VNets, so your internal resources can use human-readable names without exposing them to the internet.
+
+<Callout type="warning">
+Azure DNS is a DNS **hosting** service, not a domain **registrar**. You cannot purchase a domain name through Azure DNS. You buy your domain from a registrar (like GoDaddy, Namecheap, or Azure App Service Domains), then point the domain's name servers to Azure DNS for hosting and record management.
+</Callout>
+
+---
+
+## Azure Load Balancer
+
+<KeyTerm term="Azure Load Balancer">A Layer 4 (transport layer) load-balancing service that distributes incoming network traffic across multiple backend resources, such as VMs, based on source IP, source port, destination IP, destination port, and protocol. It provides high availability by routing traffic only to healthy instances.</KeyTerm>
+
+When your application runs on multiple VMs or instances, you need a way to distribute incoming traffic evenly across them. If all traffic hits a single instance, it becomes a bottleneck and a single point of failure. A load balancer solves both problems: it spreads traffic across multiple instances and stops sending traffic to any instance that becomes unhealthy.
+
+Azure Load Balancer operates at **Layer 4** of the OSI model — the transport layer. This means it makes routing decisions based on network-level information: IP addresses, ports, and protocols (TCP/UDP). It does not inspect the content of the traffic (HTTP headers, URLs, cookies) — that's the job of Application Gateway (Layer 7).
+
+### Public vs. Internal Load Balancer
+
+- **Public Load Balancer** — has a public IP address and distributes incoming internet traffic across your backend VMs. This is what you use when users on the internet need to reach your application.
+- **Internal (Private) Load Balancer** — has only a private IP address and distributes traffic within your VNet. This is used for internal workloads — for example, load-balancing traffic between your web tier and your application tier, where no internet-facing access is needed.
+
+### Health Probes
+
+Load Balancer uses **health probes** to determine which backend instances are healthy. A health probe sends periodic checks (HTTP, HTTPS, or TCP) to each instance. If an instance fails to respond within a configured threshold, Load Balancer stops sending traffic to it until it recovers.
+
+<Callout type="tip">
+For the AZ-900 exam, remember the key distinction: Azure Load Balancer works at **Layer 4** (TCP/UDP — network level). It does not understand HTTP, URLs, or application-level routing. If you need URL-based routing, SSL termination, or Web Application Firewall capabilities, that's **Application Gateway** (Layer 7).
+</Callout>
+
+---
+
+## Application Gateway
+
+<KeyTerm term="Azure Application Gateway">A Layer 7 (application layer) load balancer that manages traffic to web applications. It makes routing decisions based on HTTP attributes such as URI path, host headers, and cookies, and includes features like SSL/TLS termination, URL-based routing, and an optional Web Application Firewall (WAF).</KeyTerm>
+
+Application Gateway is Azure's HTTP-aware load balancer. While Azure Load Balancer routes traffic based on IP addresses and ports, Application Gateway understands the content of web requests and makes intelligent routing decisions based on that content.
+
+Key capabilities:
+
+- **URL-based routing** — route requests to different backend pools based on the URL path. For example, `/images/*` goes to an image server pool, and `/api/*` goes to an API server pool.
+- **Multi-site hosting** — host multiple websites behind a single Application Gateway instance, routing traffic based on the host header (e.g., `app1.contoso.com` vs. `app2.contoso.com`).
+- **SSL/TLS termination** — decrypt HTTPS traffic at the gateway so backend servers don't need to handle encryption overhead. The gateway can also re-encrypt traffic for end-to-end SSL if required.
+- **Cookie-based session affinity** — ensure that a user's requests are always routed to the same backend server, which is useful for applications that store session state locally.
+- **Web Application Firewall (WAF)** — an optional feature that protects web applications from common exploits like SQL injection, cross-site scripting (XSS), and other OWASP Top 10 vulnerabilities.
+
+<Callout type="info">
+Think of it this way: **Load Balancer** is a traffic cop directing cars at an intersection based on which lane they're in (IP/port). **Application Gateway** is a receptionist in a building lobby who reads your appointment slip (HTTP request) and directs you to the right floor and office (backend pool).
+</Callout>
+
+---
+
+## Comparing Azure Networking Services
+
+| Service | Layer | Purpose | Best For |
+|---|---|---|---|
+| **Virtual Network (VNet)** | Foundation | Isolated private network for Azure resources | All Azure deployments needing network isolation |
+| **VNet Peering** | Connectivity | Connect VNets via Microsoft backbone | Azure-to-Azure VNet communication |
+| **VPN Gateway** | Hybrid | Encrypted tunnel over public internet | On-premises to Azure, dev/test, backup path |
+| **ExpressRoute** | Hybrid | Private dedicated link bypassing internet | Mission-critical, high bandwidth, low latency |
+| **Azure DNS** | Name resolution | Host and manage DNS records | Domain name management within Azure |
+| **Load Balancer** | Layer 4 | Distribute TCP/UDP traffic across backends | Network-level load balancing, non-HTTP workloads |
+| **Application Gateway** | Layer 7 | HTTP-aware routing with WAF | Web apps, URL routing, SSL termination |
+
+---
+
+## Practice Activities
+
+<DragDropMatch
+  title="Match Each Azure Networking Service to Its Key Characteristic"
+  categories={["Virtual Network", "VPN Gateway", "ExpressRoute", "Azure Load Balancer", "Application Gateway"]}
+  items={[
+    { text: "Provides an isolated private address space with subnets for Azure resources", category: "Virtual Network" },
+    { text: "Creates encrypted IPsec tunnels over the public internet", category: "VPN Gateway" },
+    { text: "Private dedicated connection that bypasses the public internet entirely", category: "ExpressRoute" },
+    { text: "Distributes traffic at Layer 4 (TCP/UDP) using IP addresses and ports", category: "Azure Load Balancer" },
+    { text: "Routes HTTP traffic based on URL paths, host headers, and cookies", category: "Application Gateway" },
+    { text: "Supports site-to-site, point-to-site, and VNet-to-VNet connections", category: "VPN Gateway" },
+    { text: "Offers bandwidth options from 50 Mbps to 100 Gbps through a connectivity provider", category: "ExpressRoute" },
+    { text: "Uses health probes to detect and stop routing to unhealthy backend instances", category: "Azure Load Balancer" },
+    { text: "Includes an optional Web Application Firewall (WAF) for OWASP protection", category: "Application Gateway" },
+    { text: "Can be divided into subnets with Network Security Groups for access control", category: "Virtual Network" },
+  ]}
+/>
+
+<FillInBlank
+  title="Azure Networking — Type Your Answer"
+  mode="type"
+  items={[
+    { text: "VNet peering is ___, meaning traffic cannot pass through an intermediate VNet to reach a third VNet.", answer: "non-transitive" },
+    { text: "Network Security Groups are ___, meaning return traffic for an allowed inbound connection is automatically permitted.", answer: "stateful" },
+    { text: "Azure Load Balancer operates at Layer ___ of the OSI model.", answer: "4" },
+    { text: "Application Gateway operates at Layer ___ of the OSI model.", answer: "7" },
+    { text: "ExpressRoute connections are established through a connectivity ___.", answer: "provider" },
+  ]}
+/>
+
+<FillInBlank
+  title="Azure Networking — Select Your Answer"
+  mode="select"
+  items={[
+    { text: "A ___ VPN connects an individual device to an Azure VNet on demand.", answer: "point-to-site" },
+    { text: "Azure DNS is a DNS ___ service, not a domain registrar.", answer: "hosting" },
+    { text: "Application Gateway supports ___-based routing to direct requests to different backend pools based on the URL.", answer: "URL" },
+    { text: "Azure Load Balancer uses health ___ to determine which backend instances can receive traffic.", answer: "probes" },
+  ]}
+/>
+
+<ScenarioQuestion
+  title="Connecting On-Premises to Azure"
+  scenario="A financial services company is migrating its core banking application to Azure. The application processes millions of transactions daily and requires consistently low latency (under 10ms) between the on-premises mainframe and Azure-hosted services. Regulatory requirements mandate that transaction data must never traverse the public internet. The company has budgeted for infrastructure investment and is willing to accept a longer provisioning timeline. Which Azure connectivity service should they use?"
+  options={[
+    { text: "Azure VPN Gateway (site-to-site)", feedback: "Incorrect. While VPN Gateway provides encrypted connectivity, it routes traffic over the public internet, which violates the regulatory requirement. It also cannot guarantee the low, consistent latency needed for millions of daily transactions because internet routing is inherently variable." },
+    { text: "Azure ExpressRoute", feedback: "Correct. ExpressRoute provides a private, dedicated connection that bypasses the public internet entirely — satisfying the regulatory requirement. It offers predictable, low latency and high bandwidth (up to 100 Gbps), making it suitable for high-volume transaction processing. The longer provisioning timeline (days to weeks) is acceptable given the company's stated willingness to invest.", correct: true },
+    { text: "VNet Peering", feedback: "Incorrect. VNet peering connects Azure VNets to each other — it does not connect on-premises networks to Azure. For hybrid connectivity (on-premises to Azure), you need either VPN Gateway or ExpressRoute." },
+    { text: "Azure Load Balancer", feedback: "Incorrect. Azure Load Balancer distributes traffic across backend resources within Azure. It is not a connectivity service for linking on-premises networks to Azure." },
+  ]}
+/>
+
+<BuildIt
+  title="Design a Secure Hybrid Network Architecture"
+  instruction="A healthcare company needs to connect its on-premises hospital systems to Azure. Patient data must flow over a private connection, web applications need intelligent HTTP routing with security, and internal services need network-level load balancing. Arrange the networking components from the on-premises edge to the application layer."
+  steps={[
+    { label: "Azure ExpressRoute", description: "Establish a private, dedicated connection from the on-premises hospital network to Azure. Patient data never touches the public internet, satisfying healthcare compliance requirements like HIPAA. Provides consistent low latency for real-time clinical applications." },
+    { label: "Hub VNet with Azure Firewall", description: "Route all incoming traffic through a hub VNet with Azure Firewall for centralized security inspection, threat detection, and logging. The firewall inspects traffic before it reaches any workload VNet, enforcing network-level security policies." },
+    { label: "Application Gateway with WAF", description: "Place Application Gateway in front of web-facing applications. It provides Layer 7 load balancing with URL-based routing, SSL termination, and the Web Application Firewall (WAF) protects against common web attacks like SQL injection and XSS." },
+    { label: "Internal Load Balancer", description: "Use an internal (private) Azure Load Balancer to distribute traffic between the application tier and the database tier within spoke VNets. This provides Layer 4 load balancing for internal services that don't need internet exposure." },
+  ]}
+/>
+
+---
+
+<KeyTakeaways>
+- **Azure Virtual Network (VNet)** is an isolated private network in Azure. It uses address spaces and subnets to segment resources, with Network Security Groups (NSGs) filtering traffic based on rules.
+- **VNet Peering** connects two VNets over the Microsoft backbone — supporting both regional and global peering. Peering is **non-transitive**: A↔B and B↔C does not mean A↔C.
+- **VPN Gateway** creates encrypted IPsec tunnels over the public internet. It supports site-to-site (whole network), point-to-site (single device), and VNet-to-VNet connections.
+- **Azure ExpressRoute** provides a private, dedicated connection to Azure through a connectivity provider — higher bandwidth (up to 100 Gbps), lower latency, and traffic never crosses the public internet. It does not encrypt by default.
+- **Azure DNS** hosts DNS zones and manages DNS records within Azure. It is a hosting service, **not** a domain registrar.
+- **Azure Load Balancer** is a Layer 4 (TCP/UDP) load balancer that distributes traffic based on IP, port, and protocol. It comes in public (internet-facing) and internal (private) variants, using health probes to route only to healthy instances.
+- **Application Gateway** is a Layer 7 (HTTP) load balancer that provides URL-based routing, SSL termination, multi-site hosting, cookie affinity, and an optional Web Application Firewall (WAF).
+</KeyTakeaways>
+
+---
+
+<Quiz
+  questions={[
+    {
+      type: "multiple-choice",
+      question: "What is the primary purpose of an Azure Virtual Network (VNet)?",
+      options: [
+        "To host DNS records for public domains",
+        "To provide an isolated private network for Azure resources to communicate securely",
+        "To encrypt all traffic between Azure and on-premises networks",
+        "To distribute incoming traffic across multiple backend virtual machines"
+      ],
+      correct: 1,
+      explanation: "An Azure Virtual Network (VNet) provides a logically isolated private network within Azure. Resources deployed into a VNet receive private IP addresses and can communicate with each other securely. VNets are the fundamental building block for networking in Azure — they provide isolation, segmentation, and the address space for your cloud resources."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company has two Azure VNets: VNet A is peered with VNet B, and VNet B is peered with VNet C. Can resources in VNet A communicate directly with resources in VNet C?",
+      options: [
+        "Yes, because peering is transitive and traffic flows through VNet B automatically",
+        "Yes, but only if all three VNets are in the same region",
+        "No, because VNet peering is non-transitive — a separate A↔C peering or hub routing is required",
+        "No, because VNet peering only works within a single subscription"
+      ],
+      correct: 2,
+      explanation: "VNet peering is non-transitive. If VNet A peers with VNet B and VNet B peers with VNet C, resources in VNet A cannot reach VNet C through VNet B. You must either create a direct peering between VNet A and VNet C, or route traffic through a network virtual appliance or Azure Firewall in a hub VNet. This is a frequently tested concept on the AZ-900 exam."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Azure service creates an encrypted tunnel over the public internet to connect an on-premises network to an Azure VNet?",
+      options: [
+        "Azure ExpressRoute",
+        "Azure VPN Gateway",
+        "Azure Load Balancer",
+        "VNet Peering"
+      ],
+      correct: 1,
+      explanation: "Azure VPN Gateway creates encrypted IPsec/IKE tunnels over the public internet between an on-premises network and an Azure VNet. It supports site-to-site (whole network), point-to-site (individual device), and VNet-to-VNet connections. ExpressRoute, by contrast, provides a private dedicated connection that bypasses the internet entirely."
+    },
+    {
+      type: "true-false",
+      question: "Azure ExpressRoute encrypts all traffic by default.",
+      correct: false,
+      explanation: "ExpressRoute does not encrypt traffic by default. It provides a private, dedicated connection through a connectivity provider, so traffic does not traverse the public internet. Because the connection is private, encryption is not inherently required. However, organizations can layer VPN encryption on top of ExpressRoute if their compliance or security requirements demand it."
+    },
+    {
+      type: "multiple-choice",
+      question: "A remote worker needs to connect their personal laptop to an Azure VNet to access company resources. Which VPN Gateway connection type is most appropriate?",
+      options: [
+        "Site-to-site VPN",
+        "Point-to-site VPN",
+        "VNet-to-VNet VPN",
+        "ExpressRoute"
+      ],
+      correct: 1,
+      explanation: "Point-to-site (P2S) VPN is designed for individual devices connecting to an Azure VNet. The user installs a VPN client on their device and establishes a connection on demand. Site-to-site connects an entire on-premises network (requires a VPN device/router), and VNet-to-VNet connects two Azure VNets. ExpressRoute requires a connectivity provider and is not meant for individual device connections."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following is TRUE about Azure DNS?",
+      options: [
+        "Azure DNS can be used to purchase and register domain names",
+        "Azure DNS is a DNS hosting service that manages DNS records but cannot register domains",
+        "Azure DNS only supports A and CNAME record types",
+        "Azure DNS requires all domains to use Azure-hosted applications"
+      ],
+      correct: 1,
+      explanation: "Azure DNS is a hosting service for DNS zones — it manages DNS records (A, AAAA, CNAME, MX, TXT, and more) using Azure infrastructure. However, it is not a domain registrar. You must purchase your domain from a registrar (such as GoDaddy, Namecheap, or Azure App Service Domains), then point the domain's name servers to Azure DNS for record management."
+    },
+    {
+      type: "multiple-choice",
+      question: "At which OSI layer does Azure Load Balancer operate?",
+      options: [
+        "Layer 2 (Data Link)",
+        "Layer 3 (Network)",
+        "Layer 4 (Transport)",
+        "Layer 7 (Application)"
+      ],
+      correct: 2,
+      explanation: "Azure Load Balancer operates at Layer 4 (the transport layer) of the OSI model. It makes routing decisions based on IP addresses, ports, and protocols (TCP/UDP). It does not inspect the content of traffic — no HTTP headers, URLs, or cookies. For application-layer (Layer 7) load balancing with HTTP awareness, you use Azure Application Gateway."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Azure networking service provides URL-based routing, SSL termination, and an optional Web Application Firewall?",
+      options: [
+        "Azure Load Balancer",
+        "Azure VPN Gateway",
+        "Azure Application Gateway",
+        "Azure Firewall"
+      ],
+      correct: 2,
+      explanation: "Azure Application Gateway is a Layer 7 (application layer) load balancer that understands HTTP traffic. It can route requests based on URL paths and host headers, terminate SSL/TLS connections, and includes an optional Web Application Firewall (WAF) to protect against common web exploits. Azure Load Balancer operates at Layer 4 and does not have these HTTP-aware features."
+    },
+    {
+      type: "true-false",
+      question: "Network Security Groups (NSGs) are stateless — you must create separate rules for both inbound and return traffic.",
+      correct: false,
+      explanation: "NSGs are stateful, not stateless. If you create a rule allowing inbound traffic on port 443 (HTTPS), the return traffic for established connections is automatically allowed without needing a separate outbound rule. This is similar to how stateful firewalls work — once a connection is allowed in one direction, the response traffic is tracked and permitted automatically."
+    },
+    {
+      type: "multiple-choice",
+      question: "An organization needs to connect its on-premises data center to Azure with guaranteed 10 Gbps bandwidth and traffic that never traverses the public internet. Which service should they choose?",
+      options: [
+        "Azure VPN Gateway with the VpnGw5 SKU",
+        "Azure ExpressRoute",
+        "VNet Peering with global peering enabled",
+        "Azure Application Gateway"
+      ],
+      correct: 1,
+      explanation: "Azure ExpressRoute provides private, dedicated connections through a connectivity provider with bandwidth options from 50 Mbps to 100 Gbps. Traffic bypasses the public internet entirely. While VPN Gateway's highest SKU (VpnGw5) can reach ~10 Gbps, it still routes traffic over the public internet, which violates the requirement. VNet peering connects Azure VNets, not on-premises networks. Application Gateway is a load balancer, not a connectivity service."
+    },
+    {
+      type: "multiple-choice",
+      question: "What mechanism does Azure Load Balancer use to determine whether a backend instance is available to receive traffic?",
+      options: [
+        "DNS resolution checks",
+        "Health probes (HTTP, HTTPS, or TCP)",
+        "Heartbeat signals from the Azure fabric controller",
+        "Manual availability flags set by administrators"
+      ],
+      correct: 1,
+      explanation: "Azure Load Balancer uses health probes to continuously check the status of backend instances. Probes can be HTTP, HTTPS, or TCP-based and run at configurable intervals. If an instance fails to respond within the configured threshold, Load Balancer stops routing traffic to it. When the instance recovers and responds to probes again, traffic is resumed automatically."
+    },
+    {
+      type: "true-false",
+      question: "VNet peering traffic between two Azure VNets travels over the public internet.",
+      correct: false,
+      explanation: "VNet peering traffic stays entirely on the Microsoft backbone network — it never touches the public internet. This applies to both regional peering (VNets in the same region) and global peering (VNets in different regions). This is one of the key advantages of peering: low-latency, high-bandwidth, private connectivity between VNets."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following correctly describes the difference between a public and internal Azure Load Balancer?",
+      options: [
+        "A public Load Balancer uses Layer 7 routing; an internal Load Balancer uses Layer 4",
+        "A public Load Balancer has a public IP and handles internet traffic; an internal Load Balancer has a private IP and handles VNet-internal traffic",
+        "A public Load Balancer supports TCP only; an internal Load Balancer supports both TCP and UDP",
+        "A public Load Balancer requires Application Gateway; an internal Load Balancer works independently"
+      ],
+      correct: 1,
+      explanation: "A public Load Balancer has a public IP address and distributes incoming internet traffic across backend resources. An internal (private) Load Balancer has a private IP address within a VNet and distributes traffic between internal tiers — for example, from a web tier to an application tier. Both operate at Layer 4 and support TCP and UDP."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company wants to host multiple websites (app1.contoso.com and app2.contoso.com) behind a single Azure load-balancing resource, routing traffic to different backend pools based on the hostname. Which service should they use?",
+      options: [
+        "Azure Load Balancer",
+        "Azure Application Gateway",
+        "Azure VPN Gateway",
+        "Azure Traffic Manager"
+      ],
+      correct: 1,
+      explanation: "Azure Application Gateway supports multi-site hosting — it can route traffic to different backend pools based on the host header in HTTP requests. This means a single Application Gateway instance can serve app1.contoso.com and app2.contoso.com, directing each to its own set of backend servers. Azure Load Balancer cannot inspect HTTP headers and cannot make routing decisions based on hostnames."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which VPN Gateway connection type connects an entire on-premises network to an Azure VNet through a permanent, always-on tunnel?",
+      options: [
+        "Point-to-site (P2S)",
+        "Site-to-site (S2S)",
+        "VNet-to-VNet",
+        "ExpressRoute"
+      ],
+      correct: 1,
+      explanation: "Site-to-site (S2S) VPN creates a permanent, always-on encrypted tunnel between an on-premises VPN device and an Azure VPN Gateway. This connects the entire on-premises network to the Azure VNet, allowing all resources on both sides to communicate. Point-to-site connects individual devices, and VNet-to-VNet connects two Azure VNets."
+    },
+    {
+      type: "true-false",
+      question: "Azure Application Gateway can protect web applications from SQL injection and cross-site scripting attacks through its Web Application Firewall (WAF) feature.",
+      correct: true,
+      explanation: "Azure Application Gateway includes an optional Web Application Firewall (WAF) that protects web applications from common exploits listed in the OWASP Top 10, including SQL injection, cross-site scripting (XSS), and other web-based attacks. WAF inspects incoming HTTP traffic and blocks malicious requests before they reach the backend application."
+    },
+    {
+      type: "multiple-choice",
+      question: "What is the primary purpose of subnets within an Azure Virtual Network?",
+      options: [
+        "To connect the VNet to the public internet",
+        "To segment the VNet's address space into smaller sections for organizing and securing resources",
+        "To encrypt traffic between resources within the VNet",
+        "To provide DNS name resolution for VNet resources"
+      ],
+      correct: 1,
+      explanation: "Subnets divide a VNet's address space into smaller, logical sections. Each subnet gets a portion of the IP range and can have its own Network Security Group (NSG) rules and routing configuration. This allows you to organize resources (web servers in one subnet, databases in another) and apply different security policies to each group."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which statement about ExpressRoute connectivity models is INCORRECT?",
+      options: [
+        "You can connect through a colocation facility at a cloud exchange",
+        "You can use a point-to-point Ethernet connection through a provider",
+        "You can integrate Azure into an existing MPLS/WAN network",
+        "You can establish a direct cable from your office to an Azure data center without any provider"
+      ],
+      correct: 3,
+      explanation: "You cannot run a cable directly from your office to an Azure data center. ExpressRoute always requires a connectivity provider (such as AT&T, Equinix, or Megaport) that has a physical presence at an Azure peering location. The three valid models are: colocation at a cloud exchange, point-to-point Ethernet through a provider, and any-to-any (IPVPN/MPLS) integration through a provider."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company is designing a network architecture in Azure. They need the web tier in one VNet to communicate with the database tier in another VNet. Traffic must stay on the Microsoft private backbone. What should they use?",
+      options: [
+        "Azure VPN Gateway",
+        "Azure ExpressRoute",
+        "VNet Peering",
+        "Azure Load Balancer"
+      ],
+      correct: 2,
+      explanation: "VNet peering is the correct choice for connecting two Azure VNets with private, high-bandwidth, low-latency connectivity. Peered VNet traffic travels over the Microsoft backbone network and never touches the public internet. VPN Gateway would work but adds unnecessary encryption overhead and routes through VPN infrastructure. ExpressRoute connects on-premises to Azure, not VNet-to-VNet. Load Balancer distributes traffic, not connects networks."
+    },
+    {
+      type: "multiple-choice",
+      question: "An architect needs to choose between Azure Load Balancer and Application Gateway. The application is a web API that needs requests to /v1/* routed to one set of servers and /v2/* routed to another. Which should they choose and why?",
+      options: [
+        "Azure Load Balancer, because it supports URL-based routing for REST APIs",
+        "Azure Application Gateway, because it operates at Layer 7 and can route based on URL paths",
+        "Azure Load Balancer, because it is more cost-effective for API workloads",
+        "Either service works equally well for this requirement"
+      ],
+      correct: 1,
+      explanation: "Application Gateway is the correct choice because URL-based routing requires inspecting the HTTP request path — a Layer 7 (application layer) capability. Application Gateway can examine the URL path (/v1/* vs /v2/*) and route to different backend pools accordingly. Azure Load Balancer operates at Layer 4 and only sees IP addresses and ports — it cannot inspect URLs or any HTTP content."
+    }
+  ]}
+/>
