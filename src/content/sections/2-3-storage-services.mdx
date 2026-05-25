@@ -1,0 +1,681 @@
+---
+title: "Storage Services"
+domain: 2
+section: "2.3"
+order: 10
+description: "Explore Azure Storage services — storage accounts, redundancy options, Blob storage, Azure Files, Queue storage, Table storage, access tiers, and data migration tools."
+tags: ["azure-storage", "blob-storage", "azure-files", "queue-storage", "table-storage", "storage-redundancy", "access-tiers", "azure-migrate", "data-box"]
+lastVerified: "2026-05-25"
+microsoftLearnUrl: "https://learn.microsoft.com/en-us/training/modules/describe-azure-storage-services/"
+---
+
+import KeyTakeaways from '../../components/KeyTakeaways.astro';
+import KeyTerm from '../../components/KeyTerm.astro';
+import Callout from '../../components/Callout.astro';
+import DeepDive from '../../components/DeepDive.astro';
+import InteractiveDiagram from '../../components/InteractiveDiagram.astro';
+import DiagramHotspot from '../../components/DiagramHotspot.astro';
+import DragDropMatch from '../../components/DragDropMatch.astro';
+import FillInBlank from '../../components/FillInBlank.astro';
+import ScenarioQuestion from '../../components/ScenarioQuestion.astro';
+import BuildIt from '../../components/BuildIt.astro';
+import Quiz from '../../components/Quiz.astro';
+
+## Why Cloud Storage Matters
+
+Every application needs somewhere to store data — documents, images, log files, messages, database records, virtual machine disks. In a traditional data center, storage means purchasing physical hard drives, configuring RAID arrays, managing backups, and planning capacity months in advance. When you run out of space, you buy more hardware. When a drive fails, you hope your redundancy strategy was sound.
+
+Azure Storage removes that burden. It provides durable, highly available, and massively scalable cloud storage that you can provision in minutes, scale on demand, and access from anywhere in the world over HTTP or HTTPS. Microsoft manages the physical hardware, handles replication, and guarantees availability through service-level agreements.
+
+For the AZ-900 exam, you need to understand the core Azure Storage services — Blob, Files, Queue, and Table — how storage accounts organize these services, the redundancy options that protect your data, the access tiers that optimize cost, and the migration tools that help you move data to the cloud. Let's walk through each one.
+
+---
+
+## Storage Accounts
+
+<KeyTerm term="Azure Storage Account">A container that groups together all of your Azure Storage services — blobs, files, queues, and tables — under a single namespace. A storage account provides a unique namespace for your data that is accessible from anywhere in the world over HTTP or HTTPS.</KeyTerm>
+
+Think of a storage account as a building that houses different departments (Blob, Files, Queue, Table). Each department operates independently, but they all share the same address and security policies. The storage account defines the settings that apply to all services within it: the redundancy level, the access tier, the network rules, and the encryption configuration.
+
+When you create a storage account, you choose a **globally unique name** that becomes part of the URL used to access your data. For example, if your storage account is named `contosostorageacct`, your blob data would be accessible at `https://contosostorageacct.blob.core.windows.net`.
+
+<Callout type="tip">
+Storage account names have strict rules for the AZ-900 exam: they must be **3 to 24 characters** long, use only **lowercase letters and numbers** (no hyphens, no uppercase, no special characters), and must be **globally unique** across all of Azure. If someone else already has a name, you can't use it.
+</Callout>
+
+### Storage Account Types
+
+Azure offers several storage account types, but the one you need to know for the AZ-900 exam is:
+
+- **Standard general-purpose v2 (GPv2)** — the recommended default for most scenarios. It supports all storage services (Blob, Files, Queue, Table) and all redundancy options. It uses standard hard disk drives (HDDs) for cost-effective storage.
+- **Premium** — uses solid-state drives (SSDs) for low-latency, high-throughput storage. Premium accounts are available for block blobs, file shares, or page blobs, but each premium type supports only its specific service. Premium accounts only support LRS and ZRS redundancy.
+
+---
+
+## Storage Redundancy
+
+<KeyTerm term="Storage Redundancy">The strategy Azure uses to maintain multiple copies of your data so that it remains available and durable even when hardware failures, network outages, or natural disasters occur. Every Azure storage account replicates data automatically — you choose the level of redundancy.</KeyTerm>
+
+Azure Storage always maintains multiple copies of your data. The question is not whether your data is replicated, but how many copies exist and where they are stored. More copies across more locations means higher durability and availability — but also higher cost.
+
+### Primary Region Redundancy
+
+These options keep all copies within the primary region where you created the storage account:
+
+**Locally Redundant Storage (LRS)** replicates your data **three times within a single data center** in the primary region. It protects against drive and rack failures within that data center, but not against a data center-level disaster (fire, flood, power loss). LRS is the lowest-cost option and provides **11 nines (99.999999999%) of durability** over a given year.
+
+**Zone-Redundant Storage (ZRS)** replicates your data across **three availability zones** in the primary region. Each availability zone is a separate physical data center with independent power, cooling, and networking. ZRS protects against a single data center going offline and provides **12 nines of durability**.
+
+### Cross-Region Redundancy
+
+These options add a copy of your data to a secondary region hundreds of miles away:
+
+**Geo-Redundant Storage (GRS)** uses LRS in the primary region (3 copies in one data center), then asynchronously copies your data to a secondary region where it is again stored using LRS. This gives you **six total copies** — three in the primary region's data center and three in the secondary region's data center. GRS provides **16 nines of durability**.
+
+**Geo-Zone-Redundant Storage (GZRS)** uses ZRS in the primary region (3 copies across 3 availability zones), then asynchronously copies to the secondary region where it is stored using LRS. This combines the availability zone protection of ZRS with the geographic protection of GRS.
+
+<KeyTerm term="Read-Access Geo-Redundant Storage (RA-GRS)">A redundancy option that builds on GRS by adding read access to the secondary region copy. With standard GRS, the secondary copy is only used for failover. With RA-GRS, you can read data from the secondary region at any time, even when the primary region is functioning normally.</KeyTerm>
+
+**RA-GRS** and **RA-GZRS** add read access to the secondary region. Without the "RA-" prefix, the secondary region data is only available if Microsoft initiates a failover. With RA-GRS or RA-GZRS, your application can read from the secondary endpoint at any time — useful for serving read traffic from the closest region or for read-only access during a primary region outage.
+
+<Callout type="warning">
+Replication to the secondary region is **asynchronous**. There is always a small delay (the Recovery Point Objective, or RPO) between a write to the primary region and when it appears in the secondary region. Microsoft targets an RPO of under 15 minutes, but does not guarantee a specific value. This means that in a failover, the most recent writes may not yet be available in the secondary region.
+</Callout>
+
+<DeepDive title="Choosing the Right Redundancy Option">
+The right redundancy option depends on your durability requirements, availability needs, and budget:
+
+| Option | Copies | Locations | Read from Secondary? | Best For |
+|---|---|---|---|---|
+| **LRS** | 3 | 1 data center | No | Dev/test, non-critical data, data that can be reconstructed |
+| **ZRS** | 3 | 3 availability zones (1 region) | No | Production workloads needing high availability within a region |
+| **GRS** | 6 | 2 regions (LRS + LRS) | No (failover only) | Critical data needing geographic protection |
+| **GZRS** | 6 | 2 regions (ZRS + LRS) | No (failover only) | Highest durability: zone + geo protection |
+| **RA-GRS** | 6 | 2 regions (LRS + LRS) | Yes | Read-heavy apps wanting secondary region reads |
+| **RA-GZRS** | 6 | 2 regions (ZRS + LRS) | Yes | Maximum availability and durability |
+
+For the AZ-900 exam, remember: LRS = cheapest/least durable (single data center), ZRS = zone-level protection, GRS/GZRS = geographic protection, and the "RA-" prefix means you can read from the secondary region without waiting for a failover.
+</DeepDive>
+
+---
+
+## Blob Storage
+
+<KeyTerm term="Azure Blob Storage">An object storage service optimized for storing massive amounts of unstructured data — data that does not conform to a particular data model or definition, such as text files, images, videos, logs, backups, and binary data. "Blob" stands for Binary Large Object.</KeyTerm>
+
+Blob storage is Azure's most versatile storage service. It is designed for storing any type of unstructured data — anything that doesn't fit neatly into rows and columns. Think of it as an infinitely expandable file cabinet where you can toss in any type of file: photos, videos, documents, log files, database backups, virtual machine disk images, or raw sensor data from IoT devices.
+
+Blob storage organizes data into **containers**, which function like folders. A storage account can have unlimited containers, and each container can hold unlimited blobs. Containers provide a grouping level for security and organization — you can set access policies at the container level.
+
+### Blob Types
+
+Azure Blob Storage supports three types of blobs, each optimized for different scenarios:
+
+- **Block blobs** — store text and binary data, up to about 190.7 TiB. Data is uploaded in blocks that are then committed as a whole blob. Block blobs are the default and most common type, ideal for documents, images, videos, and any file you'd upload and download as a unit.
+- **Append blobs** — optimized for append operations. New data can only be added to the end of the blob, not modified or inserted in the middle. This makes append blobs ideal for logging scenarios where data is continuously written but never modified.
+- **Page blobs** — store random-access files up to 8 TiB. Data is stored in 512-byte pages that can be read and written individually. Page blobs are the foundation for Azure Virtual Machine disks (VHDs) — every Azure VM's OS disk and data disk is backed by page blobs.
+
+<Callout type="info">
+For the AZ-900 exam, remember these blob type associations: **block blobs** for general-purpose file storage, **append blobs** for log files and streaming data, and **page blobs** for VM disks. You don't need to memorize size limits, but knowing the use case for each type is important.
+</Callout>
+
+---
+
+## Azure Files
+
+<KeyTerm term="Azure Files">A fully managed file share service that offers industry-standard SMB (Server Message Block) and NFS (Network File System) file shares accessible from the cloud or on-premises. Azure file shares can be mounted concurrently by cloud or on-premises deployments of Windows, Linux, and macOS.</KeyTerm>
+
+Azure Files brings traditional network file shares to the cloud. If you've ever mapped a network drive at work to access shared documents on a file server, Azure Files provides the same experience — but the file server is managed by Microsoft in the cloud.
+
+The key advantage of Azure Files is **protocol compatibility**. It supports the same SMB and NFS protocols that on-premises file servers use, so existing applications that read from or write to network file shares can switch to Azure Files without code changes. Just change the file share path and your application continues working as before.
+
+Common use cases for Azure Files:
+
+- **Lift-and-shift migrations** — when migrating applications that depend on file shares, Azure Files provides a drop-in replacement without rewriting the application to use Blob storage APIs.
+- **Shared configuration files** — store configuration files in a central Azure file share accessible by multiple VMs or application instances.
+- **Diagnostic data** — centralize log files, crash dumps, and metrics from multiple sources into a shared file location.
+- **Development tools and utilities** — share development tools, scripts, and utilities across team members and build agents.
+
+### Azure File Sync
+
+Azure File Sync extends Azure Files to your on-premises Windows Server, letting you cache frequently accessed files locally while keeping the full data set in the cloud. This turns your Windows Server into a fast local cache of your Azure file share — frequently used files are accessed at local speed, while rarely used files are tiered to the cloud and recalled on demand.
+
+---
+
+## Queue Storage
+
+<KeyTerm term="Azure Queue Storage">A messaging service for storing large numbers of messages that can be accessed from anywhere via authenticated HTTP or HTTPS calls. Individual messages can be up to 64 KiB in size, and a queue can contain millions of messages, up to the total capacity of the storage account.</KeyTerm>
+
+Queue storage provides a simple, reliable messaging mechanism for asynchronous communication between application components. When one part of your application produces work faster than another part can process it, a queue acts as a buffer — the producer adds messages to the queue, and the consumer retrieves and processes them at its own pace.
+
+Think of it as a line at a restaurant. When customers arrive faster than the kitchen can cook, they wait in line (the queue). The kitchen processes orders one at a time, and the line absorbs the burst of arrivals. Without the queue, customers would be turned away during peak times.
+
+Common patterns:
+
+- **Work decoupling** — a web front-end adds a message to the queue for each user request, and a background worker processes them independently. If the worker goes down, messages remain in the queue and are processed when the worker recovers.
+- **Load leveling** — smooth out bursts of incoming traffic by queuing requests during peak times and processing them steadily.
+- **Order processing** — e-commerce applications can queue order confirmations, payment processing, and shipping notifications as independent messages.
+
+---
+
+## Table Storage
+
+<KeyTerm term="Azure Table Storage">A NoSQL key-value store for structured, non-relational data. It stores large amounts of structured data without the complexity of a traditional relational database, using a schema-less design where each entity (row) can have a different set of properties (columns).</KeyTerm>
+
+Table storage is Azure's simple NoSQL data store. Unlike a relational database with a fixed schema (every row must have the same columns), Table storage uses a flexible, schema-less design. Each entity (row) in a table can have completely different properties (columns) from other entities in the same table.
+
+Data is organized using a **partition key** and a **row key**. The partition key groups related entities together for efficient querying, and the row key uniquely identifies each entity within a partition. Together, the partition key and row key form the unique identifier for every entity.
+
+Table storage is ideal for:
+
+- **Web application user data** — user profiles, preferences, and session data
+- **Device telemetry** — IoT sensor readings and device metadata
+- **Address books and contact information** — flexible schemas accommodate varying levels of detail
+- **Any structured data** that does not need complex joins, foreign keys, or stored procedures
+
+<Callout type="info">
+Azure Table Storage is a cost-effective option for structured, non-relational data. For applications that need richer querying, global distribution, or guaranteed throughput, consider **Azure Cosmos DB**, which offers a Table API that is compatible with Table storage code but provides additional capabilities like turnkey global distribution and single-digit-millisecond reads.
+</Callout>
+
+---
+
+<InteractiveDiagram title="Azure Storage Account Architecture" alt="Diagram showing a storage account containing four services — Blob with containers, Files with file shares, Queues with messages, and Tables with entities — along with redundancy and access tier options">
+  <svg viewBox="0 0 620 440" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:system-ui,sans-serif">
+    {/* Background */}
+    <rect x="0" y="0" width="620" height="440" fill="#0f172a" rx="10" />
+    {/* Title */}
+    <text x="310" y="26" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">Azure Storage Account Architecture</text>
+    {/* Storage Account boundary */}
+    <rect x="20" y="40" width="580" height="260" rx="8" fill="#162032" stroke="#3b82f6" strokeWidth="2" />
+    <text x="310" y="62" textAnchor="middle" fill="#60a5fa" fontSize="12" fontWeight="bold">Storage Account: contosostorageacct</text>
+    <text x="310" y="76" textAnchor="middle" fill="#94a3b8" fontSize="8">https://contosostorageacct.*.core.windows.net</text>
+    {/* Blob Storage */}
+    <rect x="35" y="90" width="130" height="120" rx="6" fill="#0f172a" stroke="#f59e0b" strokeWidth="1.5" />
+    <text x="100" y="108" textAnchor="middle" fill="#fbbf24" fontSize="10" fontWeight="bold">Blob Storage</text>
+    <rect x="45" y="116" width="110" height="24" rx="3" fill="#1e293b" stroke="#f59e0b" strokeWidth="0.8" />
+    <text x="100" y="132" textAnchor="middle" fill="#fcd34d" fontSize="8">images (container)</text>
+    <rect x="45" y="146" width="110" height="24" rx="3" fill="#1e293b" stroke="#f59e0b" strokeWidth="0.8" />
+    <text x="100" y="162" textAnchor="middle" fill="#fcd34d" fontSize="8">backups (container)</text>
+    <rect x="45" y="176" width="110" height="24" rx="3" fill="#1e293b" stroke="#f59e0b" strokeWidth="0.8" />
+    <text x="100" y="192" textAnchor="middle" fill="#fcd34d" fontSize="8">logs (container)</text>
+    {/* Azure Files */}
+    <rect x="175" y="90" width="130" height="120" rx="6" fill="#0f172a" stroke="#34d399" strokeWidth="1.5" />
+    <text x="240" y="108" textAnchor="middle" fill="#6ee7b7" fontSize="10" fontWeight="bold">Azure Files</text>
+    <rect x="185" y="116" width="110" height="24" rx="3" fill="#1e293b" stroke="#34d399" strokeWidth="0.8" />
+    <text x="240" y="132" textAnchor="middle" fill="#86efac" fontSize="8">shared-docs (SMB)</text>
+    <rect x="185" y="146" width="110" height="24" rx="3" fill="#1e293b" stroke="#34d399" strokeWidth="0.8" />
+    <text x="240" y="162" textAnchor="middle" fill="#86efac" fontSize="8">config-files (SMB)</text>
+    <rect x="185" y="176" width="110" height="24" rx="3" fill="#1e293b" stroke="#34d399" strokeWidth="0.8" />
+    <text x="240" y="192" textAnchor="middle" fill="#86efac" fontSize="8">linux-data (NFS)</text>
+    {/* Queue Storage */}
+    <rect x="315" y="90" width="130" height="120" rx="6" fill="#0f172a" stroke="#38bdf8" strokeWidth="1.5" />
+    <text x="380" y="108" textAnchor="middle" fill="#7dd3fc" fontSize="10" fontWeight="bold">Queue Storage</text>
+    <rect x="325" y="116" width="110" height="24" rx="3" fill="#1e293b" stroke="#38bdf8" strokeWidth="0.8" />
+    <text x="380" y="132" textAnchor="middle" fill="#bae6fd" fontSize="8">order-processing</text>
+    <rect x="325" y="146" width="110" height="24" rx="3" fill="#1e293b" stroke="#38bdf8" strokeWidth="0.8" />
+    <text x="380" y="162" textAnchor="middle" fill="#bae6fd" fontSize="8">email-notifications</text>
+    <rect x="325" y="176" width="50" height="24" rx="3" fill="#1e293b" stroke="#38bdf8" strokeWidth="0.5" />
+    <text x="350" y="191" textAnchor="middle" fill="#94a3b8" fontSize="7">msg</text>
+    <rect x="380" y="176" width="50" height="24" rx="3" fill="#1e293b" stroke="#38bdf8" strokeWidth="0.5" />
+    <text x="405" y="191" textAnchor="middle" fill="#94a3b8" fontSize="7">msg</text>
+    {/* Table Storage */}
+    <rect x="455" y="90" width="130" height="120" rx="6" fill="#0f172a" stroke="#a78bfa" strokeWidth="1.5" />
+    <text x="520" y="108" textAnchor="middle" fill="#c4b5fd" fontSize="10" fontWeight="bold">Table Storage</text>
+    <rect x="465" y="116" width="110" height="18" rx="2" fill="#1e293b" stroke="#a78bfa" strokeWidth="0.8" />
+    <text x="520" y="129" textAnchor="middle" fill="#ddd6fe" fontSize="7">PK: Users | RK: user01</text>
+    <rect x="465" y="138" width="110" height="18" rx="2" fill="#1e293b" stroke="#a78bfa" strokeWidth="0.8" />
+    <text x="520" y="151" textAnchor="middle" fill="#ddd6fe" fontSize="7">PK: Users | RK: user02</text>
+    <rect x="465" y="160" width="110" height="18" rx="2" fill="#1e293b" stroke="#a78bfa" strokeWidth="0.8" />
+    <text x="520" y="173" textAnchor="middle" fill="#ddd6fe" fontSize="7">PK: Devices | RK: dev01</text>
+    <rect x="465" y="182" width="110" height="18" rx="2" fill="#1e293b" stroke="#a78bfa" strokeWidth="0.8" />
+    <text x="520" y="195" textAnchor="middle" fill="#ddd6fe" fontSize="7">PK: Devices | RK: dev02</text>
+    {/* Redundancy bar */}
+    <rect x="35" y="225" width="555" height="30" rx="4" fill="#0f172a" stroke="#64748b" strokeWidth="1" />
+    <text x="67" y="244" textAnchor="middle" fill="#94a3b8" fontSize="9" fontWeight="bold">Redundancy:</text>
+    <rect x="108" y="231" width="50" height="18" rx="3" fill="#1e3a5f" />
+    <text x="133" y="243" textAnchor="middle" fill="#60a5fa" fontSize="8">LRS</text>
+    <rect x="165" y="231" width="50" height="18" rx="3" fill="#1e3a5f" />
+    <text x="190" y="243" textAnchor="middle" fill="#60a5fa" fontSize="8">ZRS</text>
+    <rect x="222" y="231" width="50" height="18" rx="3" fill="#1e3a5f" />
+    <text x="247" y="243" textAnchor="middle" fill="#60a5fa" fontSize="8">GRS</text>
+    <rect x="279" y="231" width="60" height="18" rx="3" fill="#1e3a5f" />
+    <text x="309" y="243" textAnchor="middle" fill="#60a5fa" fontSize="8">RA-GRS</text>
+    <rect x="346" y="231" width="55" height="18" rx="3" fill="#1e3a5f" />
+    <text x="374" y="243" textAnchor="middle" fill="#60a5fa" fontSize="8">GZRS</text>
+    <rect x="408" y="231" width="68" height="18" rx="3" fill="#1e3a5f" />
+    <text x="442" y="243" textAnchor="middle" fill="#60a5fa" fontSize="8">RA-GZRS</text>
+    {/* Access tiers bar */}
+    <rect x="35" y="260" width="555" height="30" rx="4" fill="#0f172a" stroke="#64748b" strokeWidth="1" />
+    <text x="79" y="279" textAnchor="middle" fill="#94a3b8" fontSize="9" fontWeight="bold">Access Tiers:</text>
+    <rect x="120" y="266" width="60" height="18" rx="3" fill="#7f1d1d" />
+    <text x="150" y="278" textAnchor="middle" fill="#fca5a5" fontSize="8">Hot</text>
+    <rect x="187" y="266" width="60" height="18" rx="3" fill="#1e3a5f" />
+    <text x="217" y="278" textAnchor="middle" fill="#93c5fd" fontSize="8">Cool</text>
+    <rect x="254" y="266" width="60" height="18" rx="3" fill="#0c4a6e" />
+    <text x="284" y="278" textAnchor="middle" fill="#7dd3fc" fontSize="8">Cold</text>
+    <rect x="321" y="266" width="70" height="18" rx="3" fill="#1e1b4b" />
+    <text x="356" y="278" textAnchor="middle" fill="#a5b4fc" fontSize="8">Archive</text>
+    {/* Bottom legend */}
+    <rect x="20" y="310" width="580" height="120" rx="8" fill="#162032" stroke="#1e3a5f" strokeWidth="1.5" />
+    <text x="310" y="332" textAnchor="middle" fill="#60a5fa" fontSize="11" fontWeight="bold">Storage Services at a Glance</text>
+    <circle cx="48" cy="354" r="6" fill="#f59e0b" />
+    <text x="62" y="358" fill="#fbbf24" fontSize="9">Blob — unstructured object storage (images, videos, backups)</text>
+    <circle cx="48" cy="374" r="6" fill="#34d399" />
+    <text x="62" y="378" fill="#6ee7b7" fontSize="9">Files — managed file shares (SMB/NFS), mount as network drives</text>
+    <circle cx="48" cy="394" r="6" fill="#38bdf8" />
+    <text x="62" y="398" fill="#7dd3fc" fontSize="9">Queue — asynchronous messaging between app components</text>
+    <circle cx="48" cy="414" r="6" fill="#a78bfa" />
+    <text x="62" y="418" fill="#c4b5fd" fontSize="9">Table — NoSQL key-value store for structured, non-relational data</text>
+  </svg>
+  <DiagramHotspot x="2%" y="20%" width="23%" height="30%" variant="layer" label="Blob Storage">
+    Blob Storage is Azure's object storage service for unstructured data. Blobs are organized into containers (shown here as images, backups, and logs). The three blob types — block blobs for general files, append blobs for log data, and page blobs for VM disks — cover virtually every unstructured data scenario. Blob Storage supports access tiers (Hot, Cool, Cold, Archive) to optimize costs based on how frequently data is accessed.
+  </DiagramHotspot>
+  <DiagramHotspot x="26%" y="20%" width="23%" height="30%" variant="layer" label="Azure Files">
+    Azure Files provides fully managed file shares that use standard SMB and NFS protocols. Applications and users can mount these shares as network drives, just like a traditional on-premises file server. This makes lift-and-shift migrations simple — no code changes are needed when switching from an on-premises file share to Azure Files.
+  </DiagramHotspot>
+  <DiagramHotspot x="49%" y="20%" width="23%" height="30%" variant="layer" label="Queue Storage">
+    Queue Storage provides asynchronous messaging between application components. Producers add messages to the queue, and consumers retrieve and process them independently. This decouples application tiers, enables load leveling during traffic spikes, and ensures messages are not lost if a processing component temporarily goes down.
+  </DiagramHotspot>
+  <DiagramHotspot x="72%" y="20%" width="23%" height="30%" variant="layer" label="Table Storage">
+    Table Storage is a NoSQL key-value store that uses partition keys and row keys to organize structured, non-relational data. It is schema-less — each entity (row) can have a different set of properties. Table Storage is ideal for user profiles, device telemetry, and other structured data that does not need the complexity of a relational database.
+  </DiagramHotspot>
+</InteractiveDiagram>
+
+---
+
+## Access Tiers
+
+<KeyTerm term="Access Tiers">Storage pricing levels that let you optimize costs based on how frequently your data is accessed. Azure Blob Storage offers four access tiers: Hot, Cool, Cold, and Archive. Each tier balances storage cost against access cost — storing data is cheaper in cooler tiers, but retrieving it is more expensive.</KeyTerm>
+
+Not all data is accessed equally. A company's current month of sales records might be accessed hundreds of times a day, while audit logs from five years ago might never be accessed again unless there is a compliance review. Storing both at the same price tier wastes money.
+
+Azure access tiers let you match storage costs to access patterns:
+
+| Tier | Use Case | Min Retention | Storage Cost | Access Cost |
+|---|---|---|---|---|
+| **Hot** | Frequently accessed data | None | Highest | Lowest |
+| **Cool** | Infrequently accessed data, short-term backup | 30 days | Lower | Higher |
+| **Cold** | Rarely accessed data, long-term backup | 90 days | Lower still | Higher still |
+| **Archive** | Archival data accessed almost never | 180 days | Lowest | Highest |
+
+<KeyTerm term="Archive Tier">The lowest-cost storage tier for data that is rarely accessed and stored for at least 180 days. Data in the Archive tier is stored offline and must be rehydrated (moved to an online tier such as Hot or Cool) before it can be read. Rehydration can take up to 15 hours with standard priority.</KeyTerm>
+
+The **Hot** tier is the default for new storage accounts. You pay more per gigabyte of stored data, but reads and writes are cheap. This is optimal for data that is actively used — web content, current documents, application data.
+
+The **Cool** tier reduces storage costs by about 30-40% compared to Hot, but charges more for each read and write operation. Data should stay in Cool for at least 30 days — deleting or moving it earlier incurs an early deletion charge.
+
+The **Cold** tier further reduces storage costs compared to Cool, with even higher access costs. Data should stay for at least 90 days.
+
+The **Archive** tier offers the lowest storage costs of all — but data is stored **offline**. You cannot read a blob directly from Archive. You must first **rehydrate** it by changing its tier to Hot or Cool, which can take up to 15 hours with standard priority (or within an hour with high priority rehydration). Archive is ideal for regulatory compliance data, long-term backups, and raw data that you want to preserve but rarely need.
+
+<Callout type="tip">
+The access tier can be set at the **account level** (applies to all blobs that don't have an explicit tier) and at the **individual blob level** (overrides the account default). Only Hot and Cool can be set as the default account-level tier. Cold and Archive tiers can only be set at the individual blob level.
+</Callout>
+
+### Lifecycle Management
+
+<KeyTerm term="Lifecycle Management">A feature that lets you define rule-based policies to automatically transition blobs between access tiers or delete them based on age or other conditions. For example, you can create a rule that moves blobs to the Cool tier 30 days after creation and to Archive after 180 days.</KeyTerm>
+
+Rather than manually moving blobs between tiers, lifecycle management policies automate the process. You define rules like:
+
+- Move blobs to Cool 30 days after last modification
+- Move blobs to Archive 180 days after last modification
+- Delete blobs 365 days after creation
+
+This ensures data is always stored at the optimal cost tier without manual intervention.
+
+<DeepDive title="Access Tiers and Cost Optimization in Practice">
+Consider a media company that stores video files in Azure Blob Storage:
+
+1. **Day 0-30 (Hot tier):** A new video is uploaded and frequently accessed by editors and viewers. The Hot tier's low access costs keep read operations cheap despite many downloads.
+
+2. **Day 31-90 (Cool tier):** After a month, the video gets less traffic. A lifecycle policy automatically moves it to Cool, cutting storage costs while accepting slightly higher per-access charges for the reduced number of views.
+
+3. **Day 91-180 (Cold tier):** After three months, the video is rarely viewed. It moves to Cold tier for even lower storage costs. The occasional view costs more per access, but the total cost is far lower because views are so rare.
+
+4. **Day 181+ (Archive tier):** After six months, the video is moved to Archive for long-term retention at minimal storage cost. If a viewer requests it, the company rehydrates the blob to the Hot tier (taking up to 15 hours) before serving it.
+
+This tiered approach can reduce storage costs by 60-80% compared to keeping all data in the Hot tier.
+</DeepDive>
+
+---
+
+## Data Migration Tools
+
+Azure provides several tools for migrating data to the cloud, each designed for different scenarios and data volumes.
+
+### Azure Migrate
+
+<KeyTerm term="Azure Migrate">A centralized hub for discovering, assessing, and migrating on-premises workloads to Azure. It provides tools for assessing servers, databases, web apps, and virtual desktops, generating right-sizing recommendations and cost estimates, and orchestrating the migration itself.</KeyTerm>
+
+Azure Migrate is not just a data migration tool — it is a complete migration platform. It helps you:
+
+- **Discover** what you have on-premises (servers, databases, dependencies)
+- **Assess** readiness and compatibility with Azure services
+- **Estimate** costs for running workloads in Azure
+- **Migrate** servers, databases, and applications with minimal downtime
+
+### Azure Data Box
+
+<KeyTerm term="Azure Data Box">A physical device provided by Microsoft for transferring large amounts of data to Azure offline. Microsoft ships a rugged, tamper-resistant storage device to your location. You copy your data onto it and ship it back to Microsoft, who uploads the data to your Azure storage account.</KeyTerm>
+
+When you have terabytes or petabytes of data to move to Azure, transferring it over the network could take weeks or months — even with a fast connection. Azure Data Box solves this with a physical device. Microsoft ships you a storage appliance (Data Box holds up to 80 TB, Data Box Heavy holds up to 1 PB), you copy your data to it, and ship it back. Microsoft then uploads your data to your storage account.
+
+Data Box is ideal when:
+- Network transfer would take too long (weeks or months)
+- Bandwidth is limited or expensive
+- You need to move a one-time, large volume of data to Azure
+
+### AzCopy
+
+**AzCopy** is a command-line utility for copying data to and from Azure Storage accounts. It supports copying data between storage accounts, uploading files from your local machine to Azure, and downloading data from Azure. AzCopy is optimized for performance with multi-threaded transfers and supports resumable transfers for large files.
+
+### Azure Storage Explorer
+
+**Azure Storage Explorer** is a free, standalone GUI application for managing Azure Storage data from your desktop. It provides a visual interface for browsing, uploading, downloading, and managing blobs, files, queues, and tables across multiple storage accounts and subscriptions. Think of it as a graphical file manager for Azure Storage.
+
+<Callout type="info">
+For the AZ-900 exam, remember these migration tool pairings: **Azure Migrate** is for discovering, assessing, and migrating workloads (servers, databases, apps). **Azure Data Box** is for large-scale offline data transfer using a physical device. **AzCopy** is a command-line tool for copying storage data. **Storage Explorer** is a GUI tool for browsing and managing storage.
+</Callout>
+
+---
+
+## Practice Activities
+
+<DragDropMatch
+  title="Match Each Azure Storage Concept to Its Description"
+  categories={["Blob Storage", "Azure Files", "Queue Storage", "Table Storage", "LRS", "RA-GRS"]}
+  items={[
+    { text: "Object storage for unstructured data like images, videos, and backups", category: "Blob Storage" },
+    { text: "Managed file shares accessible via SMB and NFS protocols", category: "Azure Files" },
+    { text: "Asynchronous messaging service for decoupling application components", category: "Queue Storage" },
+    { text: "NoSQL key-value store using partition keys and row keys", category: "Table Storage" },
+    { text: "Three copies of data within a single data center", category: "LRS" },
+    { text: "Six copies across two regions with read access to the secondary", category: "RA-GRS" },
+    { text: "Supports block, append, and page blob types", category: "Blob Storage" },
+    { text: "Can be mounted as a network drive by Windows, Linux, and macOS", category: "Azure Files" },
+    { text: "Messages are up to 64 KiB in size and processed by consumers independently", category: "Queue Storage" },
+    { text: "Schema-less design where each entity can have different properties", category: "Table Storage" },
+  ]}
+/>
+
+<FillInBlank
+  title="Azure Storage — Type Your Answer"
+  mode="type"
+  items={[
+    { text: "Storage account names must be between 3 and ___ characters long.", answer: "24" },
+    { text: "LRS maintains ___ copies of your data within a single data center.", answer: "3" },
+    { text: "GRS provides a total of ___ copies of your data across two regions.", answer: "6" },
+    { text: "The Archive tier requires data to be ___ before it can be read.", answer: "rehydrated" },
+    { text: "The minimum retention period for the Cool access tier is ___ days.", answer: "30" },
+  ]}
+/>
+
+<FillInBlank
+  title="Azure Storage — Select Your Answer"
+  mode="select"
+  items={[
+    { text: "___ blobs are optimized for append operations and are ideal for logging scenarios.", answer: "Append" },
+    { text: "Azure ___ is a physical device for transferring large amounts of data to Azure offline.", answer: "Data Box" },
+    { text: "___ is a command-line utility for copying data to and from Azure Storage accounts.", answer: "AzCopy" },
+    { text: "Azure Files supports the ___ protocol, allowing file shares to be mounted as network drives on Windows.", answer: "SMB" },
+  ]}
+/>
+
+<ScenarioQuestion
+  title="Choosing a Storage Redundancy Option"
+  scenario="A hospital stores patient medical records in Azure Blob Storage. Regulations require that the data must survive even if an entire Azure region goes offline, and the hospital's electronic health records application needs to read data at all times, even during a regional outage. The hospital wants the highest level of protection for this critical data. Which redundancy option should they choose?"
+  options={[
+    { text: "Locally Redundant Storage (LRS)", feedback: "Incorrect. LRS stores three copies within a single data center. If the data center or the entire region goes offline, all copies could be lost. LRS does not provide geographic redundancy or read access from a secondary region." },
+    { text: "Zone-Redundant Storage (ZRS)", feedback: "Incorrect. ZRS protects against a single data center failure by spreading copies across three availability zones, but all zones are within a single region. A region-wide outage would make the data unavailable." },
+    { text: "Geo-Redundant Storage (GRS)", feedback: "Close, but not quite. GRS replicates data to a secondary region, protecting against a region-wide outage. However, the secondary copy is only accessible during a Microsoft-initiated failover — the application cannot read from the secondary region during normal operations or before failover completes." },
+    { text: "Read-Access Geo-Redundant Storage (RA-GRS) or RA-GZRS", feedback: "Correct. RA-GRS (or RA-GZRS for even higher durability) replicates data to a secondary region and provides read access to the secondary copy at all times. The hospital's application can read patient records from the secondary region endpoint even if the primary region is experiencing an outage, ensuring continuous access to critical medical data.", correct: true },
+  ]}
+/>
+
+<BuildIt
+  title="Design a Tiered Storage Strategy"
+  instruction="A media company stores video files in Azure Blob Storage. New videos are accessed frequently, then interest declines over time. The company wants to minimize storage costs while keeping recent content immediately available. Arrange the lifecycle stages from most recent to oldest."
+  steps={[
+    { label: "Hot Tier (Days 0-30)", description: "Store newly uploaded videos in the Hot tier. Access costs are lowest, so the many downloads from editors and viewers are inexpensive. Storage costs are higher per GB, but this is the right trade-off for actively used content." },
+    { label: "Cool Tier (Days 31-90)", description: "After 30 days, a lifecycle management rule automatically moves videos to the Cool tier. Storage costs drop significantly, and the reduced number of accesses means the higher per-access cost has minimal impact on the total bill." },
+    { label: "Cold Tier (Days 91-180)", description: "After 90 days, videos move to the Cold tier for further storage savings. These videos are rarely viewed, so the higher access cost is justified by the even lower storage cost." },
+    { label: "Archive Tier (Day 181+)", description: "After 180 days, videos move to Archive for long-term retention at the lowest possible storage cost. The videos are stored offline — if a viewer requests one, it must be rehydrated (up to 15 hours) before it can be served." },
+  ]}
+/>
+
+---
+
+<KeyTakeaways>
+- **Azure Storage Account** is a unique namespace that groups Blob, Files, Queue, and Table services. Account names must be 3-24 characters, lowercase letters and numbers only, and globally unique.
+- **Storage redundancy** ranges from LRS (3 copies, 1 data center) to RA-GZRS (6 copies across 2 regions with secondary read access). More redundancy means higher durability and cost.
+- **Blob Storage** stores unstructured data (images, videos, backups) in containers. Three blob types: **block** (general files), **append** (logs), **page** (VM disks).
+- **Azure Files** provides managed SMB/NFS file shares that can be mounted as network drives — ideal for lift-and-shift migrations.
+- **Queue Storage** enables asynchronous messaging between application components for decoupling and load leveling.
+- **Table Storage** is a NoSQL key-value store for structured, non-relational data using partition keys and row keys.
+- **Access tiers** optimize cost: Hot (frequent access), Cool (30-day min, lower storage cost), Cold (90-day min), Archive (180-day min, offline, requires rehydration). Lifecycle management policies automate tier transitions.
+- **Migration tools**: Azure Migrate (discover, assess, migrate workloads), Azure Data Box (physical device for large offline transfers), AzCopy (CLI data copy tool), Storage Explorer (GUI management tool).
+</KeyTakeaways>
+
+---
+
+<Quiz
+  questions={[
+    {
+      type: "multiple-choice",
+      question: "What is the primary purpose of an Azure Storage Account?",
+      options: [
+        "To provide compute resources for running applications",
+        "To group Azure Storage services (Blob, Files, Queue, Table) under a single namespace",
+        "To manage virtual machine disks exclusively",
+        "To provide DNS name resolution for storage resources"
+      ],
+      correct: 1,
+      explanation: "An Azure Storage Account is a container that groups all Azure Storage services — blobs, files, queues, and tables — under a single, globally unique namespace. It defines shared settings like redundancy, access tier, network rules, and encryption for all services within it."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following is a valid Azure Storage account name?",
+      options: [
+        "My-Storage-Account",
+        "contoso_storage_2024",
+        "contosostorage2024",
+        "CONTOSOSTORAGE"
+      ],
+      correct: 2,
+      explanation: "Storage account names must be 3-24 characters long and contain only lowercase letters and numbers. 'My-Storage-Account' contains hyphens and uppercase letters. 'contoso_storage_2024' contains underscores. 'CONTOSOSTORAGE' uses uppercase letters. Only 'contosostorage2024' follows all the rules: lowercase letters and numbers, no special characters, within the 3-24 character limit."
+    },
+    {
+      type: "multiple-choice",
+      question: "How many copies of data does Locally Redundant Storage (LRS) maintain?",
+      options: [
+        "1 copy in a single data center",
+        "3 copies within a single data center",
+        "3 copies across 3 availability zones",
+        "6 copies across 2 regions"
+      ],
+      correct: 1,
+      explanation: "LRS maintains three copies of your data within a single data center in the primary region. It protects against drive and rack failures within that data center but does not protect against a data center-level disaster. LRS is the lowest-cost redundancy option."
+    },
+    {
+      type: "multiple-choice",
+      question: "What is the key difference between GRS and RA-GRS?",
+      options: [
+        "GRS stores data in 2 regions; RA-GRS stores data in 3 regions",
+        "RA-GRS allows read access to the secondary region at any time; GRS only allows access during failover",
+        "GRS uses LRS in both regions; RA-GRS uses ZRS in the primary region",
+        "RA-GRS encrypts data; GRS does not"
+      ],
+      correct: 1,
+      explanation: "Both GRS and RA-GRS replicate data to a secondary region (6 copies total). The difference is that with standard GRS, the secondary copy is only accessible if Microsoft initiates a failover. With RA-GRS, your application can read data from the secondary region endpoint at any time, even during normal operations."
+    },
+    {
+      type: "true-false",
+      question: "Zone-Redundant Storage (ZRS) replicates data across three availability zones in a single region.",
+      correct: true,
+      explanation: "ZRS replicates your data across three availability zones within the primary region. Each availability zone is a separate physical data center with independent power, cooling, and networking. This protects against a single data center failure while keeping all copies within the same region."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which blob type is used as the foundation for Azure Virtual Machine disks?",
+      options: [
+        "Block blobs",
+        "Append blobs",
+        "Page blobs",
+        "Archive blobs"
+      ],
+      correct: 2,
+      explanation: "Page blobs store random-access files up to 8 TiB using 512-byte pages that can be read and written individually. Azure VM OS disks and data disks (VHDs) are backed by page blobs because VM disk operations require random read/write access to specific disk locations."
+    },
+    {
+      type: "multiple-choice",
+      question: "A developer needs to store application log files that are continuously appended but never modified. Which blob type is most appropriate?",
+      options: [
+        "Block blobs",
+        "Append blobs",
+        "Page blobs",
+        "Table entities"
+      ],
+      correct: 1,
+      explanation: "Append blobs are optimized specifically for append operations — data can only be added to the end of the blob, not modified or inserted in the middle. This makes them ideal for logging scenarios where data is continuously written in a sequential, append-only pattern."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Azure Storage service provides managed file shares that can be mounted as network drives using SMB or NFS protocols?",
+      options: [
+        "Azure Blob Storage",
+        "Azure Queue Storage",
+        "Azure Files",
+        "Azure Table Storage"
+      ],
+      correct: 2,
+      explanation: "Azure Files provides fully managed file shares that use industry-standard SMB and NFS protocols. These file shares can be mounted as network drives by Windows, Linux, and macOS — both in the cloud and on-premises. This makes Azure Files ideal for lift-and-shift migrations from on-premises file servers."
+    },
+    {
+      type: "true-false",
+      question: "Azure Queue Storage messages can be up to 1 MB in size.",
+      correct: false,
+      explanation: "Individual Azure Queue Storage messages can be up to 64 KiB (kilobytes) in size, not 1 MB. If you need to handle larger payloads, you can store the data in Blob Storage and put a reference (URL or blob name) in the queue message instead."
+    },
+    {
+      type: "multiple-choice",
+      question: "What are the two key components used to uniquely identify an entity in Azure Table Storage?",
+      options: [
+        "Table name and column name",
+        "Primary key and foreign key",
+        "Partition key and row key",
+        "Blob name and container name"
+      ],
+      correct: 2,
+      explanation: "Azure Table Storage uses a partition key and a row key to uniquely identify each entity (row). The partition key groups related entities together for efficient querying, and the row key uniquely identifies each entity within a partition. Together, they form the unique identifier for every entity in a table."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which access tier has the lowest storage cost but requires data to be rehydrated before it can be read?",
+      options: [
+        "Hot",
+        "Cool",
+        "Cold",
+        "Archive"
+      ],
+      correct: 3,
+      explanation: "The Archive tier has the lowest storage cost of all tiers, but data is stored offline. To read a blob in the Archive tier, you must first rehydrate it by changing its tier to Hot or Cool. Rehydration with standard priority can take up to 15 hours. Archive is ideal for data that is rarely accessed and stored for at least 180 days."
+    },
+    {
+      type: "multiple-choice",
+      question: "What is the minimum retention period for data stored in the Cool access tier?",
+      options: [
+        "7 days",
+        "30 days",
+        "90 days",
+        "180 days"
+      ],
+      correct: 1,
+      explanation: "The Cool tier has a minimum retention period of 30 days. If you delete or move data to a different tier before 30 days, you incur an early deletion charge. The Cold tier requires 90 days, and the Archive tier requires 180 days. The Hot tier has no minimum retention period."
+    },
+    {
+      type: "true-false",
+      question: "The Archive access tier can be set as the default account-level access tier for a storage account.",
+      correct: false,
+      explanation: "Only Hot and Cool can be set as the default account-level access tier. The Cold and Archive tiers can only be set at the individual blob level. When you set a blob's tier to Cold or Archive, it overrides the account-level default for that specific blob."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Azure migration tool is a physical device used for large-scale offline data transfer to Azure?",
+      options: [
+        "Azure Migrate",
+        "AzCopy",
+        "Azure Data Box",
+        "Azure Storage Explorer"
+      ],
+      correct: 2,
+      explanation: "Azure Data Box is a physical device provided by Microsoft for transferring large amounts of data to Azure offline. Microsoft ships a rugged storage appliance (up to 80 TB for Data Box, up to 1 PB for Data Box Heavy) to your location. You copy data onto it and ship it back for upload to your storage account."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company needs to discover and assess its on-premises servers, databases, and applications before migrating to Azure. Which tool should they use?",
+      options: [
+        "Azure Data Box",
+        "AzCopy",
+        "Azure Migrate",
+        "Azure Storage Explorer"
+      ],
+      correct: 2,
+      explanation: "Azure Migrate is a centralized hub for discovering, assessing, and migrating on-premises workloads to Azure. It can scan your on-premises environment, identify servers and their dependencies, assess readiness and compatibility with Azure services, generate cost estimates, and orchestrate the migration. Data Box, AzCopy, and Storage Explorer are data transfer tools, not assessment tools."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which tool provides a graphical user interface for browsing, uploading, downloading, and managing Azure Storage data from your desktop?",
+      options: [
+        "AzCopy",
+        "Azure Storage Explorer",
+        "Azure Data Box",
+        "Azure Migrate"
+      ],
+      correct: 1,
+      explanation: "Azure Storage Explorer is a free, standalone GUI application for managing Azure Storage data. It provides a visual file-manager-like interface for working with blobs, files, queues, and tables across multiple storage accounts. AzCopy is a command-line tool (no GUI), Data Box is a physical device, and Azure Migrate is a migration assessment platform."
+    },
+    {
+      type: "true-false",
+      question: "AzCopy is a GUI application for transferring data to and from Azure Storage.",
+      correct: false,
+      explanation: "AzCopy is a command-line utility, not a GUI application. It is designed for high-performance data transfers to and from Azure Storage, supporting multi-threaded uploads and resumable transfers. For a graphical interface, you would use Azure Storage Explorer."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company stores surveillance footage in Azure Blob Storage. Videos are reviewed frequently during the first week, occasionally for the next two months, and then kept for compliance for five years but almost never accessed. Which lifecycle management strategy is most cost-effective?",
+      options: [
+        "Keep all data in the Hot tier for fastest access at all times",
+        "Keep all data in the Archive tier to minimize storage costs",
+        "Hot for 7 days, Cool for 60 days, then Archive for long-term retention",
+        "Cool for the first 90 days, then delete all data"
+      ],
+      correct: 2,
+      explanation: "A lifecycle management policy that moves data through tiers based on age is the most cost-effective approach. Hot tier for the first week handles frequent reviews at low access cost. Cool tier for the next two months handles occasional access at reduced storage cost. Archive tier for long-term compliance retention minimizes storage costs for data that is almost never accessed."
+    },
+    {
+      type: "multiple-choice",
+      question: "GZRS combines which two redundancy strategies?",
+      options: [
+        "LRS in the primary region and LRS in the secondary region",
+        "ZRS in the primary region and ZRS in the secondary region",
+        "ZRS in the primary region and LRS in the secondary region",
+        "LRS in the primary region and ZRS in the secondary region"
+      ],
+      correct: 2,
+      explanation: "Geo-Zone-Redundant Storage (GZRS) uses ZRS in the primary region (3 copies across 3 availability zones) and LRS in the secondary region (3 copies within a single data center). This provides both availability zone protection in the primary region and geographic protection through the secondary region copy."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Azure Storage service would be most appropriate for a web application that needs to process user-submitted photo uploads asynchronously using a background worker?",
+      options: [
+        "Store photos in Blob Storage and use Queue Storage to notify the worker",
+        "Store photos and processing status in Table Storage",
+        "Store photos directly in Queue Storage messages",
+        "Store photos in Azure Files and poll the file share for changes"
+      ],
+      correct: 0,
+      explanation: "The best approach is to store the photos in Blob Storage (designed for large unstructured files like images) and place a message in Queue Storage to notify the background worker that a new photo needs processing. The queue decouples the web front-end from the worker, enabling asynchronous processing. Queue messages are limited to 64 KiB, too small for photos. Table Storage is for structured data, not file storage."
+    }
+  ]}
+/>
