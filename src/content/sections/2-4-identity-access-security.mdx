@@ -1,0 +1,652 @@
+---
+title: "Identity, Access, and Security"
+domain: 2
+section: "2.4"
+order: 11
+description: "Understand Azure identity and security services — Microsoft Entra ID, authentication vs authorization, Conditional Access, MFA, RBAC, Zero Trust model, Defense in Depth, and Microsoft Defender for Cloud."
+tags: ["entra-id", "authentication", "authorization", "conditional-access", "mfa", "rbac", "zero-trust", "defense-in-depth", "defender-for-cloud"]
+lastVerified: "2026-05-26"
+microsoftLearnUrl: "https://learn.microsoft.com/en-us/training/modules/describe-azure-identity-access-security/"
+---
+
+import KeyTakeaways from '../../components/KeyTakeaways.astro';
+import KeyTerm from '../../components/KeyTerm.astro';
+import Callout from '../../components/Callout.astro';
+import DeepDive from '../../components/DeepDive.astro';
+import InteractiveDiagram from '../../components/InteractiveDiagram.astro';
+import DiagramHotspot from '../../components/DiagramHotspot.astro';
+import DragDropMatch from '../../components/DragDropMatch.astro';
+import FillInBlank from '../../components/FillInBlank.astro';
+import ScenarioQuestion from '../../components/ScenarioQuestion.astro';
+import BuildIt from '../../components/BuildIt.astro';
+import Quiz from '../../components/Quiz.astro';
+
+## Why Identity Is the New Security Perimeter
+
+In the old model of corporate IT, security meant building a strong perimeter around your network — firewalls at the edge, VPNs for remote access, and the assumption that anything inside the network could be trusted. Once someone got past the perimeter, they were in. That model worked reasonably well when everyone worked in the office and applications lived in on-premises data centers.
+
+Cloud computing and remote work blew that model apart. Users now access resources from home, coffee shops, airports, and personal devices. Applications live in Azure, on-premises, and with third-party SaaS providers. The network perimeter is no longer a reliable security boundary.
+
+Today, **identity is the new perimeter**. Every request to access a resource — whether it is an employee logging into an internal app, a partner accessing shared documents, or a service calling an API — must be verified based on who or what is making the request, from where, and under what conditions. The cloud era demands a fundamentally different approach to security, one built around identity verification, least-privilege access, and the assumption that threats are already inside your environment.
+
+For the AZ-900 exam, you need to understand Microsoft's core identity and security services: Microsoft Entra ID, authentication and authorization methods, Conditional Access, RBAC, the Zero Trust model, Defense in Depth, and Microsoft Defender for Cloud. Let's work through each one.
+
+---
+
+## Microsoft Entra ID
+
+<KeyTerm term="Microsoft Entra ID">Microsoft's cloud-based identity and access management (IAM) service — the successor to Azure Active Directory (Azure AD). It manages identities for users, applications, and devices, and controls their access to internal and external resources. Every Azure subscription is associated with a Microsoft Entra ID tenant.</KeyTerm>
+
+Microsoft Entra ID (renamed from Azure Active Directory in 2023) is the foundation of identity management in Microsoft's cloud ecosystem. Think of it as the digital equivalent of a company's HR and security badge office combined. It knows who every employee is (identity), what they're allowed to do (access), and it issues the credentials they use to prove their identity (authentication).
+
+When your organization adopts Microsoft 365, Azure, or any Microsoft cloud service, you automatically get a Microsoft Entra ID tenant — a dedicated, isolated instance of the identity service for your organization.
+
+<Callout type="info">
+Microsoft Entra ID is **not** the same as on-premises Active Directory Domain Services (AD DS). AD DS is a traditional, on-premises directory service that authenticates users on a corporate network using the Kerberos and LDAP protocols. Microsoft Entra ID is a cloud-based identity service that authenticates over the internet using modern protocols like OAuth 2.0 and OpenID Connect. They can coexist and sync with each other using Microsoft Entra Connect, but they are distinct technologies.
+</Callout>
+
+### Tenants, Users, and Groups
+
+<KeyTerm term="Entra ID Tenant">A dedicated, trusted instance of Microsoft Entra ID that an organization receives when it signs up for a Microsoft cloud service. The tenant contains the organization's users, groups, applications, and devices. Each tenant has a unique ID and a default domain (yourorg.onmicrosoft.com).</KeyTerm>
+
+A **tenant** is the top-level organizational container — your company's dedicated slice of Entra ID. Within the tenant, you create:
+
+- **Users** — individual identity accounts (employees, service accounts, guest users)
+- **Groups** — collections of users (used to assign permissions to many people at once)
+- **Applications** — registered apps that use Entra ID for sign-in and authorization
+- **Devices** — computers and mobile devices registered or joined to the tenant
+
+### External Identities
+
+Microsoft Entra ID supports two external identity scenarios you should know for the exam:
+
+**Business-to-Business (B2B):** Allows you to invite partner organizations' users to access your resources. The partners authenticate with their own organization's identity provider, and Entra ID grants them controlled access as **guest users** in your tenant. For example, a law firm can invite a client's IT team to review documents in SharePoint without creating accounts for them in the law firm's tenant.
+
+**Business-to-Consumer (B2C):** Using Azure AD B2C (now part of Microsoft Entra External ID), you can build consumer-facing applications where customers sign in with social identities (Google, Facebook, Apple) or create local accounts. B2C handles hundreds of millions of authentications per day for apps like retail portals and streaming services.
+
+<Callout type="tip">
+For the AZ-900 exam, remember the B2B vs B2C distinction: **B2B** is for partner or business users accessing your internal resources (they sign in with their own work accounts). **B2C** is for consumer-facing apps where customers sign in with social accounts or local credentials.
+</Callout>
+
+---
+
+## Authentication vs Authorization
+
+These two terms are closely related but describe fundamentally different operations. Getting them confused is a common mistake — on the exam and in practice.
+
+<KeyTerm term="Authentication">The process of verifying that someone is who they claim to be. Authentication answers the question "Who are you?" and results in a verified identity. It is often called AuthN.</KeyTerm>
+
+<KeyTerm term="Authorization">The process of determining what an authenticated identity is allowed to do. Authorization answers the question "What are you allowed to do?" and results in a set of permissions. It is often called AuthZ.</KeyTerm>
+
+A useful analogy: imagine arriving at an office building.
+
+- **Authentication** is showing your ID badge at the door. The security guard checks your photo, confirms you are who you say you are, and verifies you're a current employee. You've been **authenticated**.
+- **Authorization** is the access control list that determines which floors and rooms your badge opens. Even though you're authenticated, you might not be authorized to enter the server room, the CEO's office, or the R&D lab. **Authorization** determines what you can do.
+
+Here is a side-by-side comparison:
+
+| Aspect | Authentication (AuthN) | Authorization (AuthZ) |
+|---|---|---|
+| **Question answered** | Who are you? | What can you do? |
+| **Process** | Verify identity via credentials | Determine permissions for the identity |
+| **Happens** | First (before authorization) | Second (after authentication) |
+| **Example** | Entering username and password | Allowed to read but not edit a file |
+| **Azure service** | Microsoft Entra ID | RBAC, Conditional Access |
+| **Result** | Verified identity (token) | Access granted or denied |
+
+---
+
+## Authentication Methods
+
+Microsoft Entra ID supports a spectrum of authentication methods, from traditional passwords to modern passwordless options.
+
+### Passwords
+
+Passwords are the oldest and most familiar authentication method. A user types a username and password, and Entra ID verifies the password against its records. Passwords alone are weak — they can be stolen, guessed, phished, or leaked in data breaches. For this reason, Microsoft recommends supplementing or replacing passwords with stronger methods.
+
+### Multi-Factor Authentication (MFA)
+
+<KeyTerm term="Multi-Factor Authentication (MFA)">A security process that requires users to provide two or more verification factors from different categories to prove their identity. The three factor categories are: something you know (password, PIN), something you have (phone, security key), and something you are (fingerprint, face scan).</KeyTerm>
+
+MFA dramatically reduces the risk of compromised accounts. Even if an attacker steals a user's password, they still cannot sign in without also possessing the user's phone or fingerprint. Microsoft research shows that MFA blocks over 99.9% of account compromise attacks.
+
+The three factor categories:
+- **Something you know** — password, PIN, security question answer
+- **Something you have** — authenticator app on your phone, SMS code, hardware security key
+- **Something you are** — fingerprint scan, facial recognition, retina scan
+
+MFA requires at least two of these three categories. A password + authenticator app push notification is the most common combination in enterprise environments.
+
+### Passwordless Authentication
+
+<KeyTerm term="Passwordless Authentication">Authentication methods that eliminate passwords entirely, replacing them with stronger alternatives that are more convenient and more secure. Microsoft Entra ID supports three passwordless methods: Windows Hello for Business, FIDO2 security keys, and the Microsoft Authenticator app.</KeyTerm>
+
+Passwordless authentication is the future of secure sign-in. Passwords are inherently weak — they can be forgotten, stolen, or reused across services. Passwordless methods use cryptography and biometrics that cannot be phished or stolen as easily:
+
+- **Windows Hello for Business** — uses biometrics (fingerprint, facial recognition) or a PIN tied to a specific device. The PIN never leaves the device, and biometric data is stored locally, never sent to Entra ID.
+- **FIDO2 security keys** — physical USB, NFC, or Bluetooth security keys (like YubiKey). Users plug in the key and optionally provide a touch or PIN. The key uses public-key cryptography that is resistant to phishing.
+- **Microsoft Authenticator app** — turns a smartphone into a passwordless credential. Users sign in with their username, then approve a number-matching prompt in the Authenticator app.
+
+### Single Sign-On (SSO)
+
+<KeyTerm term="Single Sign-On (SSO)">An authentication capability that allows users to sign in once and access multiple applications and services without re-entering credentials. Microsoft Entra ID provides SSO across Microsoft 365, Azure, and thousands of integrated third-party SaaS applications.</KeyTerm>
+
+SSO reduces authentication fatigue and improves security. Instead of users maintaining separate passwords for dozens of applications (and inevitably reusing or writing them down), they sign in once to Entra ID and are automatically authenticated to all connected applications. When a user leaves an organization, revoking their Entra ID account immediately cuts off access to all integrated applications.
+
+<DeepDive title="How SSO Works with Entra ID">
+When a user signs in to Entra ID, the service issues a security token — a digitally signed document containing claims about the user's identity and permissions. When the user tries to access an integrated application (say, Salesforce or ServiceNow), the application redirects to Entra ID, which checks whether the user already has a valid session. If they do, Entra ID issues a new token for that application without prompting for credentials again.
+
+This process uses open standards like **OpenID Connect** (for identity) and **OAuth 2.0** (for authorization). These standards are what makes SSO work across Microsoft applications, third-party SaaS apps, and custom-built applications — they all speak the same token language.
+
+For enterprise applications that use older protocols, Microsoft Entra ID can act as a bridge through the Application Proxy service, enabling SSO to on-premises web apps as well.
+</DeepDive>
+
+---
+
+## Conditional Access
+
+<KeyTerm term="Conditional Access">A Microsoft Entra ID feature that evaluates signals about a sign-in attempt (user identity, location, device, application, and risk level) to enforce access policies. Policies can allow access, block access, or require additional verification (like MFA) based on the evaluated signals.</KeyTerm>
+
+Conditional Access is the smart traffic cop of identity security. Rather than applying a blanket "always require MFA" or "always trust users inside the network," Conditional Access evaluates the context of each sign-in and applies policies accordingly.
+
+Think of it like a bank's automated fraud detection. When you swipe your credit card at your usual grocery store, the transaction goes through instantly. When you swipe in a foreign country five minutes after using your card at home, the system flags it and may ask for additional verification or block the transaction. The decision is based on context — who, where, when, and what.
+
+### How Conditional Access Works
+
+Every sign-in attempt flows through Conditional Access as a series of **signals** evaluated against **policies** to produce an **outcome**:
+
+**Signals (If conditions):**
+- **User or group** — is this a VIP executive, a guest user, or a standard employee?
+- **Location** — is the sign-in from a trusted corporate network or an unexpected country?
+- **Device** — is the device managed (joined to Entra ID) or unmanaged (personal device)?
+- **Application** — which application is being accessed (email vs financial system)?
+- **Risk level** — is Entra ID's AI detecting signs of a compromised account or unusual behavior?
+
+**Outcomes (Then controls):**
+- **Allow access** — grant access without additional requirements
+- **Block access** — deny the request entirely
+- **Require MFA** — grant access only if the user completes a second factor
+- **Require compliant device** — grant access only from managed, policy-compliant devices
+- **Require password change** — grant access after the user resets their password
+
+Example policy: "If a user in the Finance group signs in to the payroll application from outside the corporate network, require MFA." This means Finance employees on-site can sign in normally, but signing in remotely requires an extra verification step.
+
+<Callout type="warning">
+Conditional Access requires a **Microsoft Entra ID P1 or P2 license** (included in Microsoft 365 E3/E5 and available as an add-on). It is not available with the free Entra ID tier included with every Azure subscription. For the AZ-900 exam, knowing the licensing requirement is a common exam topic.
+</Callout>
+
+---
+
+## Role-Based Access Control (RBAC)
+
+<KeyTerm term="Role-Based Access Control (RBAC)">An authorization system built into Azure that controls who has access to Azure resources, what they can do with those resources, and what areas they have access to. RBAC assigns roles to users, groups, or service principals at a specific scope, and permissions flow down the scope hierarchy.</KeyTerm>
+
+RBAC answers the authorization question: once a user is authenticated, what Azure resources can they see and interact with? Rather than assigning permissions to individual users one at a time, RBAC uses **roles** — named collections of permissions — that are assigned to **principals** (users, groups, or service identities) at a specific **scope**.
+
+### The Three Core Built-In Roles
+
+Azure has over 100 built-in roles for specific services, but three foundational roles apply to all Azure resources:
+
+| Role | What They Can Do |
+|---|---|
+| **Owner** | Full access to all resources, **plus** the ability to assign roles to others. The most powerful role — assign it sparingly. |
+| **Contributor** | Full access to create and manage all resources, but **cannot** assign roles or grant access to others. |
+| **Reader** | View-only access. Can see all resources but cannot create, modify, or delete anything. |
+
+Beyond these three, there are service-specific roles like **Virtual Machine Contributor** (manage VMs but not networking), **Storage Blob Data Contributor** (read/write blob data but not manage storage accounts), and **Key Vault Secrets User** (read secrets but not manage the vault).
+
+### Scope Hierarchy
+
+RBAC assignments are applied at a **scope** — a boundary that defines what resources the role covers. Azure has four scope levels, arranged in a hierarchy:
+
+1. **Management Group** — a container for multiple subscriptions
+2. **Subscription** — a billing and resource container
+3. **Resource Group** — a logical grouping of related resources
+4. **Resource** — an individual Azure service (a specific VM, storage account, etc.)
+
+**Permissions inherit downward.** If you assign the Reader role to a user at the subscription level, they can read all resource groups and resources within that subscription. If you assign the Contributor role at the resource group level, they can manage everything within that resource group but not other resource groups in the same subscription.
+
+<Callout type="tip">
+The **principle of least privilege** is RBAC's guiding rule: grant users the minimum permissions they need to do their job, and no more. Instead of making everyone an Owner for convenience, assign the narrowest role at the narrowest scope that allows the user to complete their work. This limits the blast radius if an account is compromised.
+</Callout>
+
+<DeepDive title="RBAC in Practice: A Real-World Example">
+Consider a three-person cloud team at a company:
+
+- **Alice (Cloud Admin)** — needs to manage everything and assign roles to new team members. Assign her the **Owner** role at the **subscription** level. She can manage all resources and grant access to others.
+
+- **Bob (DevOps Engineer)** — needs to create and manage VMs, storage, and networking in the production resource group, but should not be able to manage resources in the finance resource group or assign roles. Assign him **Contributor** at the **production resource group** scope.
+
+- **Carol (Junior Developer)** — is learning Azure and needs to look at what resources exist, but should not be able to change anything. Assign her **Reader** at the **subscription** level so she can see all resources without modifying them.
+
+If Carol later needs to deploy to the dev resource group, you add a **Contributor** role assignment for her at the **dev resource group** scope. Her Reader access to the subscription remains, and she now also has Contributor access to that specific resource group — RBAC assignments are additive.
+</DeepDive>
+
+---
+
+## Zero Trust Model
+
+<KeyTerm term="Zero Trust">A security model based on the principle "never trust, always verify." Rather than assuming everything inside a corporate network is safe, Zero Trust requires explicit verification of every request regardless of where it originates. It has three guiding principles: verify explicitly, use least privilege access, and assume breach.</KeyTerm>
+
+Zero Trust is a philosophy, not a single product. It represents a fundamental shift from the old perimeter-based security model ("trust everyone inside the network") to a model that treats every request as potentially hostile until proven otherwise.
+
+The three principles of Zero Trust:
+
+### 1. Verify Explicitly
+
+Always authenticate and authorize based on all available data points — user identity, location, device health, service or workload, data classification, and anomalies. Never grant access based solely on network location. A request from inside the corporate network is not automatically trustworthy.
+
+### 2. Use Least Privilege Access
+
+Limit user access with just-in-time (JIT) and just-enough-access (JEA) policies. Grant the minimum access required for the specific task, for only as long as it is needed. If an admin needs to access a sensitive resource, they should request elevated access for a limited time window, not hold permanent admin rights.
+
+### 3. Assume Breach
+
+Design and operate as if attackers are already in your environment. Segment networks so that compromising one area doesn't automatically compromise everything. Encrypt all data. Use analytics to detect anomalies and respond rapidly. Minimize the blast radius of any potential breach through segmentation and isolation.
+
+<Callout type="info">
+Zero Trust aligns directly with Microsoft Entra ID features: **Verify explicitly** maps to Conditional Access evaluating risk signals before granting access. **Least privilege** maps to RBAC with minimal role assignments. **Assume breach** maps to features like Microsoft Defender for Cloud monitoring for threats inside your environment.
+</Callout>
+
+---
+
+## Defense in Depth
+
+<KeyTerm term="Defense in Depth">A layered security strategy that uses multiple independent security controls across physical, identity, network, compute, application, and data layers. If an attacker bypasses one layer, additional layers continue to provide protection. No single point of failure can compromise the entire system.</KeyTerm>
+
+Defense in Depth is the security equivalent of a medieval castle. A castle wasn't secured by a single wall — it had a moat, drawbridge, outer walls, inner walls, towers, and a heavily fortified keep. Each layer provided independent protection. An attacker who made it past the moat still faced the outer walls, and so on.
+
+Modern cloud security applies the same principle across seven layers. From the outermost to the innermost:
+
+### The Seven Layers
+
+1. **Physical Security** — the outermost layer. Microsoft's data centers use biometric access controls, security cameras, security personnel, and restricted access to prevent unauthorized physical access to hardware. If an attacker can physically access a server, no software security can help.
+
+2. **Identity and Access** — controls who can access systems using Entra ID, MFA, Conditional Access, and RBAC. Even if an attacker gets past physical security, they still need valid credentials to log in.
+
+3. **Perimeter** — protects the network boundary using distributed denial-of-service (DDoS) protection and network firewalls. Azure DDoS Protection filters malicious traffic before it reaches your applications.
+
+4. **Network** — limits communication between resources using network security groups (NSGs), private endpoints, and network segmentation. Even if an attacker enters the network, they should not be able to move freely between resources.
+
+5. **Compute** — secures the virtual machines and container workloads. Includes patching operating systems, disabling unnecessary services, and using endpoint protection (antimalware, EDR tools).
+
+6. **Application** — ensures applications are built securely, free of vulnerabilities like SQL injection or cross-site scripting. Includes secure coding practices, web application firewalls (WAF), and penetration testing.
+
+7. **Data** — the innermost and most critical layer. Encrypt data at rest and in transit. Control access to databases and storage. Apply data classification and data loss prevention. An attacker who reaches this layer and finds encrypted data gains nothing useful.
+
+---
+
+<InteractiveDiagram title="Defense in Depth Layers" width={700} height={420}>
+  <svg slot="diagram" viewBox="0 0 700 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:system-ui,sans-serif">
+    {/* Background */}
+    <rect x="0" y="0" width="700" height="420" fill="#0f172a" rx="10" />
+    {/* Title */}
+    <text x="350" y="26" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">Defense in Depth — Seven Security Layers</text>
+    {/* Layer 1: Physical (outermost) */}
+    <rect x="20" y="40" width="660" height="340" rx="10" fill="#1e1b4b" stroke="#6d28d9" strokeWidth="2" />
+    <text x="350" y="60" textAnchor="middle" fill="#a78bfa" fontSize="11" fontWeight="bold">Physical Security</text>
+    {/* Layer 2: Identity */}
+    <rect x="60" y="70" width="580" height="295" rx="8" fill="#1e3a5f" stroke="#2563eb" strokeWidth="2" />
+    <text x="350" y="88" textAnchor="middle" fill="#93c5fd" fontSize="11" fontWeight="bold">Identity &amp; Access</text>
+    {/* Layer 3: Perimeter */}
+    <rect x="100" y="100" width="500" height="250" rx="8" fill="#064e3b" stroke="#059669" strokeWidth="2" />
+    <text x="350" y="118" textAnchor="middle" fill="#6ee7b7" fontSize="11" fontWeight="bold">Perimeter</text>
+    {/* Layer 4: Network */}
+    <rect x="140" y="128" width="420" height="210" rx="8" fill="#1c1917" stroke="#d97706" strokeWidth="2" />
+    <text x="350" y="147" textAnchor="middle" fill="#fbbf24" fontSize="11" fontWeight="bold">Network</text>
+    {/* Layer 5: Compute */}
+    <rect x="180" y="158" width="340" height="168" rx="8" fill="#450a0a" stroke="#dc2626" strokeWidth="2" />
+    <text x="350" y="176" textAnchor="middle" fill="#fca5a5" fontSize="11" fontWeight="bold">Compute</text>
+    {/* Layer 6: Application */}
+    <rect x="220" y="186" width="260" height="130" rx="8" fill="#0c4a6e" stroke="#0284c7" strokeWidth="2" />
+    <text x="350" y="205" textAnchor="middle" fill="#7dd3fc" fontSize="11" fontWeight="bold">Application</text>
+    {/* Layer 7: Data (innermost) */}
+    <rect x="260" y="214" width="180" height="90" rx="8" fill="#134e4a" stroke="#0d9488" strokeWidth="2.5" />
+    <text x="350" y="238" textAnchor="middle" fill="#5eead4" fontSize="12" fontWeight="bold">Data</text>
+    <text x="350" y="256" textAnchor="middle" fill="#99f6e4" fontSize="9">Innermost Layer</text>
+    <text x="350" y="272" textAnchor="middle" fill="#99f6e4" fontSize="8">Encrypt at rest &amp; in transit</text>
+    {/* Arrow indicator */}
+    <text x="350" y="320" textAnchor="middle" fill="#64748b" fontSize="9">Outermost to innermost →</text>
+    <text x="350" y="335" textAnchor="middle" fill="#64748b" fontSize="8">Click any layer label for details</text>
+    {/* Layer 7: Data label area for hotspot alignment */}
+    <text x="350" y="365" textAnchor="middle" fill="#475569" fontSize="8">(Physical → Identity → Perimeter → Network → Compute → Application → Data)</text>
+  </svg>
+  <DiagramHotspot slot="hotspots" x={20} y={40} width={660} height={30} label="Physical Security" description="The outermost layer — Microsoft's data centers use biometric access controls, 24/7 security personnel, security cameras, and multi-factor physical entry systems. Physical security prevents attackers from directly accessing hardware, bypassing all software controls." />
+  <DiagramHotspot slot="hotspots" x={60} y={70} width={580} height={30} label="Identity & Access" description="Controls who can access systems using Microsoft Entra ID, MFA, Conditional Access, and RBAC. Even if an attacker passes physical security, they must have valid credentials and satisfy policy conditions to sign in. SSO and passwordless authentication reduce credential-based risks." />
+  <DiagramHotspot slot="hotspots" x={100} y={100} width={500} height={28} label="Perimeter" description="Protects the network boundary using DDoS protection and firewalls. Azure DDoS Protection filters volumetric attacks before they reach your resources. Firewalls inspect and filter traffic at the network edge, blocking known threats and suspicious traffic patterns." />
+  <DiagramHotspot slot="hotspots" x={140} y={128} width={420} height={30} label="Network" description="Limits lateral movement inside the network using Network Security Groups (NSGs), private endpoints, and virtual network segmentation. Even if an attacker enters one network segment, they cannot freely access resources in other segments without passing additional controls." />
+  <DiagramHotspot slot="hotspots" x={180} y={158} width={340} height={28} label="Compute" description="Secures virtual machines and containers by patching operating systems, disabling unnecessary services, and running endpoint protection software (antimalware, EDR). Microsoft Defender for Servers monitors VM-level threats and vulnerabilities in real time." />
+  <DiagramHotspot slot="hotspots" x={220} y={186} width={260} height={28} label="Application" description="Ensures applications are built securely and free of vulnerabilities like SQL injection and cross-site scripting (XSS). Includes web application firewalls (WAF), secure development lifecycle (SDL) practices, API security, and regular penetration testing." />
+  <DiagramHotspot slot="hotspots" x={260} y={214} width={180} height={90} label="Data" description="The innermost and most critical layer. Encrypt data at rest (using Azure Storage Service Encryption and Transparent Data Encryption for databases) and in transit (TLS). Apply strict access controls, data classification, and data loss prevention policies. An attacker who reaches this layer and finds properly encrypted data gains nothing usable." />
+</InteractiveDiagram>
+
+---
+
+## Microsoft Defender for Cloud
+
+<KeyTerm term="Microsoft Defender for Cloud">A cloud security posture management (CSPM) and cloud workload protection platform (CWPP) that continuously assesses your Azure, on-premises, and multi-cloud environments for security misconfigurations, vulnerabilities, and threats. It provides a unified security view with actionable recommendations.</KeyTerm>
+
+Microsoft Defender for Cloud is your security command center in Azure. It continuously watches over your cloud resources, evaluates them against security best practices, generates a score reflecting your overall security posture, and provides specific recommendations for improving it. Think of it as a security auditor that never sleeps and checks everything automatically.
+
+### Cloud Security Posture Management (CSPM)
+
+The CSPM capabilities focus on your configuration and compliance:
+
+<KeyTerm term="Secure Score">A numeric score (0–100%) in Microsoft Defender for Cloud that measures your overall security posture. The score increases as you implement security recommendations and decreases when new vulnerabilities or misconfigurations are discovered. It gives a quick, quantifiable view of how secure your environment is.</KeyTerm>
+
+- **Secure score** — a percentage (0-100%) that summarizes your security posture. Implementing each recommendation earns points. Defender for Cloud prioritizes recommendations by impact so you know which fixes give the biggest security improvement.
+- **Security recommendations** — specific, actionable steps to improve your configuration. Examples: "Enable MFA for accounts with owner permissions on your subscription," "Restrict access to storage accounts with firewall and virtual network rules," or "Apply system updates to virtual machines."
+- **Compliance dashboard** — maps your resource configurations to regulatory standards (ISO 27001, PCI DSS, SOC 2, NIST) so you can track compliance over time.
+
+### Cloud Workload Protection (CWP)
+
+Beyond posture management, Defender for Cloud can actively detect and respond to threats across your workloads:
+
+- **Defender for Servers** — detects threats on VMs, including fileless malware, brute-force attacks, and suspicious process execution
+- **Defender for Databases** — monitors SQL databases for SQL injection attacks, anomalous access patterns, and unauthorized exports
+- **Defender for Storage** — detects threats to storage accounts like ransomware uploads, suspicious access from unusual locations, and data exfiltration
+- **Defender for Containers** — secures Kubernetes clusters and container registries
+
+### Free vs Paid Tiers
+
+<Callout type="info">
+Microsoft Defender for Cloud has two tiers. The **free tier** provides basic CSPM capabilities — the secure score, security recommendations, and continuous assessment — at no cost for all Azure subscriptions. The **enhanced workload protection** (paid) tier adds advanced threat detection, cloud workload protection for specific service types, and extended compliance coverage. For the AZ-900 exam, know that the free tier exists and that paid plans add workload-specific threat detection.
+</Callout>
+
+### Multi-Cloud and Hybrid Support
+
+Defender for Cloud is not limited to Azure. It can monitor AWS and Google Cloud resources (using cloud connectors), as well as on-premises servers (using Azure Arc). This gives organizations a single security pane of glass across their entire hybrid and multi-cloud environment.
+
+---
+
+## Practice Activities
+
+<DragDropMatch
+  title="Match Security Concepts to Their Descriptions"
+  categories={["Authentication", "Authorization", "Conditional Access", "RBAC", "Zero Trust", "Secure Score", "MFA", "SSO"]}
+  items={[
+    { text: "Verifying who you are (proving your identity)", category: "Authentication" },
+    { text: "Determining what you are allowed to do", category: "Authorization" },
+    { text: "Evaluates sign-in signals to enforce access policies (allow, block, or require MFA)", category: "Conditional Access" },
+    { text: "Assigns roles (Owner, Contributor, Reader) to users at a specific scope", category: "RBAC" },
+    { text: "Security model: verify explicitly, least privilege, assume breach", category: "Zero Trust" },
+    { text: "A 0–100% metric measuring your overall security posture in Defender for Cloud", category: "Secure Score" },
+    { text: "Requires two or more verification factors from: something you know, have, or are", category: "MFA" },
+    { text: "Sign in once and access multiple applications without re-entering credentials", category: "SSO" },
+  ]}
+/>
+
+<FillInBlank
+  title="Identity and Security — Type Your Answer"
+  mode="type"
+  items={[
+    { text: "The three principles of Zero Trust are: verify explicitly, use least privilege access, and assume ___.", answer: "breach" },
+    { text: "The RBAC role that grants full access to manage resources but cannot assign roles to others is ___.", answer: "Contributor" },
+    { text: "Microsoft Entra ID was formerly known as Azure Active ___.", answer: "Directory" },
+    { text: "Conditional Access requires Microsoft Entra ID ___ or P2 licensing.", answer: "P1" },
+  ]}
+/>
+
+<ScenarioQuestion
+  id="conditional-access-scenario"
+  scenario="Contoso Corporation has a payroll application in Azure that contains sensitive salary data. The security team wants to ensure that employees can access it from the corporate network without friction, but any access attempt from outside the network — such as from home or a coffee shop — must require MFA, regardless of the user's role or job title. Employees using unmanaged personal devices should be blocked entirely."
+  question="Which Azure feature should Contoso implement to enforce these context-aware access rules?"
+  options={[
+    { text: "Azure RBAC with a custom role that restricts access by IP address", feedback: "Incorrect. RBAC controls what resources a user can access, not the conditions under which they can access them. RBAC does not evaluate sign-in location or device compliance — it only manages permissions on Azure resources." },
+    { text: "Microsoft Entra ID Conditional Access policies", feedback: "Correct. Conditional Access evaluates signals like network location (corporate network vs external) and device compliance state to enforce different controls. A policy can allow access freely from the corporate network, require MFA for external access, and block unmanaged devices — exactly what Contoso needs.", correct: true },
+    { text: "Microsoft Defender for Cloud with enhanced workload protection", feedback: "Incorrect. Defender for Cloud monitors security posture and detects threats — it does not enforce access conditions at sign-in time. It would not block or require MFA for sign-in attempts based on location or device state." },
+    { text: "Azure AD B2B external identities", feedback: "Incorrect. B2B external identities are used to invite partner or guest users from outside organizations. They do not control the conditions under which existing employees can sign in to internal applications." },
+  ]}
+/>
+
+<BuildIt
+  title="Build a Conditional Access Policy"
+  instruction="A company needs to enforce MFA for all employees accessing a payroll application from outside the corporate network, while blocking unmanaged devices entirely. Arrange the steps to create this Conditional Access policy in the correct order."
+  steps={[
+    { label: "Define User/Group Assignment", description: "Select which users or groups the policy applies to — in this case, all employees who access the payroll application. You can target specific groups or all users." },
+    { label: "Specify Target Application", description: "Choose the cloud application the policy protects — the payroll app. Conditional Access policies are applied per-application, so you must select the specific app." },
+    { label: "Configure Conditions", description: "Set the signals that trigger the policy: location (outside corporate network), device state (unmanaged devices). These conditions determine when the policy's controls are enforced." },
+    { label: "Set Access Controls", description: "Define the enforcement action: require MFA for external network access, block access for unmanaged devices. Grant controls specify what is required; session controls can add further restrictions." },
+    { label: "Enable the Policy", description: "Switch the policy from 'Report-only' mode to 'On'. Report-only mode lets you test the policy's impact on sign-ins before enforcing it — a recommended best practice." },
+    { label: "Monitor Sign-In Logs", description: "Review the Entra ID sign-in logs and Conditional Access insights to verify the policy is working as intended — confirming that MFA is prompted for external access and unmanaged devices are blocked." },
+  ]}
+/>
+
+---
+
+<KeyTakeaways>
+- **Microsoft Entra ID** is the cloud-based identity and access management service for Azure (formerly Azure Active Directory). Every Azure subscription is associated with an Entra ID tenant.
+- **Authentication (AuthN)** verifies identity ("Who are you?"). **Authorization (AuthZ)** determines permissions ("What can you do?"). Authentication always happens first.
+- **MFA** requires at least two verification factors: something you know, something you have, and something you are. Passwordless options include Windows Hello for Business, FIDO2 security keys, and the Microsoft Authenticator app.
+- **Single Sign-On (SSO)** lets users sign in once and access multiple applications without re-entering credentials.
+- **Conditional Access** evaluates signals (user, location, device, risk) to enforce access policies — allow, block, or require MFA. It requires Entra ID P1 or P2 licensing.
+- **RBAC** assigns roles (Owner = full + role assignment, Contributor = full without role assignment, Reader = view only) at a scope (management group → subscription → resource group → resource). Permissions inherit downward.
+- **Principle of least privilege**: grant the minimum permissions needed for a task, at the narrowest scope that allows the work to be done.
+- **Zero Trust** has three principles: verify explicitly (always authenticate and authorize), use least privilege access, and assume breach (operate as if attackers are already inside).
+- **Defense in Depth** uses seven security layers from outermost to innermost: Physical → Identity & Access → Perimeter → Network → Compute → Application → Data.
+- **Microsoft Defender for Cloud** provides CSPM (secure score, recommendations) and workload protection (threat detection). The free tier covers basic CSPM; paid plans add workload-specific threat detection.
+</KeyTakeaways>
+
+---
+
+<Quiz
+  sectionId="2.4"
+  questions={[
+    {
+      type: "multiple-choice",
+      question: "What was the former name of Microsoft Entra ID?",
+      options: [
+        "Azure Active Directory Domain Services (AD DS)",
+        "Azure Active Directory (Azure AD)",
+        "Microsoft Identity Platform",
+        "Azure Access Manager"
+      ],
+      correct: 1,
+      explanation: "Microsoft Entra ID was renamed from Azure Active Directory (Azure AD) in 2023. It is important to distinguish Entra ID from on-premises Active Directory Domain Services (AD DS), which is a separate technology. Entra ID is a cloud-based identity service using modern protocols like OAuth 2.0, while AD DS is an on-premises directory service using Kerberos and LDAP."
+    },
+    {
+      type: "multiple-choice",
+      question: "What is the difference between authentication and authorization?",
+      options: [
+        "Authentication determines what you can do; authorization verifies who you are",
+        "Authentication verifies who you are; authorization determines what you can do",
+        "Authentication and authorization both verify identity but at different times",
+        "Authentication is for users; authorization is for applications only"
+      ],
+      correct: 1,
+      explanation: "Authentication (AuthN) is the process of verifying identity — confirming who a user or service claims to be. Authorization (AuthZ) determines what that verified identity is allowed to do. Authentication always occurs first; you cannot determine permissions for someone whose identity has not been confirmed."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company wants to allow employees to sign in once and access Microsoft 365, Salesforce, and their custom HR application without re-entering credentials. Which Microsoft Entra ID feature enables this?",
+      options: [
+        "Multi-Factor Authentication (MFA)",
+        "Conditional Access",
+        "Single Sign-On (SSO)",
+        "Privileged Identity Management (PIM)"
+      ],
+      correct: 2,
+      explanation: "Single Sign-On (SSO) allows users to authenticate once with Microsoft Entra ID and then access multiple integrated applications — both Microsoft services and third-party SaaS apps — without being prompted for credentials again. When a user's Entra ID session is active, connected applications accept the issued security token, eliminating repeated logins."
+    },
+    {
+      type: "true-false",
+      question: "Microsoft Entra ID is the same service as on-premises Active Directory Domain Services (AD DS).",
+      correct: false,
+      explanation: "Entra ID and AD DS are distinct services. AD DS is an on-premises directory service that uses Kerberos and LDAP protocols, runs on Windows Server domain controllers, and manages computers and users on a corporate network. Entra ID is a cloud-based identity service using OAuth 2.0 and OpenID Connect that manages cloud identities and is accessed over the internet."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following is NOT one of the three MFA factor categories?",
+      options: [
+        "Something you know (password or PIN)",
+        "Something you have (phone or security key)",
+        "Something you are (fingerprint or face scan)",
+        "Something you own (registered device serial number)"
+      ],
+      correct: 3,
+      explanation: "The three MFA factor categories are: something you know (password, PIN), something you have (authenticator app, SMS code, FIDO2 key), and something you are (biometrics like fingerprint or facial recognition). 'Something you own' is not a recognized MFA category — device ownership may relate to 'something you have,' but a serial number alone is not an MFA factor."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which passwordless authentication method uses a physical USB or NFC device with public-key cryptography to resist phishing attacks?",
+      options: [
+        "Windows Hello for Business",
+        "FIDO2 security keys",
+        "Microsoft Authenticator app",
+        "SMS one-time passcode"
+      ],
+      correct: 1,
+      explanation: "FIDO2 security keys are physical hardware devices (USB, NFC, or Bluetooth) like YubiKey that use public-key cryptography for authentication. Because the private key never leaves the physical device and the authentication is cryptographically bound to the specific website or app, FIDO2 is resistant to phishing attacks. Windows Hello uses biometrics or device-bound PINs, and the Authenticator app uses the smartphone itself as the factor."
+    },
+    {
+      type: "multiple-choice",
+      question: "What license is required to use Microsoft Entra ID Conditional Access?",
+      options: [
+        "No license required — it is included in the free Entra ID tier",
+        "Microsoft Entra ID P1 or P2",
+        "Azure Defender for Identity",
+        "Microsoft 365 Business Basic"
+      ],
+      correct: 1,
+      explanation: "Conditional Access requires a Microsoft Entra ID P1 or P2 license. These are available as standalone licenses or included in Microsoft 365 E3 (P1) and E5 (P2) plans. The free Entra ID tier included with every Azure subscription does not include Conditional Access. This is a frequently tested licensing detail on the AZ-900 exam."
+    },
+    {
+      type: "multiple-choice",
+      question: "A Conditional Access policy is set to require MFA for all users signing in from outside the corporate network. An employee signs in from the office. What happens?",
+      options: [
+        "MFA is always required regardless of location",
+        "The sign-in is blocked because Conditional Access is active",
+        "Access is granted without MFA because the location condition is not met",
+        "The employee is asked to register for MFA first"
+      ],
+      correct: 2,
+      explanation: "Conditional Access policies use an 'if/then' logic: if the specified conditions are met, then apply the controls. If the employee signs in from inside the corporate network, the condition 'outside corporate network' is NOT met, so the policy's MFA requirement does NOT apply. Access is granted without requiring MFA, providing a seamless experience for on-site users while still protecting remote access."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Azure RBAC built-in role allows a user to create and manage all Azure resources but prevents them from assigning roles to others?",
+      options: [
+        "Owner",
+        "Contributor",
+        "Reader",
+        "User Access Administrator"
+      ],
+      correct: 1,
+      explanation: "The Contributor role grants full access to create and manage all Azure resources but does not allow the user to assign Azure roles to other principals. The Owner role has the same full access AND the ability to assign roles. Reader is view-only. User Access Administrator can manage role assignments but cannot manage Azure resources."
+    },
+    {
+      type: "true-false",
+      question: "RBAC role assignments at the subscription level automatically apply to all resource groups and resources within that subscription.",
+      correct: true,
+      explanation: "RBAC permissions are inherited downward through the scope hierarchy: management group → subscription → resource group → resource. A role assigned at the subscription level gives the same permissions to all resource groups and individual resources within that subscription. This inheritance simplifies administration — you don't need to assign the same role individually to every resource."
+    },
+    {
+      type: "multiple-choice",
+      question: "A developer needs to deploy and manage virtual machines in a specific resource group but should not be able to access resources in other resource groups or assign roles. Which configuration is correct?",
+      options: [
+        "Assign Owner role at the subscription level",
+        "Assign Contributor role at the resource group level",
+        "Assign Reader role at the subscription level with Contributor at the VM level",
+        "Assign Owner role at the resource group level"
+      ],
+      correct: 1,
+      explanation: "Assigning the Contributor role at the resource group level grants full management access to all resources within that specific resource group, without affecting other resource groups. Owner at the subscription level would be too broad (access to everything) and allows role assignment. Contributor at resource group scope gives exactly the needed access while following the principle of least privilege."
+    },
+    {
+      type: "multiple-choice",
+      question: "What are the three principles of the Zero Trust security model?",
+      options: [
+        "Encrypt everything, monitor always, patch regularly",
+        "Verify explicitly, use least privilege access, assume breach",
+        "Defense in depth, network segmentation, data encryption",
+        "Identity first, perimeter second, data last"
+      ],
+      correct: 1,
+      explanation: "The Zero Trust model is built on three principles: (1) Verify explicitly — always authenticate and authorize using all available data points; (2) Use least privilege access — grant only the minimum permissions needed for the specific task; (3) Assume breach — design systems as if attackers are already present, minimizing blast radius through segmentation and monitoring."
+    },
+    {
+      type: "true-false",
+      question: "The Zero Trust model assumes that any request originating from inside the corporate network can be trusted without additional verification.",
+      correct: false,
+      explanation: "Zero Trust explicitly rejects the assumption that internal network location means trustworthiness. Under Zero Trust, every request — regardless of whether it originates inside or outside the corporate network — must be explicitly verified based on identity, device health, location, and risk signals. The old perimeter model ('trust inside, verify outside') is replaced with 'never trust, always verify.'"
+    },
+    {
+      type: "multiple-choice",
+      question: "In the Defense in Depth model, which layer is responsible for protecting against DDoS attacks and filtering malicious traffic at the network boundary?",
+      options: [
+        "Physical Security",
+        "Identity and Access",
+        "Perimeter",
+        "Network"
+      ],
+      correct: 2,
+      explanation: "The Perimeter layer defends the network boundary using DDoS protection and firewalls. Azure DDoS Protection filters volumetric attacks before they reach your applications. The Network layer (inside the perimeter) focuses on segmentation and lateral movement prevention using NSGs. Physical security is about data center access, and Identity deals with authentication."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which layer of Defense in Depth is considered the innermost and most critical layer?",
+      options: [
+        "Application",
+        "Compute",
+        "Network",
+        "Data"
+      ],
+      correct: 3,
+      explanation: "Data is the innermost layer of Defense in Depth and the ultimate target attackers seek. All other layers exist to protect data. Security controls at this layer include encryption at rest and in transit, strict access controls, data classification, and data loss prevention policies. An attacker who breaches all other layers but finds properly encrypted data gains nothing useful."
+    },
+    {
+      type: "multiple-choice",
+      question: "What does the Secure Score in Microsoft Defender for Cloud represent?",
+      options: [
+        "The number of security alerts detected in the last 30 days",
+        "A 0–100% measure of your environment's overall security posture",
+        "The percentage of resources protected by Defender workload plans",
+        "The compliance score against a specific regulatory standard"
+      ],
+      correct: 1,
+      explanation: "The Secure Score is a numeric score from 0 to 100% that measures the overall security posture of your Azure environment. It increases as you implement security recommendations and decreases as new misconfigurations or vulnerabilities are discovered. It gives a quick, quantifiable view of your security health and helps prioritize which recommendations to address first for the biggest improvement."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Microsoft Defender for Cloud capability focuses on detecting active threats in running workloads, such as malware on virtual machines or SQL injection attempts on databases?",
+      options: [
+        "Cloud Security Posture Management (CSPM)",
+        "Secure Score",
+        "Cloud Workload Protection (CWP)",
+        "Security recommendations"
+      ],
+      correct: 2,
+      explanation: "Cloud Workload Protection (CWP) is the active threat detection and response component of Defender for Cloud. It provides plans like Defender for Servers (VM-level threat detection), Defender for Databases (SQL injection monitoring), and Defender for Storage (ransomware and exfiltration detection). CSPM covers configuration assessment and secure score — these focus on posture rather than active threat detection."
+    },
+    {
+      type: "true-false",
+      question: "Microsoft Defender for Cloud can monitor AWS and Google Cloud resources in addition to Azure resources.",
+      correct: true,
+      explanation: "Microsoft Defender for Cloud supports multi-cloud environments. Using cloud connectors, it can extend monitoring and security recommendations to AWS and Google Cloud resources, providing a unified security view across multiple cloud providers. It also supports on-premises servers through Azure Arc, making it a true hybrid and multi-cloud security platform."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company invites a partner organization's employees to access a project site in SharePoint. The partners sign in using their own organization's credentials. Which Microsoft Entra ID feature enables this scenario?",
+      options: [
+        "Azure AD B2C (Business-to-Consumer)",
+        "Entra ID B2B (Business-to-Business) external identities",
+        "Conditional Access with guest policies",
+        "Microsoft Entra ID P2 privileged identity management"
+      ],
+      correct: 1,
+      explanation: "B2B (Business-to-Business) external identities allow partner users to sign in using their own organization's credentials and be granted controlled access as guest users in your tenant. This is specifically designed for partner and business collaboration scenarios. B2C is for consumer-facing apps where customers sign in with social identities. Conditional Access can add policies on top of B2B access, but it doesn't enable the external identity capability itself."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following best describes the principle of least privilege as applied in Azure RBAC?",
+      options: [
+        "Always assign the Owner role so users have everything they need",
+        "Assign users to the broadest possible scope to reduce the number of role assignments",
+        "Grant users only the minimum permissions required for their task, at the narrowest applicable scope",
+        "Assign Reader to all users and escalate to Contributor only when requested"
+      ],
+      correct: 2,
+      explanation: "The principle of least privilege means granting only the minimum access necessary to complete a task, at the narrowest scope that still allows the work. For example, if a developer only needs to manage VMs in one resource group, assign Contributor at that resource group — not at the subscription level, and not the Owner role. This limits the damage if an account is compromised and reduces the risk of accidental changes."
+    },
+  ]}
+/>
