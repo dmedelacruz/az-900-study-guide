@@ -513,10 +513,16 @@ A useful scenario for AVD: a company wants to give remote workers access to line
       explanation: "VM Scale Sets allow you to deploy and manage a group of identical, load-balanced VMs that automatically scale in and out based on demand metrics (such as CPU utilization) or schedules. Availability sets provide fault and update domain protection but do not scale the number of VMs. App Service is a separate PaaS offering. Azure Load Balancer distributes traffic but does not manage VM count."
     },
     {
-      type: "true-false",
+      type: "multiple-choice",
       question: "In an Azure availability set, a fault domain represents a group of VMs that share the same physical power supply and network switch.",
-      correct: true,
-      explanation: "A fault domain in an availability set is a rack of servers that shares a common power supply and network switch. By placing VMs across multiple fault domains, Azure ensures that a single rack-level hardware failure (such as a power outage for that rack) does not take all VMs offline simultaneously. Azure supports up to 3 fault domains per availability set."
+      options: [
+        "True — a fault domain is a rack of servers sharing a common power supply and network switch",
+        "False — a fault domain represents VMs in different geographic regions",
+        "False — a fault domain is a batch of servers that Azure reboots together during planned maintenance",
+        "False — a fault domain is a logical grouping across multiple Azure data centers"
+      ],
+      correct: 0,
+      explanation: "A fault domain in an availability set is a rack of servers that shares a common power supply and network switch. By placing VMs across multiple fault domains, Azure ensures that a single rack-level hardware failure (such as a power outage for that rack) does not take all VMs offline simultaneously. Azure supports up to 3 fault domains per availability set. Note: the concept of rebooting VMs in batches during maintenance describes update domains, not fault domains."
     },
     {
       type: "multiple-choice",
@@ -543,9 +549,15 @@ A useful scenario for AVD: a company wants to give remote workers access to line
       explanation: "Azure Container Instances (ACI) is the simplest and fastest way to run a container in Azure. You provide a container image and resource specifications, and ACI starts the container within seconds — no cluster to provision, no orchestration to configure. AKS provides full Kubernetes orchestration for complex workloads. Container Apps provides serverless container hosting with microservice capabilities."
     },
     {
-      type: "true-false",
-      question: "Azure Functions charges you for compute resources continuously, even when no events are triggering your function.",
-      correct: false,
+      type: "multiple-choice",
+      question: "How are you charged for Azure Functions under the consumption plan?",
+      options: [
+        "A flat monthly fee regardless of usage",
+        "Per hour that the function app is provisioned",
+        "Per execution and per resource consumption during execution only",
+        "Based on the number of triggers configured, whether they fire or not"
+      ],
+      correct: 2,
       explanation: "Under the Azure Functions consumption plan, you are charged only when your function code actually executes — you pay per execution and per resource consumption during that execution. There are no charges when the function is idle and waiting for triggers. This pay-per-execution model is one of the defining benefits of the serverless compute model."
     },
     {
@@ -573,9 +585,15 @@ A useful scenario for AVD: a company wants to give remote workers access to line
       explanation: "Azure Container Apps is built on Kubernetes under the hood but fully managed by Azure — you never interact with Kubernetes directly. It supports serverless scaling, including scale-to-zero (where running instances drop to zero when there is no traffic, eliminating costs during idle periods). ACI is simpler but lacks orchestration. AKS gives you full Kubernetes control but requires you to manage cluster configuration."
     },
     {
-      type: "true-false",
-      question: "Azure Virtual Desktop (AVD) is the only cloud service that offers multi-session Windows 10 and Windows 11.",
-      correct: true,
+      type: "multiple-choice",
+      question: "What is unique about Azure Virtual Desktop compared to other cloud virtual desktop services?",
+      options: [
+        "It is the only service that supports Linux desktops",
+        "It offers multi-session Windows 10 and Windows 11, which no other cloud provider offers",
+        "It is the only service that supports GPU-accelerated virtual desktops",
+        "It provides free Windows licensing for all virtual desktop users"
+      ],
+      correct: 1,
       explanation: "Multi-session Windows 10 and Windows 11 — where multiple users simultaneously share a single VM running a desktop OS rather than a server OS — is unique to Azure Virtual Desktop. Other cloud providers offer Windows Server RDS but not the multi-session desktop OS. This capability significantly reduces the cost of delivering virtual desktop experiences compared to traditional VDI approaches."
     },
     {
@@ -615,9 +633,15 @@ A useful scenario for AVD: a company wants to give remote workers access to line
       explanation: "Azure App Service natively supports .NET, .NET Framework, Java (including Spring and Tomcat), Node.js, Python (Django, Flask), PHP, and Ruby. This broad language support makes it suitable for a wide range of web application frameworks without needing to manage the underlying runtime environment."
     },
     {
-      type: "true-false",
-      question: "Azure Functions are stateful by default, maintaining memory of previous invocations.",
-      correct: false,
+      type: "multiple-choice",
+      question: "Which of the following correctly describes the default behavior of Azure Functions regarding state?",
+      options: [
+        "Functions are stateful by default and remember previous invocations",
+        "Functions are stateless by default — each invocation is independent with no memory of previous runs",
+        "Functions persist state in Azure Table Storage automatically between invocations",
+        "Functions maintain an in-memory cache shared across all invocations"
+      ],
+      correct: 1,
       explanation: "Azure Functions are stateless by default — each function invocation is independent with no memory of previous runs. This stateless design enables the massive horizontal scaling that makes serverless compute practical. For stateful workflows, you can use Durable Functions, which is an extension that adds orchestration and state persistence on top of Azure Functions."
     },
     {
@@ -657,9 +681,15 @@ A useful scenario for AVD: a company wants to give remote workers access to line
       explanation: "AKS is a managed Kubernetes service: Microsoft manages and maintains the Kubernetes control plane (API server, scheduler, etcd), while you manage the worker nodes (the VMs that run your containers) and all workload configuration. This removes the operational burden of running Kubernetes control plane components while giving you full control over your cluster configuration and workloads."
     },
     {
-      type: "true-false",
-      question: "Availability sets protect against entire Azure region failures.",
-      correct: false,
+      type: "multiple-choice",
+      question: "What level of protection do availability sets provide?",
+      options: [
+        "Protection against entire Azure region failures",
+        "Protection against multiple data center failures within a region",
+        "Protection against hardware failures and planned maintenance within a single data center",
+        "Protection against global Azure outages affecting all regions"
+      ],
+      correct: 2,
       explanation: "Availability sets protect against hardware failures and planned maintenance events within a single data center by spreading VMs across fault domains and update domains. They do not protect against an entire data center going offline, and they definitely do not protect against regional failures. For data center-level protection, use availability zones. For regional protection, use cross-region redundancy with services like Azure Site Recovery."
     },
     {

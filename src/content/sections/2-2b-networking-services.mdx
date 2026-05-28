@@ -470,9 +470,15 @@ Think of it this way: **Load Balancer** is a traffic cop directing cars at an in
       explanation: "Azure VPN Gateway creates encrypted IPsec/IKE tunnels over the public internet between an on-premises network and an Azure VNet. It supports site-to-site (whole network), point-to-site (individual device), and VNet-to-VNet connections. ExpressRoute, by contrast, provides a private dedicated connection that bypasses the internet entirely."
     },
     {
-      type: "true-false",
+      type: "multiple-choice",
       question: "Azure ExpressRoute encrypts all traffic by default.",
-      correct: false,
+      options: [
+        "True — ExpressRoute uses IPsec encryption on all circuits",
+        "False — ExpressRoute is a private connection and does not encrypt traffic by default",
+        "True — ExpressRoute encrypts traffic only when using the Premium add-on",
+        "False — ExpressRoute never supports encryption, even optionally"
+      ],
+      correct: 1,
       explanation: "ExpressRoute does not encrypt traffic by default. It provides a private, dedicated connection through a connectivity provider, so traffic does not traverse the public internet. Because the connection is private, encryption is not inherently required. However, organizations can layer VPN encryption on top of ExpressRoute if their compliance or security requirements demand it."
     },
     {
@@ -524,9 +530,15 @@ Think of it this way: **Load Balancer** is a traffic cop directing cars at an in
       explanation: "Azure Application Gateway is a Layer 7 (application layer) load balancer that understands HTTP traffic. It can route requests based on URL paths and host headers, terminate SSL/TLS connections, and includes an optional Web Application Firewall (WAF) to protect against common web exploits. Azure Load Balancer operates at Layer 4 and does not have these HTTP-aware features."
     },
     {
-      type: "true-false",
+      type: "multiple-choice",
       question: "Network Security Groups (NSGs) are stateless — you must create separate rules for both inbound and return traffic.",
-      correct: false,
+      options: [
+        "True — NSGs are stateless and require explicit rules in both directions",
+        "False — NSGs are stateful, so return traffic for allowed connections is automatically permitted",
+        "True — NSGs track connections but still require matching outbound rules",
+        "False — NSGs automatically allow all return traffic regardless of any inbound rules"
+      ],
+      correct: 1,
       explanation: "NSGs are stateful, not stateless. If you create a rule allowing inbound traffic on port 443 (HTTPS), the return traffic for established connections is automatically allowed without needing a separate outbound rule. This is similar to how stateful firewalls work — once a connection is allowed in one direction, the response traffic is tracked and permitted automatically."
     },
     {
@@ -554,9 +566,15 @@ Think of it this way: **Load Balancer** is a traffic cop directing cars at an in
       explanation: "Azure Load Balancer uses health probes to continuously check the status of backend instances. Probes can be HTTP, HTTPS, or TCP-based and run at configurable intervals. If an instance fails to respond within the configured threshold, Load Balancer stops routing traffic to it. When the instance recovers and responds to probes again, traffic is resumed automatically."
     },
     {
-      type: "true-false",
+      type: "multiple-choice",
       question: "VNet peering traffic between two Azure VNets travels over the public internet.",
-      correct: false,
+      options: [
+        "True — peering routes traffic through the public internet but encrypts it with IPsec",
+        "False — peering traffic travels over the Microsoft backbone network and never touches the public internet",
+        "True — global peering (cross-region) uses the public internet; only regional peering uses the backbone",
+        "False — peering traffic travels over the public internet but is encrypted by default"
+      ],
+      correct: 1,
       explanation: "VNet peering traffic stays entirely on the Microsoft backbone network — it never touches the public internet. This applies to both regional peering (VNets in the same region) and global peering (VNets in different regions). This is one of the key advantages of peering: low-latency, high-bandwidth, private connectivity between VNets."
     },
     {
@@ -596,9 +614,15 @@ Think of it this way: **Load Balancer** is a traffic cop directing cars at an in
       explanation: "Site-to-site (S2S) VPN creates a permanent, always-on encrypted tunnel between an on-premises VPN device and an Azure VPN Gateway. This connects the entire on-premises network to the Azure VNet, allowing all resources on both sides to communicate. Point-to-site connects individual devices, and VNet-to-VNet connects two Azure VNets."
     },
     {
-      type: "true-false",
+      type: "multiple-choice",
       question: "Azure Application Gateway can protect web applications from SQL injection and cross-site scripting attacks through its Web Application Firewall (WAF) feature.",
-      correct: true,
+      options: [
+        "True — Application Gateway's WAF inspects HTTP traffic and blocks OWASP Top 10 threats including SQL injection and XSS",
+        "False — WAF is only available on Azure Firewall, not Application Gateway",
+        "True — but WAF is enabled by default and cannot be disabled",
+        "False — Application Gateway only provides load balancing; threat protection requires a separate Azure DDoS Protection plan"
+      ],
+      correct: 0,
       explanation: "Azure Application Gateway includes an optional Web Application Firewall (WAF) that protects web applications from common exploits listed in the OWASP Top 10, including SQL injection, cross-site scripting (XSS), and other web-based attacks. WAF inspects incoming HTTP traffic and blocks malicious requests before they reach the backend application."
     },
     {

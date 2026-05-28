@@ -185,15 +185,16 @@ RBAC answers the authorization question: once a user is authenticated, what Azur
 
 ### The Three Core Built-In Roles
 
-Azure has over 100 built-in roles for specific services, but three foundational roles apply to all Azure resources:
+Azure has over 100 built-in roles for specific services, but four foundational roles apply broadly to all Azure resources:
 
 | Role | What They Can Do |
 |---|---|
 | **Owner** | Full access to all resources, **plus** the ability to assign roles to others. The most powerful role — assign it sparingly. |
 | **Contributor** | Full access to create and manage all resources, but **cannot** assign roles or grant access to others. |
 | **Reader** | View-only access. Can see all resources but cannot create, modify, or delete anything. |
+| **User Access Administrator** | Can manage user access to Azure resources — assign and remove role assignments — but **cannot** manage the resources themselves. |
 
-Beyond these three, there are service-specific roles like **Virtual Machine Contributor** (manage VMs but not networking), **Storage Blob Data Contributor** (read/write blob data but not manage storage accounts), and **Key Vault Secrets User** (read secrets but not manage the vault).
+Beyond these four, there are service-specific roles like **Virtual Machine Contributor** (manage VMs but not networking), **Storage Blob Data Contributor** (read/write blob data but not manage storage accounts), and **Key Vault Secrets User** (read secrets but not manage the vault).
 
 ### Scope Hierarchy
 
@@ -417,7 +418,7 @@ Defender for Cloud is not limited to Azure. It can monitor AWS and Google Cloud 
 <KeyTakeaways>
 - **Microsoft Entra ID** is the cloud-based identity and access management service for Azure (formerly Azure Active Directory). Every Azure subscription is associated with an Entra ID tenant.
 - **Authentication (AuthN)** verifies identity ("Who are you?"). **Authorization (AuthZ)** determines permissions ("What can you do?"). Authentication always happens first.
-- **MFA** requires at least two verification factors: something you know, something you have, and something you are. Passwordless options include Windows Hello for Business, FIDO2 security keys, and the Microsoft Authenticator app.
+- **MFA** requires at least two of three verification factor categories: something you know, something you have, or something you are. Passwordless options include Windows Hello for Business, FIDO2 security keys, and the Microsoft Authenticator app.
 - **Single Sign-On (SSO)** lets users sign in once and access multiple applications without re-entering credentials.
 - **Conditional Access** evaluates signals (user, location, device, risk) to enforce access policies — allow, block, or require MFA. It requires Entra ID P1 or P2 licensing.
 - **RBAC** assigns roles (Owner = full + role assignment, Contributor = full without role assignment, Reader = view only) at a scope (management group → subscription → resource group → resource). Permissions inherit downward.
@@ -469,9 +470,15 @@ Defender for Cloud is not limited to Azure. It can monitor AWS and Google Cloud 
       explanation: "Single Sign-On (SSO) allows users to authenticate once with Microsoft Entra ID and then access multiple integrated applications — both Microsoft services and third-party SaaS apps — without being prompted for credentials again. When a user's Entra ID session is active, connected applications accept the issued security token, eliminating repeated logins."
     },
     {
-      type: "true-false",
-      question: "Microsoft Entra ID is the same service as on-premises Active Directory Domain Services (AD DS).",
-      correct: false,
+      type: "multiple-choice",
+      question: "How does Microsoft Entra ID differ from on-premises Active Directory Domain Services (AD DS)?",
+      options: [
+        "Entra ID is simply the cloud-hosted version of AD DS with the same protocols and features",
+        "Entra ID is a cloud-based identity service using OAuth 2.0 and OpenID Connect, while AD DS is on-premises using Kerberos and LDAP",
+        "AD DS supports multi-factor authentication while Entra ID does not",
+        "Entra ID manages only Azure resources while AD DS manages both cloud and on-premises resources"
+      ],
+      correct: 1,
       explanation: "Entra ID and AD DS are distinct services. AD DS is an on-premises directory service that uses Kerberos and LDAP protocols, runs on Windows Server domain controllers, and manages computers and users on a corporate network. Entra ID is a cloud-based identity service using OAuth 2.0 and OpenID Connect that manages cloud identities and is accessed over the internet."
     },
     {
@@ -535,9 +542,15 @@ Defender for Cloud is not limited to Azure. It can monitor AWS and Google Cloud 
       explanation: "The Contributor role grants full access to create and manage all Azure resources but does not allow the user to assign Azure roles to other principals. The Owner role has the same full access AND the ability to assign roles. Reader is view-only. User Access Administrator can manage role assignments but cannot manage Azure resources."
     },
     {
-      type: "true-false",
-      question: "RBAC role assignments at the subscription level automatically apply to all resource groups and resources within that subscription.",
-      correct: true,
+      type: "multiple-choice",
+      question: "If a user is assigned the Contributor role at the subscription level, which resources can they manage?",
+      options: [
+        "Only resources directly in the subscription, not in resource groups",
+        "All resource groups and resources within that subscription, due to RBAC inheritance",
+        "Only resource groups they have been explicitly granted access to",
+        "All resources across all subscriptions in the same management group"
+      ],
+      correct: 1,
       explanation: "RBAC permissions are inherited downward through the scope hierarchy: management group → subscription → resource group → resource. A role assigned at the subscription level gives the same permissions to all resource groups and individual resources within that subscription. This inheritance simplifies administration — you don't need to assign the same role individually to every resource."
     },
     {
@@ -565,9 +578,15 @@ Defender for Cloud is not limited to Azure. It can monitor AWS and Google Cloud 
       explanation: "The Zero Trust model is built on three principles: (1) Verify explicitly — always authenticate and authorize using all available data points; (2) Use least privilege access — grant only the minimum permissions needed for the specific task; (3) Assume breach — design systems as if attackers are already present, minimizing blast radius through segmentation and monitoring."
     },
     {
-      type: "true-false",
-      question: "The Zero Trust model assumes that any request originating from inside the corporate network can be trusted without additional verification.",
-      correct: false,
+      type: "multiple-choice",
+      question: "Under the Zero Trust security model, how are requests originating from inside the corporate network treated?",
+      options: [
+        "They are trusted automatically since they come from within the network perimeter",
+        "They are trusted if the device has an up-to-date antivirus",
+        "They must be explicitly verified, just like requests from outside the network",
+        "They bypass MFA but still require username and password"
+      ],
+      correct: 2,
       explanation: "Zero Trust explicitly rejects the assumption that internal network location means trustworthiness. Under Zero Trust, every request — regardless of whether it originates inside or outside the corporate network — must be explicitly verified based on identity, device health, location, and risk signals. The old perimeter model ('trust inside, verify outside') is replaced with 'never trust, always verify.'"
     },
     {
@@ -619,9 +638,15 @@ Defender for Cloud is not limited to Azure. It can monitor AWS and Google Cloud 
       explanation: "Cloud Workload Protection (CWP) is the active threat detection and response component of Defender for Cloud. It provides plans like Defender for Servers (VM-level threat detection), Defender for Databases (SQL injection monitoring), and Defender for Storage (ransomware and exfiltration detection). CSPM covers configuration assessment and secure score — these focus on posture rather than active threat detection."
     },
     {
-      type: "true-false",
-      question: "Microsoft Defender for Cloud can monitor AWS and Google Cloud resources in addition to Azure resources.",
-      correct: true,
+      type: "multiple-choice",
+      question: "Which cloud environments can Microsoft Defender for Cloud monitor?",
+      options: [
+        "Azure only",
+        "Azure and AWS only",
+        "Azure, AWS, and Google Cloud",
+        "Any cloud provider that supports OpenID Connect"
+      ],
+      correct: 2,
       explanation: "Microsoft Defender for Cloud supports multi-cloud environments. Using cloud connectors, it can extend monitoring and security recommendations to AWS and Google Cloud resources, providing a unified security view across multiple cloud providers. It also supports on-premises servers through Azure Arc, making it a true hybrid and multi-cloud security platform."
     },
     {

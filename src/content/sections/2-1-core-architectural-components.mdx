@@ -485,10 +485,16 @@ For the AZ-900 exam, you should know that ARM templates and Bicep enable declara
       explanation: "Azure regions that support availability zones have a minimum of three physically separate data center facilities. Each zone has independent power, cooling, and networking to ensure that a failure in one zone doesn't affect the others."
     },
     {
-      type: "true-false",
+      type: "multiple-choice",
       question: "All Azure regions support availability zones.",
-      correct: false,
-      explanation: "Not all Azure regions support availability zones. Some smaller or older regions may not have the physical infrastructure to support three independent data center facilities. For workloads requiring the highest availability, you should choose a region that supports availability zones."
+      options: [
+        "True — every Azure region has at least three availability zones",
+        "False — only regions with the physical infrastructure to support three independent data center facilities offer availability zones",
+        "True — Microsoft requires all new and existing regions to support availability zones",
+        "False — availability zones only exist in sovereign regions like Azure Government"
+      ],
+      correct: 1,
+      explanation: "Not all Azure regions support availability zones. Some smaller or older regions may not have the physical infrastructure to support three independent data center facilities. For workloads requiring the highest availability, you should choose a region that explicitly supports availability zones."
     },
     {
       type: "multiple-choice",
@@ -515,9 +521,15 @@ For the AZ-900 exam, you should know that ARM templates and Bicep enable declara
       explanation: "Azure rolls planned maintenance to one region in a pair at a time, never both simultaneously. This sequential update policy ensures that if an update causes problems, at least one region in the pair remains fully operational. This approach is a key benefit of region pairing."
     },
     {
-      type: "true-false",
-      question: "Azure Government regions are operated by Microsoft and are physically and logically separated from commercial Azure.",
-      correct: true,
+      type: "multiple-choice",
+      question: "Which of the following best describes Azure Government regions?",
+      options: [
+        "They are standard Azure regions located within the United States",
+        "They are physically and logically separated from commercial Azure and operated by screened US personnel",
+        "They are managed by a third-party contractor on behalf of the US government",
+        "They share the same portal and endpoints as commercial Azure but with extra compliance controls"
+      ],
+      correct: 1,
       explanation: "Azure Government is a physically separate instance of Azure, running in dedicated data centers in the United States. It is operated by screened US personnel and meets stringent government compliance standards. It has its own portal (portal.azure.us) and its own endpoints, completely isolated from commercial Azure."
     },
     {
@@ -545,10 +557,16 @@ For the AZ-900 exam, you should know that ARM templates and Bicep enable declara
       explanation: "An Azure subscription serves two primary purposes: it's a billing boundary (all charges within a subscription appear on a single invoice) and an access-control boundary (different access policies can be applied to different subscriptions). Resources belong to subscriptions, not the other way around with management groups."
     },
     {
-      type: "true-false",
-      question: "Resources within a resource group must all be in the same Azure region.",
-      correct: false,
-      explanation: "Resources within a resource group can be in different Azure regions. A resource group might contain a VM in East US and a database in West Europe. The resource group itself has a location, but that only determines where the group's metadata is stored — it doesn't restrict where resources inside the group can be deployed."
+      type: "multiple-choice",
+      question: "What does the location (region) of a resource group determine?",
+      options: [
+        "The only region where resources within the group can be deployed",
+        "Where the resource group's metadata is stored",
+        "The billing region for all resources in the group",
+        "The default availability zone for resources in the group"
+      ],
+      correct: 1,
+      explanation: "The resource group's location determines where its metadata is stored — it does not restrict where resources inside the group can be deployed. A resource group might contain a VM in East US and a database in West Europe."
     },
     {
       type: "multiple-choice",

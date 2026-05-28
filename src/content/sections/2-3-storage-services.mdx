@@ -510,9 +510,15 @@ For the AZ-900 exam, remember these migration tool pairings: **Azure Migrate** i
       explanation: "Both GRS and RA-GRS replicate data to a secondary region (6 copies total). The difference is that with standard GRS, the secondary copy is only accessible if Microsoft initiates a failover. With RA-GRS, your application can read data from the secondary region endpoint at any time, even during normal operations."
     },
     {
-      type: "true-false",
-      question: "Zone-Redundant Storage (ZRS) replicates data across three availability zones in a single region.",
-      correct: true,
+      type: "multiple-choice",
+      question: "How does Zone-Redundant Storage (ZRS) replicate data?",
+      options: [
+        "Three copies within a single data center in one availability zone",
+        "Three copies across three availability zones in a single region",
+        "Six copies across two paired regions",
+        "Two copies in the primary region and one in the secondary region"
+      ],
+      correct: 1,
       explanation: "ZRS replicates your data across three availability zones within the primary region. Each availability zone is a separate physical data center with independent power, cooling, and networking. This protects against a single data center failure while keeping all copies within the same region."
     },
     {
@@ -552,10 +558,16 @@ For the AZ-900 exam, remember these migration tool pairings: **Azure Migrate** i
       explanation: "Azure Files provides fully managed file shares that use industry-standard SMB and NFS protocols. These file shares can be mounted as network drives by Windows, Linux, and macOS — both in the cloud and on-premises. This makes Azure Files ideal for lift-and-shift migrations from on-premises file servers."
     },
     {
-      type: "true-false",
-      question: "Azure Queue Storage messages can be up to 1 MB in size.",
-      correct: false,
-      explanation: "Individual Azure Queue Storage messages can be up to 64 KiB (kilobytes) in size, not 1 MB. If you need to handle larger payloads, you can store the data in Blob Storage and put a reference (URL or blob name) in the queue message instead."
+      type: "multiple-choice",
+      question: "What is the maximum size of an individual Azure Queue Storage message?",
+      options: [
+        "16 KiB",
+        "64 KiB",
+        "1 MB",
+        "4 MB"
+      ],
+      correct: 1,
+      explanation: "Individual Azure Queue Storage messages can be up to 64 KiB in size. If you need to handle larger payloads, you can store the data in Blob Storage and put a reference (URL or blob name) in the queue message instead."
     },
     {
       type: "multiple-choice",
@@ -594,9 +606,15 @@ For the AZ-900 exam, remember these migration tool pairings: **Azure Migrate** i
       explanation: "The Cool tier has a minimum retention period of 30 days. If you delete or move data to a different tier before 30 days, you incur an early deletion charge. The Cold tier requires 90 days, and the Archive tier requires 180 days. The Hot tier has no minimum retention period."
     },
     {
-      type: "true-false",
-      question: "The Archive access tier can be set as the default account-level access tier for a storage account.",
-      correct: false,
+      type: "multiple-choice",
+      question: "Which access tiers can be set as the default account-level tier for an Azure storage account?",
+      options: [
+        "Hot, Cool, Cold, and Archive",
+        "Hot and Cool only",
+        "Hot, Cool, and Cold only",
+        "Any tier can be set as the default"
+      ],
+      correct: 1,
       explanation: "Only Hot and Cool can be set as the default account-level access tier. The Cold and Archive tiers can only be set at the individual blob level. When you set a blob's tier to Cold or Archive, it overrides the account-level default for that specific blob."
     },
     {
@@ -636,9 +654,15 @@ For the AZ-900 exam, remember these migration tool pairings: **Azure Migrate** i
       explanation: "Azure Storage Explorer is a free, standalone GUI application for managing Azure Storage data. It provides a visual file-manager-like interface for working with blobs, files, queues, and tables across multiple storage accounts. AzCopy is a command-line tool (no GUI), Data Box is a physical device, and Azure Migrate is a migration assessment platform."
     },
     {
-      type: "true-false",
-      question: "AzCopy is a GUI application for transferring data to and from Azure Storage.",
-      correct: false,
+      type: "multiple-choice",
+      question: "Which of the following best describes AzCopy?",
+      options: [
+        "A graphical desktop application for browsing Azure Storage",
+        "A command-line utility for high-performance data transfers to and from Azure Storage",
+        "A physical device for offline data transfer to Azure",
+        "An Azure portal feature for managing storage accounts"
+      ],
+      correct: 1,
       explanation: "AzCopy is a command-line utility, not a GUI application. It is designed for high-performance data transfers to and from Azure Storage, supporting multi-threaded uploads and resumable transfers. For a graphical interface, you would use Azure Storage Explorer."
     },
     {
