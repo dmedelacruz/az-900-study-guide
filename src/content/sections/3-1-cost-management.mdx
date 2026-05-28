@@ -1,0 +1,603 @@
+---
+title: "Cost Management"
+domain: 3
+section: "3.1"
+order: 12
+description: "Understand Azure cost management — factors that affect cost, Azure Pricing Calculator, TCO Calculator, Azure Cost Management + Billing, and resource tags."
+tags: ["cost-management", "pricing-calculator", "tco-calculator", "azure-billing", "resource-tags"]
+lastVerified: "2026-05-28"
+microsoftLearnUrl: "https://learn.microsoft.com/en-us/training/modules/describe-cost-management-azure/"
+---
+
+import KeyTakeaways from '../../components/KeyTakeaways.astro';
+import KeyTerm from '../../components/KeyTerm.astro';
+import Callout from '../../components/Callout.astro';
+import DeepDive from '../../components/DeepDive.astro';
+import InteractiveDiagram from '../../components/InteractiveDiagram.astro';
+import DiagramHotspot from '../../components/DiagramHotspot.astro';
+import DragDropMatch from '../../components/DragDropMatch.astro';
+import FillInBlank from '../../components/FillInBlank.astro';
+import ScenarioQuestion from '../../components/ScenarioQuestion.astro';
+import BuildIt from '../../components/BuildIt.astro';
+import Quiz from '../../components/Quiz.astro';
+
+## Why Cost Management Matters in the Cloud
+
+In a traditional data center, you pay large upfront costs for servers, networking gear, power, cooling, and building space. These are <KeyTerm term="Capital Expenditures (CapEx)">Upfront spending on physical infrastructure — servers, storage, network equipment, and data center facilities. The cost is incurred before you use the resources and is depreciated over time.</KeyTerm>. You buy the hardware once, use it for years, and replace it when it becomes outdated. The problem? You are guessing at future capacity. Buy too much and money sits idle. Buy too little and you cannot meet demand.
+
+The cloud flips this model to <KeyTerm term="Operational Expenditures (OpEx)">Ongoing spending for services as you use them — like a utility bill. There is no upfront cost for hardware; instead you pay monthly based on actual consumption.</KeyTerm>. Instead of buying a server, you rent computing power by the hour or second. Instead of purchasing a storage array, you pay per gigabyte per month. This is liberating — but it introduces a new challenge: **visibility and control**.
+
+With CapEx, you knew exactly what you spent because you wrote the purchase order. With OpEx, costs can grow silently. A developer spins up a virtual machine for testing and forgets to delete it. A storage account accumulates data nobody uses. An application auto-scales during a traffic spike and stays scaled up. Without active cost management, cloud bills can surprise you.
+
+Azure provides a comprehensive set of tools to help you **estimate** costs before you deploy, **monitor** costs as you consume, and **optimize** spending over time. For the AZ-900 exam, you need to understand the factors that affect cost, the planning calculators, the in-portal cost management tools, and how tags help organize spending.
+
+---
+
+## Factors That Affect Azure Costs
+
+Azure pricing is not a single number per service — it depends on several variables. Think of it like a phone plan where your bill depends on which plan you chose, how much data you use, where you call, and what extras you added.
+
+### Resource Type
+
+Different Azure services have different pricing models. A virtual machine charges by compute hours (based on the VM size you pick). A storage account charges per gigabyte stored and per transaction. An Azure SQL Database charges based on the performance tier, compute size, and storage consumed. Even within a single service, configuration choices matter — a VM with 64 GB of RAM costs more than one with 4 GB.
+
+<Callout type="info">
+For the exam, remember that cost is tied to the **specific configuration** of a resource, not just the resource type. Two virtual machines of different sizes in the same region can have very different prices.
+</Callout>
+
+### Consumption Model
+
+Azure offers two primary consumption models:
+
+- **Pay-as-you-go** — you pay for what you use, with no upfront commitment. This offers maximum flexibility but is the most expensive per-unit price.
+- **Reserved capacity** — you commit to using a specific amount of a resource (such as a VM size) for one or three years in exchange for a significant discount, often **up to 72% off** pay-as-you-go pricing. The trade-off is reduced flexibility — you pay for the reserved capacity whether you use it or not.
+
+<KeyTerm term="Azure Reservations">A commitment to use a specific Azure resource (such as a virtual machine size or database compute tier) for a one-year or three-year term. In exchange for the commitment, you receive a substantial discount compared to pay-as-you-go pricing.</KeyTerm>
+
+### Geography and Region
+
+Azure operates data centers in regions around the world. Prices vary by region because the cost of power, labor, real estate, and local market conditions differ. For example, running a VM in the US East region may cost less than running the identical VM in Brazil South or Switzerland North. When cost is a priority and latency is not critical, choosing a less expensive region can reduce your bill.
+
+### Network Traffic
+
+<KeyTerm term="Ingress and Egress">Ingress is data flowing into an Azure data center (uploading data to Azure). Egress is data flowing out of an Azure data center (downloading data from Azure or transferring data to another region). Azure generally charges for egress but not for ingress.</KeyTerm>
+
+Network traffic follows a simple rule: **data in is free, data out is charged**. Uploading data to Azure (ingress) costs nothing. Downloading data from Azure or transferring data between regions (egress) incurs bandwidth charges. The more data you move out of Azure, the more you pay. Data transfer between services within the same region is often free or low-cost, while cross-region and internet-bound traffic is more expensive.
+
+<Callout type="tip">
+**Exam tip:** Remember the phrase "ingress is free, egress is metered." This is a common exam topic. Also know that data moving between availability zones within the same region incurs a small charge.
+</Callout>
+
+### Subscription Type
+
+The type of Azure subscription you use can affect pricing and available offers:
+
+- **Free account** — includes a set of free services for the first 12 months, plus a limited set of always-free services and a one-time $200 credit for the first 30 days.
+- **Pay-As-You-Go** — standard pricing with no upfront commitment. Best for individual developers and small workloads.
+- **Enterprise Agreement (EA)** — a contractual commitment for large organizations to spend a minimum amount over three years in exchange for discounted pricing and additional benefits.
+- **Cloud Solution Provider (CSP)** — purchasing Azure services through a Microsoft partner who provides licensing, billing, and technical support.
+
+<DeepDive title="Spending Limits and Free Account Behavior">
+The Azure Free Account includes a $200 credit for the first 30 days. Once the credit is exhausted or the 30 days expire, pay-as-you-go charges begin — but only if you explicitly upgrade the account. If you do not upgrade, the account is disabled and you lose access to resources (though your data is retained for 90 days). This spending limit protects new users from unexpected charges during exploration. Enterprise Agreements and CSP subscriptions do not have the same automatic spending limits — cost management is handled through budgets and alerts instead.
+</DeepDive>
+
+---
+
+## Cost Management Tools Overview
+
+Azure provides three distinct tools that serve different purposes at different stages of your cloud journey. Understanding which tool to use when is essential for the AZ-900 exam.
+
+<InteractiveDiagram title="Azure Cost Management Lifecycle">
+  <svg slot="diagram" viewBox="0 0 620 340" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:system-ui,sans-serif">
+    {/* Background */}
+    <rect width="620" height="340" fill="none"/>
+
+    {/* Arrow flow */}
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1"/>
+      </marker>
+    </defs>
+
+    {/* Phase 1: Plan */}
+    <rect x="20" y="40" width="170" height="180" rx="12" fill="#eef2ff" stroke="#6366f1" strokeWidth="2"/>
+    <text x="105" y="72" textAnchor="middle" fill="#4338ca" fontWeight="bold" fontSize="15">PLAN</text>
+    <text x="105" y="95" textAnchor="middle" fill="#4338ca" fontSize="11">Before deployment</text>
+    <rect x="40" y="115" width="130" height="38" rx="6" fill="#c7d2fe" stroke="#6366f1" strokeWidth="1"/>
+    <text x="105" y="139" textAnchor="middle" fill="#312e81" fontSize="11" fontWeight="bold">Pricing Calculator</text>
+    <rect x="40" y="165" width="130" height="38" rx="6" fill="#c7d2fe" stroke="#6366f1" strokeWidth="1"/>
+    <text x="105" y="189" textAnchor="middle" fill="#312e81" fontSize="11" fontWeight="bold">TCO Calculator</text>
+
+    {/* Arrow 1 */}
+    <line x1="200" y1="130" x2="225" y2="130" stroke="#6366f1" strokeWidth="2" markerEnd="url(#arrowhead)"/>
+
+    {/* Phase 2: Deploy */}
+    <rect x="230" y="40" width="160" height="180" rx="12" fill="#f0fdf4" stroke="#22c55e" strokeWidth="2"/>
+    <text x="310" y="72" textAnchor="middle" fill="#15803d" fontWeight="bold" fontSize="15">MONITOR</text>
+    <text x="310" y="95" textAnchor="middle" fill="#15803d" fontSize="11">After deployment</text>
+    <rect x="248" y="115" width="124" height="38" rx="6" fill="#bbf7d0" stroke="#22c55e" strokeWidth="1"/>
+    <text x="310" y="133" textAnchor="middle" fill="#14532d" fontSize="10" fontWeight="bold">Cost Management</text>
+    <text x="310" y="146" textAnchor="middle" fill="#14532d" fontSize="10" fontWeight="bold">+ Billing</text>
+    <rect x="248" y="165" width="124" height="38" rx="6" fill="#bbf7d0" stroke="#22c55e" strokeWidth="1"/>
+    <text x="310" y="183" textAnchor="middle" fill="#14532d" fontSize="10" fontWeight="bold">Budgets &</text>
+    <text x="310" y="196" textAnchor="middle" fill="#14532d" fontSize="10" fontWeight="bold">Alerts</text>
+
+    {/* Arrow 2 */}
+    <line x1="400" y1="130" x2="425" y2="130" stroke="#6366f1" strokeWidth="2" markerEnd="url(#arrowhead)"/>
+
+    {/* Phase 3: Optimize */}
+    <rect x="430" y="40" width="170" height="180" rx="12" fill="#fef3c7" stroke="#f59e0b" strokeWidth="2"/>
+    <text x="515" y="72" textAnchor="middle" fill="#b45309" fontWeight="bold" fontSize="15">OPTIMIZE</text>
+    <text x="515" y="95" textAnchor="middle" fill="#b45309" fontSize="11">Reduce waste</text>
+    <rect x="448" y="115" width="134" height="38" rx="6" fill="#fde68a" stroke="#f59e0b" strokeWidth="1"/>
+    <text x="515" y="139" textAnchor="middle" fill="#78350f" fontSize="11" fontWeight="bold">Recommendations</text>
+    <rect x="448" y="165" width="134" height="38" rx="6" fill="#fde68a" stroke="#f59e0b" strokeWidth="1"/>
+    <text x="515" y="183" textAnchor="middle" fill="#78350f" fontSize="10" fontWeight="bold">Reservations &</text>
+    <text x="515" y="196" textAnchor="middle" fill="#78350f" fontSize="10" fontWeight="bold">Right-sizing</text>
+
+    {/* Tags bar across bottom */}
+    <rect x="20" y="260" width="580" height="55" rx="10" fill="#fdf2f8" stroke="#ec4899" strokeWidth="2"/>
+    <text x="310" y="285" textAnchor="middle" fill="#9d174d" fontWeight="bold" fontSize="13">Resource Tags</text>
+    <text x="310" y="303" textAnchor="middle" fill="#9d174d" fontSize="11">Organize and categorize costs across all phases</text>
+  </svg>
+  <DiagramHotspot x="17%" y="14%" width="29%" height="55%" variant="layer" label="Plan Phase">
+    Before deploying anything, use the **Pricing Calculator** to estimate monthly costs for specific Azure resources and the **TCO Calculator** to compare your on-premises costs with Azure costs. These tools help build a business case and set budget expectations.
+  </DiagramHotspot>
+  <DiagramHotspot x="39%" y="14%" width="28%" height="55%" variant="layer" label="Monitor Phase">
+    After deployment, **Azure Cost Management + Billing** provides real-time cost tracking, budget enforcement, and spending alerts. You can view cost breakdowns by service, resource group, or tag and set automated alerts when spending approaches your budget.
+  </DiagramHotspot>
+  <DiagramHotspot x="72%" y="14%" width="29%" height="55%" variant="layer" label="Optimize Phase">
+    Azure Cost Management also provides **recommendations** to reduce waste — such as identifying idle VMs, right-sizing over-provisioned resources, and suggesting reserved instances for steady-state workloads. Optimization is an ongoing process, not a one-time activity.
+  </DiagramHotspot>
+  <DiagramHotspot x="5%" y="78%" width="95%" height="18%" variant="layer" label="Resource Tags">
+    **Tags** span all phases. They let you label resources with key-value pairs (like Department:Marketing or Environment:Production) so you can filter and group costs by any dimension that matters to your organization.
+  </DiagramHotspot>
+</InteractiveDiagram>
+
+---
+
+## Azure Pricing Calculator
+
+<KeyTerm term="Azure Pricing Calculator">A free web-based tool that lets you estimate the cost of Azure services before you deploy anything. You select products, configure them (region, tier, expected usage), and the calculator produces a monthly cost estimate.</KeyTerm>
+
+The Azure Pricing Calculator is your **pre-deployment planning tool**. Think of it like a restaurant menu with prices — you browse the services, pick what you want, adjust the portions, and see the estimated total before you order.
+
+Here is how it works:
+
+1. **Browse or search** for the Azure services you plan to use (VMs, storage accounts, databases, etc.).
+2. **Add them to your estimate** and configure each one — select the region, pricing tier, instance size, expected hours of operation, and expected data volumes.
+3. **Review the total** — the calculator shows an estimated monthly cost for each service and the combined total.
+4. **Save and share** — you can export the estimate as an Excel spreadsheet or share a link with your team.
+
+The Pricing Calculator does not require an Azure account. Anyone can use it to explore pricing scenarios, compare configurations, or build a budget proposal.
+
+<Callout type="warning">
+The Pricing Calculator provides **estimates only** — not guarantees. Actual costs depend on real usage, which may differ from your projections. Use it for planning and budgeting, not as a binding price quote.
+</Callout>
+
+---
+
+## TCO Calculator
+
+<KeyTerm term="Total Cost of Ownership (TCO) Calculator">A free web-based tool that helps you estimate the cost savings of migrating workloads from on-premises infrastructure to Azure. You describe your current on-premises environment, and the calculator compares those costs (hardware, software, power, labor) against the projected Azure costs.</KeyTerm>
+
+While the Pricing Calculator answers "How much will Azure services cost?", the TCO Calculator answers a different question: **"How much will we save by moving to Azure?"**
+
+The TCO Calculator is designed for migration decision-making. It accounts for costs that organizations often overlook when comparing cloud and on-premises:
+
+1. **Define your workloads** — describe your on-premises servers (number, type, CPU, RAM), databases, storage, and network bandwidth.
+2. **Adjust assumptions** — the calculator includes default assumptions for electricity costs, IT labor rates, hardware refresh cycles, and software licensing. You can adjust these to match your actual costs.
+3. **View the report** — the calculator generates a side-by-side comparison showing your estimated on-premises costs versus Azure costs over a one-year, three-year, or five-year period.
+
+<Callout type="tip">
+**Exam tip:** The TCO Calculator is for **comparing on-premises vs. Azure** costs, not for estimating Azure-only costs. If a question asks about estimating costs for new Azure resources, the answer is the Pricing Calculator. If the question involves migration savings or comparing existing infrastructure to Azure, the answer is the TCO Calculator.
+</Callout>
+
+<DeepDive title="Hidden Costs the TCO Calculator Captures">
+The TCO Calculator reveals costs that are easy to overlook in an on-premises environment:
+
+- **Power and cooling** — electricity to run servers and air conditioning to cool them, which can be 30-60% of data center operating costs.
+- **Physical space** — rent or depreciation for the data center floor space your hardware occupies.
+- **IT labor** — salaries for system administrators, network engineers, and data center technicians who maintain the hardware.
+- **Hardware refresh** — servers typically need replacement every 3-5 years. The TCO Calculator factors in this lifecycle cost.
+- **Software licensing** — operating systems, hypervisors, management tools, and backup software licenses that you buy for on-premises but may be included in Azure service pricing.
+- **Downtime costs** — the business impact of outages, which are typically more frequent in smaller on-premises environments than in Azure's global infrastructure.
+
+By including all of these factors, the TCO Calculator often shows substantial savings even when the raw compute cost appears similar.
+</DeepDive>
+
+---
+
+## Azure Cost Management + Billing
+
+<KeyTerm term="Azure Cost Management + Billing">A built-in Azure portal tool for monitoring, analyzing, allocating, and optimizing your cloud spending after resources are deployed. It provides cost analysis views, budget creation, spending alerts, and optimization recommendations.</KeyTerm>
+
+The Pricing Calculator and TCO Calculator are planning tools you use before deployment. **Azure Cost Management + Billing** is the tool you use every day after deployment — it is your ongoing dashboard for understanding where your money goes.
+
+### Cost Analysis
+
+Cost Analysis is the core feature. It provides interactive charts and tables that break down your spending by:
+
+- **Service** — which Azure services are costing the most (e.g., Virtual Machines, Storage, SQL Database).
+- **Resource group** — which logical groupings of resources are most expensive.
+- **Resource** — drill down to the individual resource level to find that forgotten VM or oversized database.
+- **Time period** — view daily, weekly, or monthly trends to spot spending spikes.
+- **Tag** — filter by resource tags to see costs per department, project, or environment.
+
+### Budgets and Alerts
+
+You can create <KeyTerm term="Azure Budget">A spending threshold you define in Azure Cost Management. When your actual or forecasted spending reaches a specified percentage of the budget, Azure triggers an alert notification (email, webhook, or automation).</KeyTerm> to set spending thresholds and receive notifications when costs approach or exceed those limits.
+
+For example, you might create a $5,000 monthly budget and configure alerts at 50%, 75%, and 100%. When spending reaches $2,500, you get a heads-up. At $3,750, you get a stronger warning. At $5,000, you know you have reached your limit. Alerts can trigger emails, webhook notifications, or even Azure Automation runbooks that automatically shut down non-essential resources.
+
+<Callout type="info">
+Budgets in Azure Cost Management are **alerts only** — they do not automatically stop or limit your spending. If you exceed your budget, Azure keeps running your resources and billing you. You must take action yourself (or configure automation) to respond to budget alerts.
+</Callout>
+
+### Cost Recommendations
+
+Azure Cost Management integrates with **Azure Advisor** to surface cost optimization recommendations, such as:
+
+- **Shut down or resize underutilized VMs** — if a VM consistently uses less than 5% CPU, Advisor recommends right-sizing or shutting it down.
+- **Purchase reserved instances** — if you have VMs or databases running 24/7 for months, Advisor suggests reservations for savings.
+- **Delete unused resources** — unattached disks, idle public IP addresses, and empty resource groups that still incur costs.
+
+---
+
+## Resource Tags for Cost Organization
+
+<KeyTerm term="Resource Tags">Name-value pairs (also called key-value pairs) that you assign to Azure resources, resource groups, and subscriptions to logically organize and categorize them. Tags are metadata — they do not affect how a resource functions, but they enable filtering, grouping, and cost allocation.</KeyTerm>
+
+Tags are like labels on file folders. They do not change what is inside, but they help you find, sort, and categorize things. In the context of cost management, tags let you answer questions like:
+
+- "How much is the Marketing department spending on Azure this month?"
+- "What is the total cost of our Production environment versus our Development environment?"
+- "Which project is consuming the most storage?"
+
+### How Tags Work
+
+You apply tags as key-value pairs to resources. For example:
+
+| Tag Key | Tag Value |
+|---------|-----------|
+| Department | Marketing |
+| Environment | Production |
+| Project | WebsiteRedesign |
+| CostCenter | CC-4521 |
+| Owner | jsmith@contoso.com |
+
+Once tagged, you can filter Cost Analysis views by any tag to see spending breakdowns by department, project, environment, or any other dimension.
+
+### Tag Inheritance Behavior
+
+<Callout type="warning">
+**Critical exam concept:** Tags applied to a resource group are **not inherited** by the resources inside that group. If you tag a resource group with Department:Marketing, the individual VMs, storage accounts, and databases inside that group do **not** automatically receive that tag. You must apply tags to each resource individually, or use Azure Policy to enforce automatic tagging.
+</Callout>
+
+Similarly, tags on a subscription are not inherited by the resource groups or resources within it. Each level must be tagged independently. Azure Policy can help automate this by requiring specific tags during resource creation or by inheriting tags from parent resource groups.
+
+<DeepDive title="Tag Enforcement with Azure Policy">
+Because tags are optional by default and do not inherit, organizations often struggle with inconsistent tagging — some resources are tagged, others are not, and cost reports have gaps. Azure Policy solves this by letting you create rules such as:
+
+- **Require a tag on resource creation** — any resource created without a specified tag (e.g., CostCenter) is denied. This prevents untagged resources from ever existing.
+- **Inherit a tag from the resource group** — automatically copy a tag from the resource group to any resource created within it. This simulates tag inheritance where Azure does not provide it natively.
+- **Append a tag with a default value** — if a resource is created without a specific tag, automatically add it with a default value.
+
+For the AZ-900 exam, you do not need to know the details of Azure Policy (that is covered in Section 3.2), but understand that tags alone are passive metadata — you need Policy to enforce consistent tagging.
+</DeepDive>
+
+---
+
+## Practice Exercises
+
+### Match the Cost Tool to Its Purpose
+
+<DragDropMatch
+  id="cost-tool-match"
+  pairs={[
+    { item: "Estimate costs before deploying Azure resources", match: "Pricing Calculator" },
+    { item: "Compare on-premises costs vs. Azure migration costs", match: "TCO Calculator" },
+    { item: "Monitor and analyze actual Azure spending after deployment", match: "Cost Management + Billing" },
+    { item: "Set spending thresholds and receive notifications", match: "Azure Budgets" },
+    { item: "Label resources for cost tracking by department or project", match: "Resource Tags" }
+  ]}
+/>
+
+### Fill in the Key Terms
+
+<FillInBlank
+  id="cost-fill-in-blank"
+  items={[
+    { statement: "The ___ Calculator helps estimate Azure costs before deployment.", answer: "Pricing", hint: "Used for pre-deployment cost estimation of specific Azure services" },
+    { statement: "Data flowing into Azure is called ___ and is free of charge.", answer: "ingress", hint: "The opposite of egress" },
+    { statement: "Tags applied to a resource group are NOT ___ by the resources inside it.", answer: "inherited", hint: "Each resource must be tagged individually" },
+    { statement: "Azure ___ let you commit to a one-year or three-year term for discounted pricing.", answer: "Reservations", hint: "The opposite of pay-as-you-go flexibility" },
+    { statement: "Azure budgets trigger ___ but do not automatically stop spending.", answer: "alerts", hint: "Notifications sent when thresholds are reached" }
+  ]}
+/>
+
+### Scenario: Which Tool Should They Use?
+
+<ScenarioQuestion
+  id="cost-scenario-migration"
+  scenario="Contoso Ltd. currently runs 200 servers in their on-premises data center. The CTO wants to build a business case for migrating to Azure and needs to show the board of directors how much money the company would save over five years by moving to the cloud. The CTO needs a report comparing current on-premises costs (including hardware, power, cooling, and IT labor) against projected Azure costs."
+  options={[
+    { text: "Use the Azure Pricing Calculator to estimate the cost of 200 VMs in Azure.", feedback: "The Pricing Calculator can estimate Azure costs, but it does not compare those costs against your current on-premises infrastructure. The CTO needs a side-by-side comparison that includes hidden on-premises costs like power, cooling, and labor.", correct: false },
+    { text: "Use the TCO Calculator to compare on-premises costs against Azure costs.", feedback: "Correct! The TCO Calculator is specifically designed for migration business cases. It lets you describe your on-premises workloads and then generates a side-by-side comparison including hidden costs like electricity, cooling, labor, and hardware refresh cycles over 1, 3, or 5 years.", correct: true },
+    { text: "Use Azure Cost Management + Billing to analyze current spending.", feedback: "Cost Management + Billing monitors spending on existing Azure resources. Since Contoso hasn't migrated yet, there are no Azure resources to monitor. This tool is for post-deployment analysis, not pre-migration planning.", correct: false },
+    { text: "Use Azure Advisor to get cost optimization recommendations.", feedback: "Azure Advisor provides recommendations for existing Azure resources. Since Contoso hasn't migrated yet, Advisor has nothing to analyze. Advisor is useful after migration to optimize costs, not for building a migration business case.", correct: false }
+  ]}
+/>
+
+### Build It: Cost Optimization Workflow
+
+<BuildIt
+  id="cost-optimization-steps"
+  title="Order the Cost Optimization Steps"
+  instruction="Arrange these steps in the correct order for an organization implementing cost management in Azure, from initial planning through ongoing optimization."
+  availableParts={["Estimate costs using the Pricing Calculator", "Deploy resources to Azure", "Set up budgets and spending alerts", "Tag resources by department and project", "Review Cost Management recommendations and right-size resources"]}
+  correctOrder={["Estimate costs using the Pricing Calculator", "Deploy resources to Azure", "Tag resources by department and project", "Set up budgets and spending alerts", "Review Cost Management recommendations and right-size resources"]}
+/>
+
+---
+
+<KeyTakeaways>
+- Azure costs are affected by **resource type**, **consumption model** (pay-as-you-go vs. reserved), **region**, **network traffic** (ingress free, egress charged), and **subscription type**.
+- The **Pricing Calculator** estimates costs for specific Azure services before deployment — it is a planning tool.
+- The **TCO Calculator** compares on-premises costs to Azure costs for migration decisions — it includes hidden costs like power, cooling, and labor.
+- **Azure Cost Management + Billing** monitors, analyzes, and optimizes costs after deployment — it provides cost analysis, budgets, alerts, and recommendations.
+- **Budgets** trigger alerts but do **not** automatically stop spending — you must take action or configure automation.
+- **Resource tags** are key-value pairs for organizing costs by department, project, or environment — tags do **not** inherit from resource groups to resources.
+- Azure Policy can enforce consistent tagging by requiring tags during resource creation or inheriting tags from parent groups.
+- Cost optimization is an **ongoing process**: plan with calculators, monitor with Cost Management, optimize with Advisor recommendations and reservations.
+</KeyTakeaways>
+
+---
+
+## Knowledge Check
+
+<Quiz
+  sectionId="3.1"
+  questions={[
+    {
+      type: "multiple-choice",
+      question: "Which Azure tool should you use to estimate the monthly cost of a new set of Azure resources before deploying them?",
+      options: [
+        "TCO Calculator",
+        "Azure Pricing Calculator",
+        "Azure Cost Management + Billing",
+        "Azure Advisor"
+      ],
+      correct: 1,
+      explanation: "The Azure Pricing Calculator is a free web-based tool designed for estimating the cost of Azure services before deployment. You select services, configure them (region, tier, usage), and get an estimated monthly cost. The TCO Calculator compares on-premises vs. Azure costs. Cost Management monitors actual spending. Advisor provides optimization recommendations for existing resources."
+    },
+    {
+      type: "multiple-choice",
+      question: "What is the primary purpose of the TCO Calculator?",
+      options: [
+        "To estimate the cost of individual Azure services",
+        "To monitor real-time Azure spending",
+        "To compare on-premises infrastructure costs with Azure costs",
+        "To create budgets and spending alerts"
+      ],
+      correct: 2,
+      explanation: "The TCO (Total Cost of Ownership) Calculator is specifically designed to compare the costs of running workloads on-premises versus in Azure. It factors in hardware, software, power, cooling, labor, and other hidden costs to produce a side-by-side comparison over 1, 3, or 5 years."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following is NOT a factor that affects Azure costs?",
+      options: [
+        "Geographic region where resources are deployed",
+        "The name you assign to a resource",
+        "The type and configuration of the resource",
+        "Network egress traffic"
+      ],
+      correct: 1,
+      explanation: "The name you assign to a resource has no impact on pricing. Azure costs are affected by resource type and configuration, geographic region (prices vary by region), network traffic (egress is charged), consumption model, and subscription type."
+    },
+    {
+      type: "multiple-choice",
+      question: "What happens when an Azure budget threshold is reached?",
+      options: [
+        "Azure automatically shuts down all resources in the subscription",
+        "Azure sends an alert notification but does not stop spending",
+        "Azure prevents any new resource deployments",
+        "Azure automatically scales down all resources to reduce costs"
+      ],
+      correct: 1,
+      explanation: "Azure budgets trigger alert notifications (email, webhook, or automation) when spending thresholds are reached, but they do not automatically stop, limit, or modify your resources. Your resources continue running and incurring charges. You must manually take action or configure automation to respond to alerts."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which statement about Azure resource tags is correct?",
+      options: [
+        "Tags applied to a resource group are automatically inherited by all resources within it",
+        "Tags applied to a subscription are inherited by all resource groups within it",
+        "Tags are not inherited — each resource must be tagged individually",
+        "Tags can only be applied at the subscription level"
+      ],
+      correct: 2,
+      explanation: "Azure resource tags are NOT inherited. Tags applied to a resource group do not automatically flow down to the resources inside that group, and tags on a subscription do not flow to resource groups. Each resource must be tagged individually. Azure Policy can be used to enforce or automate tag inheritance."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company wants to reduce VM costs for a production database server that runs 24/7 year-round. Which approach would provide the greatest cost savings?",
+      options: [
+        "Move the VM to a different region",
+        "Purchase a one-year or three-year Azure Reservation",
+        "Apply a resource tag to track the cost",
+        "Use the TCO Calculator to estimate savings"
+      ],
+      correct: 1,
+      explanation: "Azure Reservations provide discounts of up to 72% compared to pay-as-you-go pricing for resources that run continuously. A production database server running 24/7 is an ideal candidate for a reserved instance. Moving regions might save some money but not as much. Tags organize costs but don't reduce them. The TCO Calculator estimates migration savings, not ongoing optimization."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which type of network traffic is generally free in Azure?",
+      options: [
+        "Data transferred from Azure to the internet (egress)",
+        "Data transferred between Azure regions",
+        "Data transferred into Azure from the internet (ingress)",
+        "Data transferred from Azure to an on-premises network"
+      ],
+      correct: 2,
+      explanation: "Inbound data transfer to Azure (ingress) is generally free. Outbound data transfer from Azure (egress), including data sent to the internet, to other Azure regions, or to on-premises networks, is metered and charged based on volume."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Azure tool provides cost optimization recommendations such as identifying underutilized virtual machines?",
+      options: [
+        "Azure Pricing Calculator",
+        "TCO Calculator",
+        "Azure Advisor",
+        "Azure Tags"
+      ],
+      correct: 2,
+      explanation: "Azure Advisor, integrated with Azure Cost Management, provides personalized recommendations for cost optimization. It can identify underutilized VMs, suggest reserved instances, and flag unused resources. The Pricing Calculator estimates pre-deployment costs, the TCO Calculator compares on-premises vs. Azure costs, and tags organize resources but don't provide recommendations."
+    },
+    {
+      type: "multiple-choice",
+      question: "What is the difference between Capital Expenditures (CapEx) and Operational Expenditures (OpEx)?",
+      options: [
+        "CapEx is monthly recurring costs; OpEx is one-time purchases",
+        "CapEx is upfront spending on physical infrastructure; OpEx is ongoing pay-as-you-go spending",
+        "CapEx applies only to cloud services; OpEx applies only to on-premises",
+        "CapEx and OpEx are the same — both refer to cloud spending"
+      ],
+      correct: 1,
+      explanation: "Capital Expenditures (CapEx) are upfront costs for physical infrastructure — buying servers, storage, and networking equipment. Operational Expenditures (OpEx) are ongoing costs for services consumed — like cloud computing charges billed monthly based on usage. Cloud computing shifts spending from CapEx to OpEx."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which cost management feature lets you visualize spending trends by service, resource group, or tag over time?",
+      options: [
+        "Azure Budgets",
+        "Cost Analysis",
+        "Azure Pricing Calculator",
+        "Azure Advisor"
+      ],
+      correct: 1,
+      explanation: "Cost Analysis is a feature within Azure Cost Management + Billing that provides interactive charts and tables for exploring spending data. You can break down costs by service, resource group, resource, tag, or time period to identify trends and anomalies. Budgets set thresholds and alerts. The Pricing Calculator is for pre-deployment estimates. Advisor provides recommendations."
+    },
+    {
+      type: "multiple-choice",
+      question: "An organization needs to enforce that all Azure resources have a 'CostCenter' tag before they can be created. Which Azure feature should they use?",
+      options: [
+        "Azure Cost Management",
+        "Azure Budgets",
+        "Azure Policy",
+        "Azure Advisor"
+      ],
+      correct: 2,
+      explanation: "Azure Policy can enforce tagging requirements by denying resource creation when required tags are missing. You create a policy that requires the 'CostCenter' tag, and any attempt to create a resource without it is blocked. Cost Management and Budgets monitor spending but don't enforce tagging. Advisor provides recommendations but doesn't enforce rules."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Azure subscription type involves a three-year contractual commitment for discounted pricing?",
+      options: [
+        "Free Account",
+        "Pay-As-You-Go",
+        "Enterprise Agreement",
+        "Visual Studio subscription"
+      ],
+      correct: 2,
+      explanation: "An Enterprise Agreement (EA) is a contractual agreement between a large organization and Microsoft where the organization commits to spending a minimum amount over three years in exchange for discounted pricing and additional benefits. Free and Pay-As-You-Go subscriptions have no long-term commitment."
+    },
+    {
+      type: "multiple-choice",
+      question: "The Azure Pricing Calculator requires an Azure subscription to use.",
+      options: [
+        "True — you must sign in with an Azure account",
+        "False — anyone can use it without an Azure account",
+        "True — but only for Enterprise Agreement customers",
+        "False — but estimates are only available for Pay-As-You-Go pricing"
+      ],
+      correct: 1,
+      explanation: "The Azure Pricing Calculator is a free, publicly available web tool. No Azure subscription or account is required to use it. Anyone can access it to explore Azure pricing, build estimates, and compare service configurations."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which of the following hidden costs does the TCO Calculator factor into its on-premises cost estimate?",
+      options: [
+        "Azure Reservations discounts",
+        "Electricity, cooling, IT labor, and hardware replacement",
+        "Azure egress bandwidth charges",
+        "Azure resource tag management"
+      ],
+      correct: 1,
+      explanation: "The TCO Calculator factors in hidden on-premises costs that organizations often overlook: electricity and cooling for the data center, IT labor for maintaining hardware, hardware refresh cycles (replacing servers every 3-5 years), software licensing, and physical space costs. Azure-specific costs like Reservations, egress, and tags are not part of the on-premises estimate."
+    },
+    {
+      type: "multiple-choice",
+      question: "A developer creates a VM in the West US region. Moving the same VM configuration to which factor could change the cost?",
+      options: [
+        "Changing the VM's name",
+        "Changing the VM's resource group",
+        "Changing the VM's region to East Asia",
+        "Changing the VM's tags"
+      ],
+      correct: 2,
+      explanation: "Azure prices vary by region due to differences in power costs, labor, real estate, and local market conditions. Moving a VM from West US to East Asia would likely change the price. Changing the VM's name, resource group, or tags does not affect pricing — these are organizational metadata."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which Azure Cost Management feature can trigger an Azure Automation runbook when a spending threshold is reached?",
+      options: [
+        "Cost Analysis",
+        "Azure Budgets",
+        "Azure Advisor",
+        "Resource Tags"
+      ],
+      correct: 1,
+      explanation: "Azure Budgets can trigger action groups when spending thresholds are reached. Action groups can send emails, post to webhooks, or invoke Azure Automation runbooks that automatically respond — for example, shutting down non-essential VMs when spending exceeds 90% of the budget. Cost Analysis visualizes data, Advisor provides recommendations, and tags organize resources."
+    },
+    {
+      type: "multiple-choice",
+      question: "What is the Azure Free Account spending limit designed to prevent?",
+      options: [
+        "Users from creating more than 10 resources",
+        "Users from deploying resources in premium regions",
+        "New users from incurring unexpected charges during exploration",
+        "Users from using Enterprise Agreement pricing"
+      ],
+      correct: 2,
+      explanation: "The Azure Free Account includes a $200 credit for the first 30 days with a spending limit that protects new users from unexpected charges. Once the credit is exhausted or expires, the account is disabled unless explicitly upgraded to pay-as-you-go. This prevents accidental charges while users explore Azure."
+    },
+    {
+      type: "multiple-choice",
+      question: "A company tags all resources with 'Environment: Production' or 'Environment: Development'. What can they do with these tags in Cost Management?",
+      options: [
+        "Automatically receive discounted pricing for Development resources",
+        "Filter Cost Analysis to compare spending between Production and Development environments",
+        "Prevent Development resources from exceeding a spending limit",
+        "Automatically shut down Development resources at night"
+      ],
+      correct: 1,
+      explanation: "Resource tags enable filtering in Cost Analysis, allowing the company to compare spending between environments. Tags are metadata for organization and reporting — they do not affect pricing, enforce spending limits, or control resource behavior. To automate shutdowns, you would use Azure Automation, not tags alone."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which pricing model offers maximum flexibility with no upfront commitment but the highest per-unit cost?",
+      options: [
+        "Reserved Instances (1-year)",
+        "Reserved Instances (3-year)",
+        "Pay-As-You-Go",
+        "Enterprise Agreement"
+      ],
+      correct: 2,
+      explanation: "Pay-As-You-Go provides maximum flexibility — you pay only for what you use with no upfront commitment and can stop at any time. However, it has the highest per-unit cost compared to reserved pricing. One-year and three-year reservations offer lower per-unit costs in exchange for a commitment. Enterprise Agreements offer volume discounts with a three-year contract."
+    },
+    {
+      type: "multiple-choice",
+      question: "Which two calculators are available for Azure cost planning, and how do they differ?",
+      options: [
+        "Pricing Calculator estimates Azure costs; TCO Calculator estimates on-premises costs only",
+        "Pricing Calculator estimates individual Azure service costs; TCO Calculator compares on-premises vs. Azure costs",
+        "Pricing Calculator is for small businesses; TCO Calculator is for enterprises",
+        "Pricing Calculator requires an Azure account; TCO Calculator does not"
+      ],
+      correct: 1,
+      explanation: "The Pricing Calculator estimates the cost of specific Azure services you plan to deploy. The TCO Calculator compares your current on-premises infrastructure costs against projected Azure costs to help justify a migration. Both are free, web-based tools that do not require an Azure account, and both are available to organizations of any size."
+    }
+  ]}
+/>
